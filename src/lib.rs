@@ -1,5 +1,5 @@
 //!
-//! haruspex - TODO
+//! haruspex - Tool to extract IDA decompiler's pseudo-code
 //! Copyright (c) 2024 Marco Ivaldi <raptor@0xdeadbeef.info>
 //!
 //! > "Hacking is the discipline of questioning all your assumptions all of the time."
@@ -44,16 +44,18 @@
 //! ```sh
 //! TODO
 //! ```
-//
-// ## Tested with
-// * IDA Pro 9.0.240925 on macOS arm64.
-//
-// ## Changelog
-// * <https://github.com/0xdea/haruspex/blob/master/CHANGELOG.md>
-//
-// ## TODO
-// * TODO
 //!
+//! ## Tested with
+//! * IDA Pro 9.0.240925 on macOS arm64.
+//!
+//! ## Changelog
+//! * <https://github.com/0xdea/haruspex/blob/master/CHANGELOG.md>
+//!
+//! ## TODO
+//! * TODO
+//!
+
+#![doc(html_logo_url = "https://raw.githubusercontent.com/0xdea/haruspex/master/.img/logo.png")]
 
 // Standard library imports
 use std::error::Error;
