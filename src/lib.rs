@@ -34,7 +34,7 @@
 //! Alternatively, you can build from [source](https://github.com/0xdea/haruspex):
 //! 1. Download, install, and configure IDA Pro (see <https://hex-rays.com/ida-pro>).
 //! 2. Download and extract the IDA SDK (see <https://docs.hex-rays.com/developer-guide>).
-//! 3. Compile rhabdomancer as follows:
+//! 3. Compile haruspex as follows:
 //!     ```sh
 //!     $ git clone https://github.com/0xdea/haruspex
 //!     $ cd haruspex
