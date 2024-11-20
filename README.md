@@ -29,7 +29,7 @@ TODO: screenshot?
 * <https://github.com/0xdea/ghidra-scripts/blob/main/Haruspex.java>
 * <https://docs.hex-rays.com/release-notes/9_0#headless-processing-with-idalib>
 * <https://github.com/binarly-io/idalib/>
-* <https://security.humanativaspa.it/automating-binary-vulnerability-discovery-with-ghidra-and-semgrep/>
+* <https://security.humanativaspa.it/automating-binary-vulnerability-discovery-with-ghidra-and-semgrep>
 
 ## Installing
 
