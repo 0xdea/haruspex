@@ -1,22 +1,11 @@
-// Standard library imports
 use std::env;
 use std::path::Path;
 use std::process;
 
-// External crate imports
-// use ...;
-
-// Internal imports
-// use ...;
-
-// const NAME: type = ...;
-
-// static NAME: type = ...;
-
-const PROG: &str = "haruspex.exe";
+const PROG: &str = "haruspex";
 
 fn main() {
-    println!("haruspex - TODO");
+    println!("haruspex - Tool to extract IDA decompiler's pseudo-code");
     println!("Copyright (c) 2024 Marco Ivaldi <raptor@0xdeadbeef.info>");
     println!();
 
@@ -29,18 +18,17 @@ fn main() {
         .to_str()
         .unwrap_or(PROG);
 
-    let action = match args.len() {
-        1 => "default",
-        2 => &args[1].clone(),
+    let filename = match args.len() {
+        2 => &args[1],
         _ => "-",
     };
-    if action.starts_with('-') {
+    if filename.starts_with('-') {
         usage(prog);
     }
 
     // Let's do it
-    match haruspex::run(action) {
-        Ok(()) => (),
+    match haruspex::run(Path::new(filename)) {
+        Ok(_) => (),
         Err(err) => {
             eprintln!("[!] Error: {err}");
             process::exit(1);
@@ -51,10 +39,7 @@ fn main() {
 /// Print usage information and exit
 fn usage(prog: &str) {
     println!("Usage:");
-    println!(".\\{prog} TODO");
-    println!("\nExamples:");
-    println!(".\\{prog}");
-    println!(".\\{prog} TODO");
+    println!("$ ./{prog} [binary file]");
 
     process::exit(1);
 }
