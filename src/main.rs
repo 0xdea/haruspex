@@ -2,10 +2,10 @@ use std::env;
 use std::path::Path;
 use std::process;
 
-const PROG: &str = "haruspex";
+const PROG: &str = env!("CARGO_PKG_NAME");
 
 fn main() {
-    println!("haruspex - Tool to extract IDA decompiler's pseudo-code");
+    println!("{PROG} - Tool to extract IDA decompiler's pseudo-code");
     println!("Copyright (c) 2024 Marco Ivaldi <raptor@0xdeadbeef.info>");
     println!();
 

@@ -79,7 +79,7 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
     if !filepath.is_file() {
         return Err(anyhow::anyhow!("invalid file path"));
     }
-    // let idb = IDB::open_with(filepath, true, true)?;
+    let idb = IDB::open_with(filepath, true, true)?;
     println!("[+] Successfully analyzed binary file");
 
     // Create a new output directory, returning an error if it already exists (and it's not empty)
@@ -89,6 +89,7 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
         fs::remove_dir(&dirpath).map_err(|_| anyhow::anyhow!("output directory already exists"))?;
     }
     fs::create_dir_all(&dirpath)?;
+    println!("[+] Output directory is ready");
 
     // Extract pseudo-code of functions
     // println!();
