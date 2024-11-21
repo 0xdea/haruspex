@@ -46,7 +46,7 @@
 //! 1. Make sure IDA Pro is properly configured with a valid license.
 //! 2. Run haruspex as follows:
 //!     ```sh
-//!     $ haruspex [binary file]
+//!     $ haruspex <binary_file>
 //!     ```
 //! 3. TODO
 //!
@@ -62,11 +62,41 @@
 
 #![doc(html_logo_url = "https://raw.githubusercontent.com/0xdea/haruspex/master/.img/logo.png")]
 
+use idalib::idb::IDB;
+use std::fs;
 use std::path::Path;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
+/// Number of marked call locations
+static COUNTER: AtomicUsize = AtomicUsize::new(0);
+
+/// Extract pseudo-code of functions in the binary file at `filepath`, save it in "`filepath`.out",
+/// and return how many functions were decompiled, or an error in case something goes wrong
 /// TODO
-pub fn run(filepath: &Path) -> anyhow::Result<()> {
-    todo!();
+pub fn run(filepath: &Path) -> anyhow::Result<usize> {
+    // Open target binary, run auto-analysis, and keep results
+    println!("[*] Trying to analyze binary file {filepath:?}");
+    if !filepath.is_file() {
+        return Err(anyhow::anyhow!("invalid file path"));
+    }
+    // let idb = IDB::open_with(filepath, true, true)?;
+    println!("[+] Successfully analyzed binary file");
 
-    Ok(())
+    // Create a new output directory, returning an error if it already exists (and it's not empty)
+    let dirpath = filepath.with_extension("hpx");
+    println!("[*] Preparing output directory {dirpath:?}");
+    if dirpath.exists() {
+        fs::remove_dir(&dirpath).map_err(|_| anyhow::anyhow!("output directory already exists"))?;
+    }
+    fs::create_dir_all(&dirpath)?;
+
+    // Extract pseudo-code of functions
+    // println!();
+    // println!("[*] Finding bad API function calls...");
+    // BadFunctions::find_all(&idb, &known_bad).locate_calls(&idb)?;
+
+    println!();
+    println!("[+] Decompiled {COUNTER:?} functions");
+    println!("[+] Done processing binary file {filepath:?}");
+    Ok(COUNTER.load(Ordering::Relaxed))
 }

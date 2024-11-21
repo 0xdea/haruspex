@@ -62,7 +62,7 @@ Alternatively, you can build from [source](https://github.com/0xdea/haruspex):
 1. Make sure IDA Pro is properly configured with a valid license.
 2. Run haruspex as follows:
     ```sh
-    $ haruspex [binary file]
+    $ haruspex <binary_file>
     ```
 3. TODO
 
