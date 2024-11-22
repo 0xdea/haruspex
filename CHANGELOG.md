@@ -7,6 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - TODO
 
-* First release to be published on [crates.io](https://crates.io/).
+* First release to be published to [crates.io](https://crates.io/).
 
 [unreleased]: https://github.com/0xdea/haruspex/releases/tag/v0.1.0
