@@ -16,6 +16,8 @@ Haruspex is a blazing fast IDA Pro headless plugin that extracts pseudo-code gen
 decompiler in a format that should be suitable to be imported into an IDE or parsed by static
 analysis tools such as [Semgrep](https://semgrep.dev/) or [weggli](https://github.com/weggli-rs/weggli).
 
+![](https://raw.githubusercontent.com/0xdea/haruspex/master/.img/screen01.png)
+
 ## Features
 
 * Blazing fast, headless user experience courtesy of IDA Pro 9 and Binarly's idalib Rust bindings.
