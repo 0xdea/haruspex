@@ -31,8 +31,8 @@ analysis tools such as [Semgrep](https://semgrep.dev/) or [weggli](https://githu
 ## See also
 
 * <https://github.com/0xdea/ghidra-scripts/blob/main/Haruspex.java>
-* https://github.com/0xdea/semgrep-rules
-* https://github.com/0xdea/weggli-patterns
+* <https://github.com/0xdea/semgrep-rules>
+* <https://github.com/0xdea/weggli-patterns>
 * <https://docs.hex-rays.com/release-notes/9_0#headless-processing-with-idalib>
 * <https://github.com/binarly-io/idalib/>
 * <https://github.com/xorpse/parascope>

@@ -20,8 +20,8 @@
 //!
 //! ## See also
 //! * <https://github.com/0xdea/ghidra-scripts/blob/main/Haruspex.java>
-//! * https://github.com/0xdea/semgrep-rules
-//! * https://github.com/0xdea/weggli-patterns
+//! * <https://github.com/0xdea/semgrep-rules>
+//! * <https://github.com/0xdea/weggli-patterns>
 //! * <https://docs.hex-rays.com/release-notes/9_0#headless-processing-with-idalib>
 //! * <https://github.com/binarly-io/idalib/>
 //! * <https://github.com/xorpse/parascope>
@@ -126,11 +126,11 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
         // Write pseudo-code to output file
         let func_name = f.name().unwrap();
         let output_path = &dirpath
-            .join(func_name.replace(".", "_"))
+            .join(func_name.replace('.', "_"))
             .with_extension("c");
         println!("{func_name} -> {output_path:?}");
         let mut writer = BufWriter::new(File::create(output_path)?);
-        writer.write_all(&source.as_bytes())?;
+        writer.write_all(source.as_bytes())?;
         writer.flush()?;
 
         COUNTER.fetch_add(1, Ordering::Relaxed);
