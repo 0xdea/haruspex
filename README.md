@@ -26,7 +26,7 @@ analysis tools such as [Semgrep](https://semgrep.dev/) or [weggli](https://githu
 
 ## Blog post:
 
-* <https://security.humanativaspa.it/doing-vulnerability-research-with-ida-pro-and-rust>
+* <https://security.humanativaspa.it/doing-vulnerability-research-with-ida-pro-and-rust> (*coming soon*)
 
 ## See also
 
@@ -79,7 +79,7 @@ Alternatively, you can build from [source](https://github.com/0xdea/haruspex):
 
 ## Changelog
 
-* <https://github.com/0xdea/haruspex/blob/master/CHANGELOG.md>
+* [CHANGELOG.md](CHANGELOG.md)
 
 ## TODO
 
