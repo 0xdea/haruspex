@@ -78,18 +78,18 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use idalib::idb::IDB;
 
-/// Number of marked call locations
+/// Number of decompiled functions
 static COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 /// Extract pseudo-code of functions in the binary file at `filepath`, save it in `filepath.hpx`,
 /// and return how many functions were decompiled, or an error in case something goes wrong
 pub fn run(filepath: &Path) -> anyhow::Result<usize> {
-    // Open target binary, run auto-analysis, and keep results
+    // Open target binary and run auto-analysis
     println!("[*] Trying to analyze binary file {filepath:?}");
     if !filepath.is_file() {
         return Err(anyhow::anyhow!("invalid file path"));
     }
-    let idb = IDB::open_with(filepath, true, true)?;
+    let idb = IDB::open(filepath)?;
     println!("[+] Successfully analyzed binary file");
     println!();
 
@@ -104,7 +104,7 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
         return Err(anyhow::anyhow!("decompiler is not available"));
     }
 
-    // Create a new output directory, returning an error if it already exists (and it's not empty)
+    // Create a new output directory, returning an error if it already exists and it's not empty
     let dirpath = filepath.with_extension("hpx");
     println!("[*] Preparing output directory {dirpath:?}");
     if dirpath.exists() {
@@ -141,7 +141,7 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
     if COUNTER.load(Ordering::Relaxed) == 0 {
         fs::remove_dir(&dirpath)?;
         return Err(anyhow::anyhow!(
-            "no functions were decompiled, check your license"
+            "no functions were decompiled, check your license and input file"
         ));
     }
 
