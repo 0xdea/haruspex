@@ -125,10 +125,9 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
         let source = decomp.pseudocode();
 
         // Write pseudo-code to output file
-        let func_name = f.name().unwrap();
-        let output_path = &dirpath
-            .join(func_name.replace('.', "_"))
-            .with_extension("c");
+        let func_name = f.name().unwrap().replace('.', "_");
+        let output_file = format!("{func_name}@{:x}", f.start_address());
+        let output_path = &dirpath.join(output_file).with_extension("c");
         println!("{func_name} -> {output_path:?}");
         let mut writer = BufWriter::new(File::create(output_path)?);
         writer.write_all(source.as_bytes())?;

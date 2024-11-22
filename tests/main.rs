@@ -31,7 +31,7 @@ fn main() -> anyhow::Result<()> {
 
     // Check the number of created files in the output directory
     print!("[*] Checking number of files in output directory... ");
-    assert_eq!(dirpath.read_dir().unwrap().count(), n_decomp);
+    assert_eq!(dirpath.read_dir()?.count(), n_decomp);
     println!("Ok.");
 
     // Remove output directory at the end
