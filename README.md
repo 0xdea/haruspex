@@ -24,7 +24,7 @@ analysis tools such as [Semgrep](https://semgrep.dev/) or [weggli](https://githu
 * Support for binary targets for any architecture implemented by IDA Pro's Hex-Rays decompiler.
 * Pseudo-code of each function is stored in a separated file in the output directory for easy inspection.
 
-## Blog post:
+## Blog post
 
 * <https://security.humanativaspa.it/doing-vulnerability-research-with-ida-pro-and-rust> (*coming soon*)
 
