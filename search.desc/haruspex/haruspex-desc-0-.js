@@ -1,0 +1,1 @@
+searchState.loadedDescShard("haruspex", 0, "haruspex - Tool to extract IDA decompiler’s pseudo-code …\nNumber of decompiled functions\nExtract pseudo-code of functions in the binary file at …")
