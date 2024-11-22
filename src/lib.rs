@@ -12,18 +12,18 @@
 //!
 //! ## Features
 //! * Blazing fast, headless user experience courtesy of IDA Pro 9 and Binarly's idalib Rust bindings.
-//! * Support for binary targets compiled for any architecture implemented by IDA Pro's Hex-Rays decompiler.
-//! * Pseudo-code of each decompiled function is stored in a separated file in the output directory.
+//! * Support for binary targets for any architecture implemented by IDA Pro's Hex-Rays decompiler.
+//! * Pseudo-code of each function is stored in a separated file in the output directory for easy inspection.
 //!
 //! ## Blog post
-//! * <https://security.humanativaspa.it/doing-vulnerability-research-with-ida-pro-and-rust>
+//! * <https://security.humanativaspa.it/doing-vulnerability-research-with-ida-pro-and-rust> (*coming soon*)
 //!
 //! ## See also
 //! * <https://github.com/0xdea/ghidra-scripts/blob/main/Haruspex.java>
 //! * <https://github.com/0xdea/semgrep-rules>
 //! * <https://github.com/0xdea/weggli-patterns>
 //! * <https://docs.hex-rays.com/release-notes/9_0#headless-processing-with-idalib>
-//! * <https://github.com/binarly-io/idalib/>
+//! * <https://github.com/binarly-io/idalib>
 //! * <https://github.com/xorpse/parascope>
 //! * <https://security.humanativaspa.it/automating-binary-vulnerability-discovery-with-ghidra-and-semgrep>
 //!
@@ -55,7 +55,7 @@
 //!     ```sh
 //!     $ haruspex <binary_file>
 //!     ```
-//! 3. Find the extracted pseudo-code of each function in the `binary_file.hpx` directory.
+//! 3. Find the extracted pseudo-code of each decompiled function in the `binary_file.hpx` directory.
 //!
 //! ## Tested with
 //! * IDA Pro 9.0.240925 on macOS arm64.
@@ -64,7 +64,8 @@
 //! * <https://github.com/0xdea/haruspex/blob/master/CHANGELOG.md>
 //!
 //! ## TODO
-//! * Integrate with Semgrep and/or weggli scanning
+//! * Integrate with Semgrep scanning (see <https://github.com/0xdea/semgrep-rules>).
+//! * Integrate with weggli scanning (see <https://github.com/0xdea/weggli-patterns>).
 //!
 
 #![doc(html_logo_url = "https://raw.githubusercontent.com/0xdea/haruspex/master/.img/logo.png")]
