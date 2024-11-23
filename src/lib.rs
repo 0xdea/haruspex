@@ -66,6 +66,8 @@
 //! ## TODO
 //! * Integrate with Semgrep scanning (see <https://github.com/0xdea/semgrep-rules>).
 //! * Integrate with weggli scanning (see <https://github.com/0xdea/weggli-patterns>).
+//! * Improve decompiler output in the style of [HexRaysPyTools](https://github.com/igogo-x86/HexRaysPyTools)
+//!   and [abyss](https://github.com/patois/abyss).
 //!
 
 #![doc(html_logo_url = "https://raw.githubusercontent.com/0xdea/haruspex/master/.img/logo.png")]
