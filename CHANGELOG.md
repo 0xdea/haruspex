@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+* Replace `/` with `_` in function name when generating output file name.
+
 ## [0.1.0] - 2024-11-22
 
 * First release to be published to [crates.io](https://crates.io/).

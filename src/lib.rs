@@ -81,7 +81,7 @@ use idalib::idb::IDB;
 /// Number of decompiled functions
 static COUNTER: AtomicUsize = AtomicUsize::new(0);
 
-/// Extract pseudo-code of functions in the binary file at `filepath`, save it in "`filepath`.hpx",
+/// Extract pseudo-code of functions in the binary file at `filepath`, save it in `filepath.hpx`,
 /// and return how many functions were decompiled, or an error in case something goes wrong
 pub fn run(filepath: &Path) -> anyhow::Result<usize> {
     // Open target binary and run auto-analysis
@@ -125,7 +125,7 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
         let source = decomp.pseudocode();
 
         // Write pseudo-code to output file
-        let func_name = f.name().unwrap().replace('.', "_");
+        let func_name = f.name().unwrap().replace(['.', '/'], "_");
         let output_file = format!("{func_name}@{:x}", f.start_address());
         let output_path = &dirpath.join(output_file).with_extension("c");
         println!("{func_name} -> {output_path:?}");
