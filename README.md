@@ -23,7 +23,7 @@ analysis tools such as [Semgrep](https://semgrep.dev/) or [weggli](https://githu
 * Blazing fast, headless user experience courtesy of IDA Pro 9 and Binarly's idalib Rust bindings.
 * Support for binary targets for any architecture implemented by IDA Pro's Hex-Rays decompiler.
 * Pseudo-code of each function is stored in a separated file in the output directory for easy inspection.
-* External crates can invoke `decompile_to_file()` to decompile a function and save its pseudo-code to file.
+* External crates can invoke `decompile_to_file()` to decompile a function and save its pseudo-code to disk.
 
 ## Blog post
 
