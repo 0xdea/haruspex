@@ -71,7 +71,7 @@ Alternatively, you can build from [source](https://github.com/0xdea/haruspex):
     ```sh
     $ haruspex <binary_file>
     ```
-3. Find the extracted pseudocode of each decompiled function in the `binary_file.hpx` directory.
+3. Find the extracted pseudocode of each decompiled function in the `binary_file.dec` directory.
 
 ## Tested with
 
@@ -87,3 +87,4 @@ Alternatively, you can build from [source](https://github.com/0xdea/haruspex):
 * Integrate with weggli scanning (see <https://github.com/0xdea/weggli-patterns>).
 * Improve decompiler output in the style of [HexRaysPyTools](https://github.com/igogo-x86/HexRaysPyTools)
   and [abyss](https://github.com/patois/abyss).
+* Implement parallel analysis (see <https://github.com/fugue-re/fugue-mptp>).

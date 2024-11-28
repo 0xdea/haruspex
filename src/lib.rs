@@ -55,7 +55,7 @@
 //!     ```sh
 //!     $ haruspex <binary_file>
 //!     ```
-//! 3. Find the extracted pseudo-code of each decompiled function in the `binary_file.hpx` directory.
+//! 3. Find the extracted pseudo-code of each decompiled function in the `binary_file.dec` directory.
 //!
 //! ## Tested with
 //! * IDA Pro 9.0.240925 on macOS arm64.
@@ -68,6 +68,7 @@
 //! * Integrate with weggli scanning (see <https://github.com/0xdea/weggli-patterns>).
 //! * Improve decompiler output in the style of [HexRaysPyTools](https://github.com/igogo-x86/HexRaysPyTools)
 //!   and [abyss](https://github.com/patois/abyss).
+//! * Implement parallel analysis (see <https://github.com/fugue-re/fugue-mptp>).
 //!
 
 #![doc(html_logo_url = "https://raw.githubusercontent.com/0xdea/haruspex/master/.img/logo.png")]
@@ -83,7 +84,7 @@ use idalib::idb::IDB;
 /// Number of decompiled functions
 static COUNTER: AtomicUsize = AtomicUsize::new(0);
 
-/// Extract pseudo-code of functions in the binary file at `filepath`, save it in `filepath.hpx`,
+/// Extract pseudo-code of functions in the binary file at `filepath`, save it in `filepath.dec`,
 /// and return how many functions were decompiled, or an error in case something goes wrong
 pub fn run(filepath: &Path) -> anyhow::Result<usize> {
     // Open target binary and run auto-analysis
@@ -107,7 +108,7 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
     }
 
     // Create a new output directory, returning an error if it already exists and it's not empty
-    let dirpath = filepath.with_extension("hpx");
+    let dirpath = filepath.with_extension("dec");
     println!("[*] Preparing output directory {dirpath:?}");
     if dirpath.exists() {
         fs::remove_dir(&dirpath).map_err(|_| anyhow::anyhow!("output directory already exists"))?;

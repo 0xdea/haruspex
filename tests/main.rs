@@ -17,7 +17,7 @@ fn main() -> anyhow::Result<()> {
 
     // Remove output directory if it exists
     let filepath = Path::new(FILENAME);
-    let dirpath = filepath.with_extension("hpx");
+    let dirpath = filepath.with_extension("dec");
     if dirpath.exists() {
         fs::remove_dir_all(&dirpath)?;
     }

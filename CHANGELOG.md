@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+* Change output directory's extension from `hpx` to `dec`.
+
 ### Fixed
 
 * Replace `/` with `_` in function name when generating output file name.
