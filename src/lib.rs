@@ -14,6 +14,7 @@
 //! * Blazing fast, headless user experience courtesy of IDA Pro 9 and Binarly's idalib Rust bindings.
 //! * Support for binary targets for any architecture implemented by IDA Pro's Hex-Rays decompiler.
 //! * Pseudo-code of each function is stored in a separated file in the output directory for easy inspection.
+//! * External crates can invoke `decompile_to_file()` to decompile a function and save its pseudo-code to file.
 //!
 //! ## Blog post
 //! * <https://security.humanativaspa.it/doing-vulnerability-research-with-ida-pro-and-rust> (*coming soon*)
@@ -79,10 +80,20 @@ use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
+use idalib::func::Function;
 use idalib::idb::IDB;
+use thiserror::Error;
 
 /// Number of decompiled functions
 static COUNTER: AtomicUsize = AtomicUsize::new(0);
+
+#[derive(Debug, Error)]
+pub enum HaruspexError {
+    #[error("cannot decompile function")]
+    Decompile,
+    #[error(transparent)]
+    FileWrite(#[from] std::io::Error),
+}
 
 /// Extract pseudo-code of functions in the binary file at `filepath`, save it in `filepath.dec`,
 /// and return how many functions were decompiled, or an error in case something goes wrong
@@ -121,20 +132,16 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
     println!("[*] Extracting pseudo-code of functions...");
     println!();
     for (_id, f) in idb.functions() {
-        // Decompile function
-        let Some(decomp) = idb.decompile(&f) else {
-            continue;
-        };
-        let source = decomp.pseudocode();
-
-        // Write pseudo-code to output file
+        // Decompile function and write pseudo-code to output file
         let func_name = f.name().unwrap().replace(['.', '/'], "_");
         let output_file = format!("{func_name}@{:x}", f.start_address());
-        let output_path = &dirpath.join(output_file).with_extension("c");
-        println!("{func_name} -> {output_path:?}");
-        let mut writer = BufWriter::new(File::create(output_path)?);
-        writer.write_all(source.as_bytes())?;
-        writer.flush()?;
+        let output_path = dirpath.join(output_file).with_extension("c");
+
+        match decompile_to_file(&idb, &f, &output_path) {
+            Ok(()) => println!("{func_name} -> {output_path:?}"),
+            Err(HaruspexError::Decompile) => continue,
+            Err(e) => return Err(e.into()),
+        }
 
         COUNTER.fetch_add(1, Ordering::Relaxed);
     }
@@ -151,4 +158,21 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
     println!("[+] Decompiled {COUNTER:?} functions into {dirpath:?}");
     println!("[+] Done processing binary file {filepath:?}");
     Ok(COUNTER.load(Ordering::Relaxed))
+}
+
+/// Decompile function `func` in IDB `idb` and save its pseudo-code to output file at `filepath`,
+/// returning the appropriate `HaruspexError` in case something goes wrong
+pub fn decompile_to_file(idb: &IDB, func: &Function, filepath: &Path) -> Result<(), HaruspexError> {
+    // Decompile function
+    let Some(decomp) = idb.decompile(func) else {
+        return Err(HaruspexError::Decompile);
+    };
+    let source = decomp.pseudocode();
+
+    // Write pseudo-code to output file
+    let mut writer = BufWriter::new(File::create(filepath)?);
+    writer.write_all(source.as_bytes())?;
+    writer.flush()?;
+
+    Ok(())
 }

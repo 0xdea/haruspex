@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+* Expose `decompile_to_file()` to decompile a function and save its pseudo-code to file.
+
 ### Changed
 
 * Change output directory's extension from `hpx` to `dec`.
