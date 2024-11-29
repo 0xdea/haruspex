@@ -149,6 +149,33 @@
 <a href="#149" id="149">149</a>
 <a href="#150" id="150">150</a>
 <a href="#151" id="151">151</a>
+<a href="#152" id="152">152</a>
+<a href="#153" id="153">153</a>
+<a href="#154" id="154">154</a>
+<a href="#155" id="155">155</a>
+<a href="#156" id="156">156</a>
+<a href="#157" id="157">157</a>
+<a href="#158" id="158">158</a>
+<a href="#159" id="159">159</a>
+<a href="#160" id="160">160</a>
+<a href="#161" id="161">161</a>
+<a href="#162" id="162">162</a>
+<a href="#163" id="163">163</a>
+<a href="#164" id="164">164</a>
+<a href="#165" id="165">165</a>
+<a href="#166" id="166">166</a>
+<a href="#167" id="167">167</a>
+<a href="#168" id="168">168</a>
+<a href="#169" id="169">169</a>
+<a href="#170" id="170">170</a>
+<a href="#171" id="171">171</a>
+<a href="#172" id="172">172</a>
+<a href="#173" id="173">173</a>
+<a href="#174" id="174">174</a>
+<a href="#175" id="175">175</a>
+<a href="#176" id="176">176</a>
+<a href="#177" id="177">177</a>
+<a href="#178" id="178">178</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//!
 //! haruspex - Tool to extract IDA decompiler's pseudo-code
 //! Copyright (c) 2024 Marco Ivaldi &lt;raptor@0xdeadbeef.info&gt;
@@ -165,6 +192,7 @@
 //! * Blazing fast, headless user experience courtesy of IDA Pro 9 and Binarly's idalib Rust bindings.
 //! * Support for binary targets for any architecture implemented by IDA Pro's Hex-Rays decompiler.
 //! * Pseudo-code of each function is stored in a separated file in the output directory for easy inspection.
+//! * External crates can invoke `decompile_to_file()` to decompile a function and save its pseudo-code to disk.
 //!
 //! ## Blog post
 //! * &lt;https://security.humanativaspa.it/doing-vulnerability-research-with-ida-pro-and-rust&gt; (*coming soon*)
@@ -206,7 +234,7 @@
 //!     ```sh
 //!     $ haruspex &lt;binary_file&gt;
 //!     ```
-//! 3. Find the extracted pseudo-code of each decompiled function in the `binary_file.hpx` directory.
+//! 3. Find the extracted pseudo-code of each decompiled function in the `binary_file.dec` directory.
 //!
 //! ## Tested with
 //! * IDA Pro 9.0.240925 on macOS arm64.
@@ -217,6 +245,9 @@
 //! ## TODO
 //! * Integrate with Semgrep scanning (see &lt;https://github.com/0xdea/semgrep-rules&gt;).
 //! * Integrate with weggli scanning (see &lt;https://github.com/0xdea/weggli-patterns&gt;).
+//! * Improve decompiler output in the style of [HexRaysPyTools](https://github.com/igogo-x86/HexRaysPyTools)
+//!   and [abyss](https://github.com/patois/abyss).
+//! * Implement parallel analysis (see &lt;https://github.com/fugue-re/fugue-mptp&gt;).
 //!
 
 </span><span class="attr">#![doc(html_logo_url = <span class="string">"https://raw.githubusercontent.com/0xdea/haruspex/master/.img/logo.png"</span>)]
@@ -227,12 +258,22 @@
 <span class="kw">use </span>std::path::Path;
 <span class="kw">use </span>std::sync::atomic::{AtomicUsize, Ordering};
 
+<span class="kw">use </span>idalib::func::Function;
 <span class="kw">use </span>idalib::idb::IDB;
+<span class="kw">use </span>thiserror::Error;
 
 <span class="doccomment">/// Number of decompiled functions
 </span><span class="kw">static </span>COUNTER: AtomicUsize = AtomicUsize::new(<span class="number">0</span>);
 
-<span class="doccomment">/// Extract pseudo-code of functions in the binary file at `filepath`, save it in `filepath.hpx`,
+<span class="attr">#[derive(Debug, Error)]
+</span><span class="kw">pub enum </span>HaruspexError {
+    <span class="attr">#[error(<span class="string">"cannot decompile function"</span>)]
+    </span>Decompile,
+    <span class="attr">#[error(transparent)]
+    </span>FileWrite(<span class="attr">#[from] </span>std::io::Error),
+}
+
+<span class="doccomment">/// Extract pseudo-code of functions in the binary file at `filepath`, save it in `filepath.dec`,
 /// and return how many functions were decompiled, or an error in case something goes wrong
 </span><span class="kw">pub fn </span>run(filepath: <span class="kw-2">&amp;</span>Path) -&gt; anyhow::Result&lt;usize&gt; {
     <span class="comment">// Open target binary and run auto-analysis
@@ -256,7 +297,7 @@
     }
 
     <span class="comment">// Create a new output directory, returning an error if it already exists and it's not empty
-    </span><span class="kw">let </span>dirpath = filepath.with_extension(<span class="string">"hpx"</span>);
+    </span><span class="kw">let </span>dirpath = filepath.with_extension(<span class="string">"dec"</span>);
     <span class="macro">println!</span>(<span class="string">"[*] Preparing output directory {dirpath:?}"</span>);
     <span class="kw">if </span>dirpath.exists() {
         fs::remove_dir(<span class="kw-2">&amp;</span>dirpath).map_err(|<span class="kw">_</span>| <span class="macro">anyhow::anyhow!</span>(<span class="string">"output directory already exists"</span>))<span class="question-mark">?</span>;
@@ -269,20 +310,16 @@
     <span class="macro">println!</span>(<span class="string">"[*] Extracting pseudo-code of functions..."</span>);
     <span class="macro">println!</span>();
     <span class="kw">for </span>(_id, f) <span class="kw">in </span>idb.functions() {
-        <span class="comment">// Decompile function
-        </span><span class="kw">let </span><span class="prelude-val">Some</span>(decomp) = idb.decompile(<span class="kw-2">&amp;</span>f) <span class="kw">else </span>{
-            <span class="kw">continue</span>;
-        };
-        <span class="kw">let </span>source = decomp.pseudocode();
-
-        <span class="comment">// Write pseudo-code to output file
-        </span><span class="kw">let </span>func_name = f.name().unwrap().replace(<span class="string">'.'</span>, <span class="string">"_"</span>);
+        <span class="comment">// Decompile function and write pseudo-code to output file
+        </span><span class="kw">let </span>func_name = f.name().unwrap().replace([<span class="string">'.'</span>, <span class="string">'/'</span>], <span class="string">"_"</span>);
         <span class="kw">let </span>output_file = <span class="macro">format!</span>(<span class="string">"{func_name}@{:x}"</span>, f.start_address());
-        <span class="kw">let </span>output_path = <span class="kw-2">&amp;</span>dirpath.join(output_file).with_extension(<span class="string">"c"</span>);
-        <span class="macro">println!</span>(<span class="string">"{func_name} -&gt; {output_path:?}"</span>);
-        <span class="kw">let </span><span class="kw-2">mut </span>writer = BufWriter::new(File::create(output_path)<span class="question-mark">?</span>);
-        writer.write_all(source.as_bytes())<span class="question-mark">?</span>;
-        writer.flush()<span class="question-mark">?</span>;
+        <span class="kw">let </span>output_path = dirpath.join(output_file).with_extension(<span class="string">"c"</span>);
+
+        <span class="kw">match </span>decompile_to_file(<span class="kw-2">&amp;</span>idb, <span class="kw-2">&amp;</span>f, <span class="kw-2">&amp;</span>output_path) {
+            <span class="prelude-val">Ok</span>(()) =&gt; <span class="macro">println!</span>(<span class="string">"{func_name} -&gt; {output_path:?}"</span>),
+            <span class="prelude-val">Err</span>(HaruspexError::Decompile) =&gt; <span class="kw">continue</span>,
+            <span class="prelude-val">Err</span>(e) =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(e.into()),
+        }
 
         COUNTER.fetch_add(<span class="number">1</span>, Ordering::Relaxed);
     }
@@ -299,5 +336,22 @@
     <span class="macro">println!</span>(<span class="string">"[+] Decompiled {COUNTER:?} functions into {dirpath:?}"</span>);
     <span class="macro">println!</span>(<span class="string">"[+] Done processing binary file {filepath:?}"</span>);
     <span class="prelude-val">Ok</span>(COUNTER.load(Ordering::Relaxed))
+}
+
+<span class="doccomment">/// Decompile function `func` in IDB `idb` and save its pseudo-code to output file at `filepath`,
+/// returning the appropriate `HaruspexError` in case something goes wrong
+</span><span class="kw">pub fn </span>decompile_to_file(idb: <span class="kw-2">&amp;</span>IDB, func: <span class="kw-2">&amp;</span>Function, filepath: <span class="kw-2">&amp;</span>Path) -&gt; <span class="prelude-ty">Result</span>&lt;(), HaruspexError&gt; {
+    <span class="comment">// Decompile function
+    </span><span class="kw">let </span><span class="prelude-val">Some</span>(decomp) = idb.decompile(func) <span class="kw">else </span>{
+        <span class="kw">return </span><span class="prelude-val">Err</span>(HaruspexError::Decompile);
+    };
+    <span class="kw">let </span>source = decomp.pseudocode();
+
+    <span class="comment">// Write pseudo-code to output file
+    </span><span class="kw">let </span><span class="kw-2">mut </span>writer = BufWriter::new(File::create(filepath)<span class="question-mark">?</span>);
+    writer.write_all(source.as_bytes())<span class="question-mark">?</span>;
+    writer.flush()<span class="question-mark">?</span>;
+
+    <span class="prelude-val">Ok</span>(())
 }
 </code></pre></div></section></main></body></html>

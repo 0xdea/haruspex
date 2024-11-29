@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["IN6ADDR_ANY_INIT","IN6ADDR_LOOPBACK_INIT"],"struct":["in6_addr"]};
