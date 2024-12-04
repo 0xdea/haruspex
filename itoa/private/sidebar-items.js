@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"trait":["Sealed"]};
+window.SIDEBAR_ITEMS = {};

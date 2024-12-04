@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"macro":["__item","align_const","cfg_if","const_fn","deprecated_mach","e","f","missing","ptr_addr_of","s","s_no_extra_traits","s_paren","safe_f"]};
+window.SIDEBAR_ITEMS = {"macro":["__item","cfg_if","const_fn","deprecated_mach","e","f","missing","prelude","s","s_no_extra_traits","s_paren","safe_f"]};

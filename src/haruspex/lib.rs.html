@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/lib.rs`."><title>lib.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-492a78a4a87dcc01.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="haruspex" data-themes="" data-resource-suffix="" data-rustdoc-version="1.82.0 (f6e511eec 2024-10-15)" data-channel="1.82.0" data-search-js="search-a99f1315e7cc5121.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-921df33f47b8780c.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-3b12f09e550e0385.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/lib.rs`."><title>lib.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-b0742ba02757f159.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="haruspex" data-themes="" data-resource-suffix="" data-rustdoc-version="1.83.0 (90b35a623 2024-11-26)" data-channel="1.83.0" data-search-js="search-f0d225181b97f9a4.js" data-settings-js="settings-805db61a62df4bd2.js" ><script src="../../static.files/storage-1d39b6787ed640ff.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-f070b9041d14864c.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-0111fcff984fae8f.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">haruspex/</div>lib.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -176,7 +177,18 @@
 <a href="#176" id="176">176</a>
 <a href="#177" id="177">177</a>
 <a href="#178" id="178">178</a>
-</pre></div><pre class="rust"><code><span class="doccomment">//!
+<a href="#179" id="179">179</a>
+<a href="#180" id="180">180</a>
+<a href="#181" id="181">181</a>
+<a href="#182" id="182">182</a>
+<a href="#183" id="183">183</a>
+<a href="#184" id="184">184</a>
+<a href="#185" id="185">185</a>
+<a href="#186" id="186">186</a>
+<a href="#187" id="187">187</a>
+<a href="#188" id="188">188</a>
+<a href="#189" id="189">189</a>
+<a href="#190" id="190">190</a></pre></div><pre class="rust"><code><span class="doccomment">//!
 //! haruspex - Tool to extract IDA decompiler's pseudo-code
 //! Copyright (c) 2024 Marco Ivaldi &lt;raptor@0xdeadbeef.info&gt;
 //!
@@ -258,8 +270,10 @@
 <span class="kw">use </span>std::path::Path;
 <span class="kw">use </span>std::sync::atomic::{AtomicUsize, Ordering};
 
+<span class="kw">use </span>idalib::decompiler::HexRaysErrorCode;
 <span class="kw">use </span>idalib::func::Function;
 <span class="kw">use </span>idalib::idb::IDB;
+<span class="kw">use </span>idalib::IDAError;
 <span class="kw">use </span>thiserror::Error;
 
 <span class="doccomment">/// Number of decompiled functions
@@ -267,8 +281,8 @@
 
 <span class="attr">#[derive(Debug, Error)]
 </span><span class="kw">pub enum </span>HaruspexError {
-    <span class="attr">#[error(<span class="string">"cannot decompile function"</span>)]
-    </span>Decompile,
+    <span class="attr">#[error(transparent)]
+    </span>Decompile(<span class="attr">#[from] </span>IDAError),
     <span class="attr">#[error(transparent)]
     </span>FileWrite(<span class="attr">#[from] </span>std::io::Error),
 }
@@ -316,9 +330,21 @@
         <span class="kw">let </span>output_path = dirpath.join(output_file).with_extension(<span class="string">"c"</span>);
 
         <span class="kw">match </span>decompile_to_file(<span class="kw-2">&amp;</span>idb, <span class="kw-2">&amp;</span>f, <span class="kw-2">&amp;</span>output_path) {
-            <span class="prelude-val">Ok</span>(()) =&gt; <span class="macro">println!</span>(<span class="string">"{func_name} -&gt; {output_path:?}"</span>),
-            <span class="prelude-val">Err</span>(HaruspexError::Decompile) =&gt; <span class="kw">continue</span>,
-            <span class="prelude-val">Err</span>(e) =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(e.into()),
+            <span class="comment">// Print output path in case of successful function decompilation
+            </span><span class="prelude-val">Ok</span>(()) =&gt; <span class="macro">println!</span>(<span class="string">"{func_name} -&gt; {output_path:?}"</span>),
+
+            <span class="comment">// Return an error if Hex-Rays decompiler license is not available
+            </span><span class="prelude-val">Err</span>(HaruspexError::Decompile(IDAError::HexRays(e)))
+                <span class="kw">if </span>e.code() == HexRaysErrorCode::License =&gt;
+            {
+                <span class="kw">return </span><span class="prelude-val">Err</span>(e.into())
+            }
+
+            <span class="comment">// Ignore other IDA errors
+            </span><span class="prelude-val">Err</span>(HaruspexError::Decompile(<span class="kw">_</span>)) =&gt; <span class="kw">continue</span>,
+
+            <span class="comment">// Return any other error
+            </span><span class="prelude-val">Err</span>(e) =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(e.into()),
         }
 
         COUNTER.fetch_add(<span class="number">1</span>, Ordering::Relaxed);
@@ -328,7 +354,7 @@
     </span><span class="kw">if </span>COUNTER.load(Ordering::Relaxed) == <span class="number">0 </span>{
         fs::remove_dir(<span class="kw-2">&amp;</span>dirpath)<span class="question-mark">?</span>;
         <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">anyhow::anyhow!</span>(
-            <span class="string">"no functions were decompiled, check your license and input file"
+            <span class="string">"no functions were decompiled, check your input file"
         </span>));
     }
 
@@ -342,9 +368,7 @@
 /// returning the appropriate `HaruspexError` in case something goes wrong
 </span><span class="kw">pub fn </span>decompile_to_file(idb: <span class="kw-2">&amp;</span>IDB, func: <span class="kw-2">&amp;</span>Function, filepath: <span class="kw-2">&amp;</span>Path) -&gt; <span class="prelude-ty">Result</span>&lt;(), HaruspexError&gt; {
     <span class="comment">// Decompile function
-    </span><span class="kw">let </span><span class="prelude-val">Some</span>(decomp) = idb.decompile(func) <span class="kw">else </span>{
-        <span class="kw">return </span><span class="prelude-val">Err</span>(HaruspexError::Decompile);
-    };
+    </span><span class="kw">let </span>decomp = idb.decompile(func)<span class="question-mark">?</span>;
     <span class="kw">let </span>source = decomp.pseudocode();
 
     <span class="comment">// Write pseudo-code to output file
