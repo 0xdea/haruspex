@@ -80,8 +80,10 @@ use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
+use idalib::decompiler::HexRaysErrorCode;
 use idalib::func::Function;
 use idalib::idb::IDB;
+use idalib::IDAError;
 use thiserror::Error;
 
 /// Number of decompiled functions
@@ -89,8 +91,8 @@ static COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 #[derive(Debug, Error)]
 pub enum HaruspexError {
-    #[error("cannot decompile function")]
-    Decompile,
+    #[error(transparent)]
+    Decompile(#[from] IDAError),
     #[error(transparent)]
     FileWrite(#[from] std::io::Error),
 }
@@ -138,8 +140,20 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
         let output_path = dirpath.join(output_file).with_extension("c");
 
         match decompile_to_file(&idb, &f, &output_path) {
+            // Print output path in case of successful function decompilation
             Ok(()) => println!("{func_name} -> {output_path:?}"),
-            Err(HaruspexError::Decompile) => continue,
+
+            // Return an error if Hex-Rays decompiler license is not available
+            Err(HaruspexError::Decompile(IDAError::HexRays(e)))
+                if e.code() == HexRaysErrorCode::License =>
+            {
+                return Err(e.into())
+            }
+
+            // Ignore other IDA errors
+            Err(HaruspexError::Decompile(_)) => continue,
+
+            // Return any other error
             Err(e) => return Err(e.into()),
         }
 
@@ -150,7 +164,7 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
     if COUNTER.load(Ordering::Relaxed) == 0 {
         fs::remove_dir(&dirpath)?;
         return Err(anyhow::anyhow!(
-            "no functions were decompiled, check your license and input file"
+            "no functions were decompiled, check your input file"
         ));
     }
 
@@ -164,9 +178,7 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
 /// returning the appropriate `HaruspexError` in case something goes wrong
 pub fn decompile_to_file(idb: &IDB, func: &Function, filepath: &Path) -> Result<(), HaruspexError> {
     // Decompile function
-    let Some(decomp) = idb.decompile(func) else {
-        return Err(HaruspexError::Decompile);
-    };
+    let decomp = idb.decompile(func)?;
     let source = decomp.pseudocode();
 
     // Write pseudo-code to output file

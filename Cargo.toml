@@ -1,6 +1,6 @@
 [package]
 name = "haruspex"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Marco Ivaldi <raptor@0xdeadbeef.info>"]
 edition = "2021"
 description = "Vulnerability research assistant that extracts pseudo-code from IDA Hex-Rays decompiler."
@@ -13,12 +13,12 @@ categories = ["command-line-utilities"]
 exclude = [".cargo/*", ".github/*", ".img/*", "tests/*"]
 
 [dependencies]
-idalib = "0.2"
+idalib = "0.3"
 anyhow = "1.0"
 thiserror = "2.0"
 
 [build-dependencies]
-idalib-build = "0.2"
+idalib-build = "0.3"
 
 [[test]]
 name = "tests"

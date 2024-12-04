@@ -9,7 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-* Update thiserror dependency to v2.0.
+* Switch to thiserror v2.0 and update other dependencies.
+
+### Fixed
+
+* Switch to idalib v0.3 and improve Hex-Rays decompiler license handling.
 
 ## [0.1.1] - 2024-11-29
 
