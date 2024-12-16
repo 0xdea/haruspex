@@ -62,6 +62,10 @@
 //!
 //! ## Tested with
 //! * IDA Pro 9.0.240925 on macOS arm64.
+//! * IDA Pro 9.0.240925 on Linux x64.
+//!
+//! *Note: not tested on Windows, check [idalib](https://github.com/binarly-io/idalib)
+//! documentation if you want to try it yourself.*
 //!
 //! ## Changelog
 //! * <https://github.com/0xdea/haruspex/blob/master/CHANGELOG.md>
