@@ -35,7 +35,7 @@
 //! 3. Install haruspex as follows:
 //!     ```sh
 //!     $ export IDASDKDIR=/path/to/idasdk90
-//!     $ export IDADIR=/path/to/ida # if not set the build script will check common locations
+//!     $ export IDADIR=/path/to/ida # if not set, the build script will check common locations
 //!     $ cargo install haruspex
 //!     ```
 //!
@@ -48,7 +48,7 @@
 //!     $ git clone https://github.com/0xdea/haruspex
 //!     $ cd haruspex
 //!     $ export IDASDKDIR=/path/to/idasdk90 # or edit .cargo/config.toml
-//!     $ export IDADIR=/path/to/ida # if not set the build script will check common locations
+//!     $ export IDADIR=/path/to/ida # if not set, the build script will check common locations
 //!     $ cargo build --release
 //!     ```
 //!
