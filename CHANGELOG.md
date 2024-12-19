@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Document Linux as a supported platform, specify that Windows was not tested.
 
+### Changed
+
+* Bump to IDA Pro 9.0.241217 (9.0sp1).
+
 ## [0.1.3] - 2024-12-16
 
 ### Changed
