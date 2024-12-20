@@ -190,7 +190,11 @@
 <a href="#189" id="189">189</a>
 <a href="#190" id="190">190</a>
 <a href="#191" id="191">191</a>
-<a href="#192" id="192">192</a></pre></div><pre class="rust"><code><span class="doccomment">//!
+<a href="#192" id="192">192</a>
+<a href="#193" id="193">193</a>
+<a href="#194" id="194">194</a>
+<a href="#195" id="195">195</a>
+<a href="#196" id="196">196</a></pre></div><pre class="rust"><code><span class="doccomment">//!
 //! haruspex - Tool to extract IDA decompiler's pseudo-code
 //! Copyright (c) 2024 Marco Ivaldi &lt;raptor@0xdeadbeef.info&gt;
 //!
@@ -227,7 +231,7 @@
 //! 3. Install haruspex as follows:
 //!     ```sh
 //!     $ export IDASDKDIR=/path/to/idasdk90
-//!     $ export IDADIR=/path/to/ida # if not set the build script will check common locations
+//!     $ export IDADIR=/path/to/ida # if not set, the build script will check common locations
 //!     $ cargo install haruspex
 //!     ```
 //!
@@ -240,7 +244,7 @@
 //!     $ git clone https://github.com/0xdea/haruspex
 //!     $ cd haruspex
 //!     $ export IDASDKDIR=/path/to/idasdk90 # or edit .cargo/config.toml
-//!     $ export IDADIR=/path/to/ida # if not set the build script will check common locations
+//!     $ export IDADIR=/path/to/ida # if not set, the build script will check common locations
 //!     $ cargo build --release
 //!     ```
 //!
@@ -253,7 +257,11 @@
 //! 3. Find the extracted pseudo-code of each decompiled function in the `binary_file.dec` directory.
 //!
 //! ## Tested with
-//! * IDA Pro 9.0.240925 on macOS arm64.
+//! * IDA Pro 9.0.240925 on macOS arm64 and Linux x64.
+//! * IDA Pro 9.0.241217 on macOS arm64 and Linux x64.
+//!
+//! *Note: not tested on Windows, check [idalib](https://github.com/binarly-io/idalib)
+//! documentation if you want to try it yourself.*
 //!
 //! ## Changelog
 //! * &lt;https://github.com/0xdea/haruspex/blob/master/CHANGELOG.md&gt;
