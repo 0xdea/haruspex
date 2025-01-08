@@ -1,6 +1,6 @@
 //!
 //! haruspex - Tool to extract IDA decompiler's pseudo-code
-//! Copyright (c) 2024 Marco Ivaldi <raptor@0xdeadbeef.info>
+//! Copyright (c) 2024-2025 Marco Ivaldi <raptor@0xdeadbeef.info>
 //!
 //! > "Hacking is the discipline of questioning all your assumptions all of the time."
 //! >
