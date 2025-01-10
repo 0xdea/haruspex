@@ -98,9 +98,9 @@ static COUNTER: AtomicUsize = AtomicUsize::new(0);
 #[derive(Debug, Error)]
 pub enum HaruspexError {
     #[error(transparent)]
-    Decompile(#[from] IDAError),
+    DecompileFailed(#[from] IDAError),
     #[error(transparent)]
-    FileWrite(#[from] std::io::Error),
+    FileWriteFailed(#[from] std::io::Error),
 }
 
 /// Extract pseudo-code of functions in the binary file at `filepath`, save it in `filepath.dec`,
@@ -150,14 +150,14 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
             Ok(()) => println!("{func_name} -> {output_path:?}"),
 
             // Return an error if Hex-Rays decompiler license is not available
-            Err(HaruspexError::Decompile(IDAError::HexRays(e)))
+            Err(HaruspexError::DecompileFailed(IDAError::HexRays(e)))
                 if e.code() == HexRaysErrorCode::License =>
             {
                 return Err(e.into())
             }
 
             // Ignore other IDA errors
-            Err(HaruspexError::Decompile(_)) => continue,
+            Err(HaruspexError::DecompileFailed(_)) => continue,
 
             // Return any other error
             Err(e) => return Err(e.into()),

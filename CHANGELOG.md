@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+* Change custom error names.
 * Update dependencies.
 
 ## [0.1.4] - 2014-12-20
