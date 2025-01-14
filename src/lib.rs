@@ -17,7 +17,7 @@
 //! * External crates can invoke `decompile_to_file()` to decompile a function and save its pseudo-code to disk.
 //!
 //! ## Blog post
-//! * <https://security.humanativaspa.it/doing-vulnerability-research-with-ida-pro-and-rust> (*coming soon*)
+//! * <https://security.humanativaspa.it/streamlining-vulnerability-research-with-ida-pro-and-rust> (*coming soon*)
 //!
 //! ## See also
 //! * <https://github.com/0xdea/ghidra-scripts/blob/main/Haruspex.java>

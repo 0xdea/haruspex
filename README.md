@@ -27,7 +27,7 @@ analysis tools such as [Semgrep](https://semgrep.dev/) or [weggli](https://githu
 
 ## Blog post
 
-* <https://security.humanativaspa.it/doing-vulnerability-research-with-ida-pro-and-rust> (*coming soon*)
+* <https://security.humanativaspa.it/streamlining-vulnerability-research-with-ida-pro-and-rust> (*coming soon*)
 
 ## See also
 
