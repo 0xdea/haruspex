@@ -5,12 +5,13 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.2.0] - 2015-01-14
 
 ### Changed
 
 * Change custom error names.
 * Update dependencies.
+* Improve documentation.
 
 ## [0.1.4] - 2014-12-20
 
@@ -48,7 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-* Expose `decompile_to_file()` to decompile a function and save its pseudo-code to file.
+* Expose `decompile_to_file` to decompile a function and save its pseudo-code to file.
 
 ### Changed
 
@@ -63,7 +64,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * First release to be published to [crates.io](https://crates.io/).
 
-[unreleased]: https://github.com/0xdea/haruspex/compare/v0.1.4...HEAD
+[unreleased]: https://github.com/0xdea/haruspex/compare/v0.2.0...HEAD
+
+[0.2.0]: https://github.com/0xdea/haruspex/compare/v0.1.4...v0.2.0
 
 [0.1.4]: https://github.com/0xdea/haruspex/compare/v0.1.3...v0.1.4
 

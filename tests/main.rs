@@ -36,8 +36,8 @@ fn main() -> anyhow::Result<()> {
     assert_eq!(dirpath.read_dir()?.count(), n_decomp);
     println!("Ok.");
 
-    // Check `decompile_to_file()` works as expected
-    print!("[*] Checking decompile_to_file() works as expected... ");
+    // Check `decompile_to_file` works as expected
+    print!("[*] Checking `decompile_to_file` works as expected... ");
     let idb = IDB::open(filepath)?;
     let (_, func) = idb
         .functions()
@@ -49,8 +49,8 @@ fn main() -> anyhow::Result<()> {
     assert!(filepath.metadata()?.len() > 0);
     println!("Ok.");
 
-    // Check `decompile_to_file()` handles filesystem errors
-    print!("[*] Checking decompile_to_file() handles filesystem errors... ");
+    // Check `decompile_to_file` handles filesystem errors
+    print!("[*] Checking `decompile_to_file` handles filesystem errors... ");
     let mut perms = filepath.metadata()?.permissions();
     perms.set_readonly(true);
     fs::set_permissions(&filepath, perms)?;
