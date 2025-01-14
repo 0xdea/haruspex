@@ -196,7 +196,7 @@
 <a href="#195" id="195">195</a>
 <a href="#196" id="196">196</a></pre></div><pre class="rust"><code><span class="doccomment">//!
 //! haruspex - Tool to extract IDA decompiler's pseudo-code
-//! Copyright (c) 2024 Marco Ivaldi &lt;raptor@0xdeadbeef.info&gt;
+//! Copyright (c) 2024-2025 Marco Ivaldi &lt;raptor@0xdeadbeef.info&gt;
 //!
 //! &gt; "Hacking is the discipline of questioning all your assumptions all of the time."
 //! &gt;
@@ -210,10 +210,10 @@
 //! * Blazing fast, headless user experience courtesy of IDA Pro 9 and Binarly's idalib Rust bindings.
 //! * Support for binary targets for any architecture implemented by IDA Pro's Hex-Rays decompiler.
 //! * Pseudo-code of each function is stored in a separated file in the output directory for easy inspection.
-//! * External crates can invoke `decompile_to_file()` to decompile a function and save its pseudo-code to disk.
+//! * External crates can invoke `decompile_to_file` to decompile a function and save its pseudo-code to disk.
 //!
 //! ## Blog post
-//! * &lt;https://security.humanativaspa.it/doing-vulnerability-research-with-ida-pro-and-rust&gt; (*coming soon*)
+//! * &lt;https://security.humanativaspa.it/streamlining-vulnerability-research-with-ida-pro-and-rust&gt; (*coming soon*)
 //!
 //! ## See also
 //! * &lt;https://github.com/0xdea/ghidra-scripts/blob/main/Haruspex.java&gt;
@@ -261,7 +261,7 @@
 //! * IDA Pro 9.0.241217 on macOS arm64 and Linux x64.
 //!
 //! *Note: not tested on Windows, check [idalib](https://github.com/binarly-io/idalib)
-//! documentation if you want to try it yourself.*
+//! documentation if you want to port it yourself.*
 //!
 //! ## Changelog
 //! * &lt;https://github.com/0xdea/haruspex/blob/master/CHANGELOG.md&gt;
@@ -294,9 +294,9 @@
 <span class="attr">#[derive(Debug, Error)]
 </span><span class="kw">pub enum </span>HaruspexError {
     <span class="attr">#[error(transparent)]
-    </span>Decompile(<span class="attr">#[from] </span>IDAError),
+    </span>DecompileFailed(<span class="attr">#[from] </span>IDAError),
     <span class="attr">#[error(transparent)]
-    </span>FileWrite(<span class="attr">#[from] </span>std::io::Error),
+    </span>FileWriteFailed(<span class="attr">#[from] </span>std::io::Error),
 }
 
 <span class="doccomment">/// Extract pseudo-code of functions in the binary file at `filepath`, save it in `filepath.dec`,
@@ -346,14 +346,14 @@
             </span><span class="prelude-val">Ok</span>(()) =&gt; <span class="macro">println!</span>(<span class="string">"{func_name} -&gt; {output_path:?}"</span>),
 
             <span class="comment">// Return an error if Hex-Rays decompiler license is not available
-            </span><span class="prelude-val">Err</span>(HaruspexError::Decompile(IDAError::HexRays(e)))
+            </span><span class="prelude-val">Err</span>(HaruspexError::DecompileFailed(IDAError::HexRays(e)))
                 <span class="kw">if </span>e.code() == HexRaysErrorCode::License =&gt;
             {
                 <span class="kw">return </span><span class="prelude-val">Err</span>(e.into())
             }
 
             <span class="comment">// Ignore other IDA errors
-            </span><span class="prelude-val">Err</span>(HaruspexError::Decompile(<span class="kw">_</span>)) =&gt; <span class="kw">continue</span>,
+            </span><span class="prelude-val">Err</span>(HaruspexError::DecompileFailed(<span class="kw">_</span>)) =&gt; <span class="kw">continue</span>,
 
             <span class="comment">// Return any other error
             </span><span class="prelude-val">Err</span>(e) =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(e.into()),
