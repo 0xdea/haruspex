@@ -194,7 +194,11 @@
 <a href="#193" id="193">193</a>
 <a href="#194" id="194">194</a>
 <a href="#195" id="195">195</a>
-<a href="#196" id="196">196</a></pre></div><pre class="rust"><code><span class="doccomment">//!
+<a href="#196" id="196">196</a>
+<a href="#197" id="197">197</a>
+<a href="#198" id="198">198</a>
+<a href="#199" id="199">199</a>
+<a href="#200" id="200">200</a></pre></div><pre class="rust"><code><span class="doccomment">//!
 //! haruspex - Tool to extract IDA decompiler's pseudo-code
 //! Copyright (c) 2024-2025 Marco Ivaldi &lt;raptor@0xdeadbeef.info&gt;
 //!
@@ -260,13 +264,14 @@
 //! * IDA Pro 9.0.240925 on macOS arm64 and Linux x64.
 //! * IDA Pro 9.0.241217 on macOS arm64 and Linux x64.
 //!
-//! *Note: not tested on Windows, check [idalib](https://github.com/binarly-io/idalib)
-//! documentation if you want to port it yourself.*
+//! *Note: only the `unix` target family is currently supported, check [idalib](https://github.com/binarly-io/idalib)
+//! documentation if you want to port it yourself to `windows` (or `wasm`).*
 //!
 //! ## Changelog
 //! * &lt;https://github.com/0xdea/haruspex/blob/master/CHANGELOG.md&gt;
 //!
 //! ## TODO
+//! * Implement support for the `windows` target family.
 //! * Integrate with Semgrep scanning (see &lt;https://github.com/0xdea/semgrep-rules&gt;).
 //! * Integrate with weggli scanning (see &lt;https://github.com/0xdea/weggli-patterns&gt;).
 //! * Improve decompiler output in the style of [HexRaysPyTools](https://github.com/igogo-x86/HexRaysPyTools)
@@ -276,7 +281,10 @@
 
 </span><span class="attr">#![doc(html_logo_url = <span class="string">"https://raw.githubusercontent.com/0xdea/haruspex/master/.img/logo.png"</span>)]
 
-</span><span class="kw">use </span>std::fs;
+#[cfg(not(unix))]
+</span><span class="macro">compile_error!</span>(<span class="string">"only the `unix` target family is currently supported"</span>);
+
+<span class="kw">use </span>std::fs;
 <span class="kw">use </span>std::fs::File;
 <span class="kw">use </span>std::io::{BufWriter, Write};
 <span class="kw">use </span>std::path::Path;
