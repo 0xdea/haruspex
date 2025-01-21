@@ -146,7 +146,7 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
     for (_id, f) in idb.functions() {
         // Decompile function and write pseudo-code to output file
         let func_name = f.name().unwrap().replace(['.', '/'], "_");
-        let output_file = format!("{func_name}@{:x}", f.start_address());
+        let output_file = format!("{func_name}@{:X}", f.start_address());
         let output_path = dirpath.join(output_file).with_extension("c");
 
         match decompile_to_file(&idb, &f, &output_path) {
