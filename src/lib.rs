@@ -58,7 +58,11 @@
 //!     ```sh
 //!     $ haruspex <binary_file>
 //!     ```
-//! 3. Find the extracted pseudo-code of each decompiled function in the `binary_file.dec` directory.
+//! 3. Find the extracted pseudo-code of each decompiled function in the `binary_file.dec` directory:
+//!     ```sh
+//!     $ vim <binary_file>.dec
+//!     $ code <binary_file>.dec
+//!     ```
 //!
 //! ## Tested with
 //! * IDA Pro 9.0.240925 on macOS arm64 and Linux x64.

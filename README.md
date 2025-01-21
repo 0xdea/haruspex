@@ -74,7 +74,11 @@ Alternatively, you can build from [source](https://github.com/0xdea/haruspex):
     ```sh
     $ haruspex <binary_file>
     ```
-3. Find the extracted pseudocode of each decompiled function in the `binary_file.dec` directory.
+3. Find the extracted pseudo-code of each decompiled function in the `binary_file.dec` directory:
+    ```sh
+    $ vim <binary_file>.dec
+    $ code <binary_file>.dec
+    ```
 
 ## Tested with
 
