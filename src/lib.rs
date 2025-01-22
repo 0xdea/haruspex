@@ -111,8 +111,9 @@ pub enum HaruspexError {
     FileWriteFailed(#[from] std::io::Error),
 }
 
-/// Extract pseudo-code of functions in the binary file at `filepath`, save it in `filepath.dec`,
-/// and return how many functions were decompiled, or an error in case something goes wrong
+/// Extract pseudo-code of functions in the binary file at `filepath` and save it in `filepath.dec`.
+///
+/// Return how many functions were decompiled, or an error in case something goes wrong.
 pub fn run(filepath: &Path) -> anyhow::Result<usize> {
     // Open target binary and run auto-analysis
     println!("[*] Trying to analyze binary file {filepath:?}");
@@ -188,8 +189,9 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
     Ok(COUNTER.load(Ordering::Relaxed))
 }
 
-/// Decompile function `func` in IDB `idb` and save its pseudo-code to output file at `filepath`,
-/// returning the appropriate `HaruspexError` in case something goes wrong
+/// Decompile function `func` in IDB `idb` and save its pseudo-code to output file at `filepath`.
+///
+/// Return the appropriate `HaruspexError` in case something goes wrong.
 pub fn decompile_to_file(idb: &IDB, func: &Function, filepath: &Path) -> Result<(), HaruspexError> {
     // Decompile function
     let decomp = idb.decompile(func)?;
