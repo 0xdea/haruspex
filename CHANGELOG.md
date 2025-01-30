@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-* Use upper hex in output file name.
+* Use `UpperHex` in output file name.
+* Update dependencies.
 
 ## [0.3.0] - 2025-01-17
 
