@@ -75,6 +75,8 @@
 //! * <https://github.com/0xdea/haruspex/blob/master/CHANGELOG.md>
 //!
 //! ## TODO
+//! * Improve decompiler output for extern functions.
+//! * Avoid decompiling functions with `thunk` attribute.
 //! * Implement support for the `windows` target family.
 //! * Integrate with Semgrep scanning (see <https://github.com/0xdea/semgrep-rules>).
 //! * Integrate with weggli scanning (see <https://github.com/0xdea/weggli-patterns>).
