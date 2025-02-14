@@ -94,7 +94,6 @@ use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use anyhow::Context;
 use idalib::decompiler::HexRaysErrorCode;
 use idalib::func::Function;
 use idalib::idb::IDB;
@@ -153,7 +152,7 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
         // Decompile function and write pseudo-code to output file
         let func_name = f
             .name()
-            .context("empty function name")?
+            .unwrap_or_else(|| "<no name>".into())
             .replace(['.', '/'], "_");
         let output_file = format!("{func_name}@{:X}", f.start_address());
         let output_path = dirpath.join(output_file).with_extension("c");
