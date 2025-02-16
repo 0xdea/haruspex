@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Make function name unwrapping logic more robust.
 
+### Fixed
+
+* Avoid decompiling functions with the `thunk` attribute, which also fixes a decompiler bug.
+
 ## [0.3.2] - 2025-02-13
 
 ### Changed

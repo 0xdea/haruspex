@@ -8,7 +8,7 @@ fn main() -> anyhow::Result<()> {
     // Target binary path
     const FILENAME: &str = "./tests/bin/ls";
     // Expected number of decompiled functions
-    const N_DECOMP: usize = 127;
+    const N_DECOMP: usize = 79;
 
     // Remove IDB file if it exists
     let idb_path = &format!("{FILENAME}.i64");

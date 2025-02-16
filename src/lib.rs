@@ -76,7 +76,6 @@
 //!
 //! ## TODO
 //! * Improve decompiler output for extern functions.
-//! * Avoid decompiling functions with `thunk` attribute.
 //! * Implement support for the `windows` target family.
 //! * Integrate with Semgrep scanning (see <https://github.com/0xdea/semgrep-rules>).
 //! * Integrate with weggli scanning (see <https://github.com/0xdea/weggli-patterns>).
@@ -97,7 +96,7 @@ use std::path::Path;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use idalib::decompiler::HexRaysErrorCode;
-use idalib::func::Function;
+use idalib::func::{Function, FunctionFlags};
 use idalib::idb::IDB;
 use idalib::IDAError;
 use thiserror::Error;
@@ -151,6 +150,11 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
     println!("[*] Extracting pseudo-code of functions...");
     println!();
     for (_id, f) in idb.functions() {
+        // Skip function if it has the `thunk` attribute
+        if f.flags().contains(FunctionFlags::THUNK) {
+            continue;
+        }
+
         // Decompile function and write pseudo-code to output file
         let func_name = f
             .name()
