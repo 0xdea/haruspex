@@ -208,7 +208,12 @@
 <a href="#207" id="207">207</a>
 <a href="#208" id="208">208</a>
 <a href="#209" id="209">209</a>
-<a href="#210" id="210">210</a></pre></div><pre class="rust"><code><span class="doccomment">//!
+<a href="#210" id="210">210</a>
+<a href="#211" id="211">211</a>
+<a href="#212" id="212">212</a>
+<a href="#213" id="213">213</a>
+<a href="#214" id="214">214</a>
+<a href="#215" id="215">215</a></pre></div><pre class="rust"><code><span class="doccomment">//!
 //! haruspex - Tool to extract IDA decompiler's pseudo-code
 //! Copyright (c) 2024-2025 Marco Ivaldi &lt;raptor@0xdeadbeef.info&gt;
 //!
@@ -285,6 +290,7 @@
 //! * &lt;https://github.com/0xdea/haruspex/blob/master/CHANGELOG.md&gt;
 //!
 //! ## TODO
+//! * Improve decompiler output for extern functions.
 //! * Implement support for the `windows` target family.
 //! * Integrate with Semgrep scanning (see &lt;https://github.com/0xdea/semgrep-rules&gt;).
 //! * Integrate with weggli scanning (see &lt;https://github.com/0xdea/weggli-patterns&gt;).
@@ -304,9 +310,8 @@
 <span class="kw">use </span>std::path::Path;
 <span class="kw">use </span>std::sync::atomic::{AtomicUsize, Ordering};
 
-<span class="kw">use </span>anyhow::Context;
 <span class="kw">use </span>idalib::decompiler::HexRaysErrorCode;
-<span class="kw">use </span>idalib::func::Function;
+<span class="kw">use </span>idalib::func::{Function, FunctionFlags};
 <span class="kw">use </span>idalib::idb::IDB;
 <span class="kw">use </span>idalib::IDAError;
 <span class="kw">use </span>thiserror::Error;
@@ -360,11 +365,16 @@
     <span class="macro">println!</span>(<span class="string">"[*] Extracting pseudo-code of functions..."</span>);
     <span class="macro">println!</span>();
     <span class="kw">for </span>(_id, f) <span class="kw">in </span>idb.functions() {
+        <span class="comment">// Skip function if it has the `thunk` attribute
+        </span><span class="kw">if </span>f.flags().contains(FunctionFlags::THUNK) {
+            <span class="kw">continue</span>;
+        }
+
         <span class="comment">// Decompile function and write pseudo-code to output file
         </span><span class="kw">let </span>func_name = f
             .name()
-            .context(<span class="string">"empty function name"</span>)<span class="question-mark">?
-            </span>.replace([<span class="string">'.'</span>, <span class="string">'/'</span>], <span class="string">"_"</span>);
+            .unwrap_or_else(|| <span class="string">"&lt;no name&gt;"</span>.into())
+            .replace([<span class="string">'.'</span>, <span class="string">'/'</span>], <span class="string">"_"</span>);
         <span class="kw">let </span>output_file = <span class="macro">format!</span>(<span class="string">"{func_name}@{:X}"</span>, f.start_address());
         <span class="kw">let </span>output_path = dirpath.join(output_file).with_extension(<span class="string">"c"</span>);
 
