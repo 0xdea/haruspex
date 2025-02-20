@@ -103,7 +103,7 @@ use thiserror::Error;
 /// Number of decompiled functions
 static COUNTER: AtomicUsize = AtomicUsize::new(0);
 
-#[derive(Debug, Error)]
+#[derive(Error, Debug)]
 pub enum HaruspexError {
     #[error(transparent)]
     DecompileFailed(#[from] IDAError),
