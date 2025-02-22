@@ -36,7 +36,7 @@
 //!     ```sh
 //!     $ export IDASDKDIR=/path/to/idasdk90
 //!     $ export IDADIR=/path/to/ida # if not set, the build script will check common locations
-//!     $ cargo install haruspex
+//!     $ cargo install haruspex # or run cargo add haruspex to install as a library
 //!     ```
 //!
 //! ## Compiling
