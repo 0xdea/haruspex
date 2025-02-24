@@ -207,6 +207,7 @@ pub fn decompile_to_file(idb: &IDB, func: &Function, filepath: &Path) -> Result<
     let source = decomp.pseudocode();
 
     // Write pseudo-code to output file
+    // Note: for easier testing, we could use a generic function together with `std::io::Cursor`
     let mut writer = BufWriter::new(File::create(filepath)?);
     writer.write_all(source.as_bytes())?;
     writer.flush()?;
