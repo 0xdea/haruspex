@@ -95,6 +95,7 @@ use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
+use anyhow::Context;
 use idalib::decompiler::HexRaysErrorCode;
 use idalib::func::{Function, FunctionFlags};
 use idalib::idb::IDB;
@@ -119,9 +120,10 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
     // Open target binary and run auto-analysis
     println!("[*] Trying to analyze binary file {filepath:?}");
     if !filepath.is_file() {
-        return Err(anyhow::anyhow!("invalid file path"));
+        return Err(anyhow::anyhow!("Invalid file path"));
     }
-    let idb = IDB::open(filepath)?;
+    let idb = IDB::open(filepath)
+        .with_context(|| format!("Failed to analyze binary file {filepath:?}"))?;
     println!("[+] Successfully analyzed binary file");
     println!();
 
@@ -133,16 +135,17 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
 
     // Check if Hex-Rays decompiler is available
     if !idb.decompiler_available() {
-        return Err(anyhow::anyhow!("decompiler is not available"));
+        return Err(anyhow::anyhow!("Decompiler is not available"));
     }
 
     // Create a new output directory, returning an error if it already exists and it's not empty
     let dirpath = filepath.with_extension("dec");
     println!("[*] Preparing output directory {dirpath:?}");
     if dirpath.exists() {
-        fs::remove_dir(&dirpath).map_err(|_| anyhow::anyhow!("output directory already exists"))?;
+        fs::remove_dir(&dirpath).map_err(|_| anyhow::anyhow!("Output directory already exists"))?;
     }
-    fs::create_dir_all(&dirpath)?;
+    fs::create_dir_all(&dirpath)
+        .with_context(|| format!("Failed to create directory {dirpath:?}"))?;
     println!("[+] Output directory is ready");
 
     // Extract pseudo-code of functions
@@ -186,9 +189,10 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
 
     // Remove output directory and return an error in case no functions were decompiled
     if COUNTER.load(Ordering::Relaxed) == 0 {
-        fs::remove_dir(&dirpath)?;
+        fs::remove_dir(&dirpath)
+            .with_context(|| format!("Failed to remove directory {dirpath:?}"))?;
         return Err(anyhow::anyhow!(
-            "no functions were decompiled, check your input file"
+            "No functions were decompiled, check your input file"
         ));
     }
 
