@@ -28,12 +28,16 @@ fn main() -> anyhow::Result<()> {
     let n_decomp = haruspex::run(Path::new(FILENAME))?;
     println!();
     print!("[*] Checking number of decompiled functions... ");
-    assert_eq!(n_decomp, N_DECOMP);
+    assert_eq!(n_decomp, N_DECOMP, "wrong number of decompiled functions");
     println!("Ok.");
 
     // Check the number of created files in the output directory
     print!("[*] Checking number of files in output directory... ");
-    assert_eq!(dirpath.read_dir()?.count(), n_decomp);
+    assert_eq!(
+        dirpath.read_dir()?.count(),
+        n_decomp,
+        "wrong number of files in output directory"
+    );
     println!("Ok.");
 
     // Check `decompile_to_file` works as expected
@@ -46,7 +50,10 @@ fn main() -> anyhow::Result<()> {
     let filepath = dirpath.join("main.c");
     let result = haruspex::decompile_to_file(&idb, &func, &filepath);
     assert!(result.is_ok());
-    assert!(filepath.metadata()?.len() > 0);
+    assert!(
+        filepath.metadata()?.len() > 0,
+        "output file {filepath:?} is empty"
+    );
     println!("Ok.");
 
     // Check `decompile_to_file` handles filesystem errors
@@ -56,7 +63,10 @@ fn main() -> anyhow::Result<()> {
     fs::set_permissions(&filepath, perms)?;
     let result = haruspex::decompile_to_file(&idb, &func, &filepath);
     assert!(result.is_err());
-    assert!(filepath.metadata()?.len() > 0);
+    assert!(
+        filepath.metadata()?.len() > 0,
+        "output file {filepath:?} is empty"
+    );
     println!("Ok.");
 
     // Remove output directory at the end
