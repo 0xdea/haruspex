@@ -96,10 +96,10 @@ use std::path::Path;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use anyhow::Context;
+use idalib::IDAError;
 use idalib::decompiler::HexRaysErrorCode;
 use idalib::func::{Function, FunctionFlags};
 use idalib::idb::IDB;
-use idalib::IDAError;
 use thiserror::Error;
 
 /// Number of decompiled functions
@@ -174,7 +174,7 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
             Err(HaruspexError::DecompileFailed(IDAError::HexRays(e)))
                 if e.code() == HexRaysErrorCode::License =>
             {
-                return Err(e.into())
+                return Err(e.into());
             }
 
             // Ignore other IDA errors
