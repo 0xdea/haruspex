@@ -126,9 +126,6 @@ pub enum HaruspexError {
 pub fn run(filepath: &Path) -> anyhow::Result<usize> {
     // Open target binary and run auto-analysis
     println!("[*] Trying to analyze binary file {filepath:?}");
-    if !filepath.is_file() {
-        return Err(anyhow::anyhow!("Invalid file path"));
-    }
     let idb = IDB::open(filepath)
         .with_context(|| format!("Failed to analyze binary file {filepath:?}"))?;
     println!("[+] Successfully analyzed binary file");
