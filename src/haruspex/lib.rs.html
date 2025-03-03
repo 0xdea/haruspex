@@ -218,7 +218,11 @@
 <a href="#217" id="217">217</a>
 <a href="#218" id="218">218</a>
 <a href="#219" id="219">219</a>
-<a href="#220" id="220">220</a></pre></div><pre class="rust"><code><span class="doccomment">//!
+<a href="#220" id="220">220</a>
+<a href="#221" id="221">221</a>
+<a href="#222" id="222">222</a>
+<a href="#223" id="223">223</a>
+<a href="#224" id="224">224</a></pre></div><pre class="rust"><code><span class="doccomment">//!
 //! haruspex - Tool to extract IDA decompiler's pseudo-code
 //! Copyright (c) 2024-2025 Marco Ivaldi &lt;raptor@0xdeadbeef.info&gt;
 //!
@@ -255,10 +259,13 @@
 //! 2. Download and extract the IDA SDK (see &lt;https://docs.hex-rays.com/developer-guide&gt;).
 //! 3. Install haruspex as follows:
 //!     ```sh
-//!     $ export IDASDKDIR=/path/to/idasdk90
+//!     $ export IDASDKDIR=/path/to/idasdk
 //!     $ export IDADIR=/path/to/ida # if not set, the build script will check common locations
 //!     $ cargo install haruspex # or run cargo add haruspex to install as a library
 //!     ```
+//!
+//! *Note: in addition to the latest IDA SDK and IDA Pro itself, a recent version of LLVM/Clang is required
+//! (see [idalib](https://github.com/binarly-io/idalib) documentation).*
 //!
 //! ## Compiling
 //! Alternatively, you can build from [source](https://github.com/0xdea/haruspex):
@@ -268,10 +275,13 @@
 //!     ```sh
 //!     $ git clone https://github.com/0xdea/haruspex
 //!     $ cd haruspex
-//!     $ export IDASDKDIR=/path/to/idasdk90 # or edit .cargo/config.toml
+//!     $ export IDASDKDIR=/path/to/idasdk # or edit .cargo/config.toml
 //!     $ export IDADIR=/path/to/ida # if not set, the build script will check common locations
 //!     $ cargo build --release
 //!     ```
+//!
+//! *Note: in addition to the latest IDA SDK and IDA Pro itself, a recent version of LLVM/Clang is required
+//! (see [idalib](https://github.com/binarly-io/idalib) documentation).*
 //!
 //! ## Usage
 //! 1. Make sure IDA Pro is properly configured with a valid license.
@@ -285,12 +295,13 @@
 //!     $ code &lt;binary_file&gt;.dec
 //!     ```
 //!
-//! ## Tested with
-//! * IDA Pro 9.0.240925 on macOS arm64 and Linux x64.
-//! * IDA Pro 9.0.241217 on macOS arm64 and Linux x64.
+//! ## Compatibility
+//! * IDA Pro 9.0.240925 - Latest compatible: v0.1.3.
+//! * IDA Pro 9.0.241217 - Latest compatible: v0.4.2.
+//! * IDA Pro 9.1.250226 - Latest compatible: current version.
 //!
 //! *Note: only the `unix` target family is currently supported, check [idalib](https://github.com/binarly-io/idalib)
-//! documentation if you want to port it to `windows` yourself.*
+//! documentation if you're interested in a `windows` port.*
 //!
 //! ## Changelog
 //! * &lt;https://github.com/0xdea/haruspex/blob/master/CHANGELOG.md&gt;
@@ -339,9 +350,6 @@
 </span><span class="kw">pub fn </span>run(filepath: <span class="kw-2">&amp;</span>Path) -&gt; anyhow::Result&lt;usize&gt; {
     <span class="comment">// Open target binary and run auto-analysis
     </span><span class="macro">println!</span>(<span class="string">"[*] Trying to analyze binary file {filepath:?}"</span>);
-    <span class="kw">if </span>!filepath.is_file() {
-        <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">anyhow::anyhow!</span>(<span class="string">"Invalid file path"</span>));
-    }
     <span class="kw">let </span>idb = IDB::open(filepath)
         .with_context(|| <span class="macro">format!</span>(<span class="string">"Failed to analyze binary file {filepath:?}"</span>))<span class="question-mark">?</span>;
     <span class="macro">println!</span>(<span class="string">"[+] Successfully analyzed binary file"</span>);
