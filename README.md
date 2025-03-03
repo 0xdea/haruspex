@@ -64,7 +64,7 @@ Alternatively, you can build from [source](https://github.com/0xdea/haruspex):
 2. Download and extract the IDA SDK (see <https://docs.hex-rays.com/developer-guide>).
 3. Compile haruspex as follows:
     ```sh
-    $ git clone https://github.com/0xdea/haruspex
+    $ git clone --depth 1 https://github.com/0xdea/haruspex
     $ cd haruspex
     $ export IDASDKDIR=/path/to/idasdk # or edit .cargo/config.toml
     $ export IDADIR=/path/to/ida # if not set, the build script will check common locations
