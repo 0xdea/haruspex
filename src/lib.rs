@@ -17,8 +17,6 @@
 //! * Pseudo-code of each function is stored in a separated file in the output directory for easy inspection.
 //! * External crates can invoke [`decompile_to_file`] to decompile a function and save its pseudo-code to disk.
 //!
-//! [`decompile_to_file`]: decompile_to_file
-//!
 //! ## Blog post
 //! * <https://security.humanativaspa.it/streamlining-vulnerability-research-with-ida-pro-and-rust>
 //!
@@ -218,8 +216,6 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
 /// ## Errors
 ///
 /// Returns the appropriate [`HaruspexError`] in case something goes wrong.
-///
-/// [`HaruspexError`]: HaruspexError
 ///
 /// ## Examples
 ///
