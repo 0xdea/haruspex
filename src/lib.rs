@@ -226,15 +226,18 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
 /// Basic usage:
 /// ```
 /// # fn main() -> anyhow::Result<()> {
-/// # const FILENAME: &str = "./tests/bin/ls";
-/// let idb = idalib::idb::IDB::open(FILENAME)?;
+/// # let base_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/bin");
+/// let input_file = base_dir.join("ls");
+/// let output_file = base_dir.join("ls-main.c");
+///
+/// let idb = idalib::idb::IDB::open(&input_file)?;
 /// let (_, func) = idb
 ///     .functions()
 ///     .find(|(_, f)| f.name().unwrap() == "main")
 ///     .unwrap();
-/// let filepath = std::path::Path::new(FILENAME).with_extension("dec").join("main.c");
 ///
-/// let result = haruspex::decompile_to_file(&idb, &func, &filepath);
+/// haruspex::decompile_to_file(&idb, &func, &output_file)?;
+/// # std::fs::remove_file(output_file)?;
 /// # Ok(())
 /// # }
 /// ```
