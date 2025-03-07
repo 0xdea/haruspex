@@ -15,7 +15,9 @@
 //! * Blazing fast, headless user experience courtesy of IDA Pro 9 and Binarly's idalib Rust bindings.
 //! * Support for binary targets for any architecture implemented by IDA Pro's Hex-Rays decompiler.
 //! * Pseudo-code of each function is stored in a separated file in the output directory for easy inspection.
-//! * External crates can invoke `decompile_to_file` to decompile a function and save its pseudo-code to disk.
+//! * External crates can invoke [`decompile_to_file`] to decompile a function and save its pseudo-code to disk.
+//!
+//! [`decompile_to_file`]: decompile_to_file
 //!
 //! ## Blog post
 //! * <https://security.humanativaspa.it/streamlining-vulnerability-research-with-ida-pro-and-rust>
@@ -125,7 +127,9 @@ pub enum HaruspexError {
 
 /// Extract pseudo-code of functions in the binary file at `filepath` and save it in `filepath.dec`.
 ///
-/// Return how many functions were decompiled, or an error in case something goes wrong.
+/// ## Errors
+///
+/// Returns how many functions were decompiled, or a generic error in case something goes wrong.
 pub fn run(filepath: &Path) -> anyhow::Result<usize> {
     // Open target binary and run auto-analysis
     println!("[*] Trying to analyze binary file {filepath:?}");
@@ -211,7 +215,11 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
 
 /// Decompile function `func` in IDB `idb` and save its pseudo-code to output file at `filepath`.
 ///
-/// Return the appropriate `HaruspexError` in case something goes wrong.
+/// ## Errors
+///
+/// Returns the appropriate [`HaruspexError`] in case something goes wrong.
+///
+/// [`HaruspexError`]: HaruspexError
 ///
 /// ## Examples
 ///
