@@ -212,6 +212,25 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
 /// Decompile function `func` in IDB `idb` and save its pseudo-code to output file at `filepath`.
 ///
 /// Return the appropriate `HaruspexError` in case something goes wrong.
+///
+/// ## Examples
+///
+/// Basic usage:
+/// ```
+/// # fn main() -> anyhow::Result<()> {
+/// # const FILENAME: &str = "./tests/bin/ls";
+/// let idb = idalib::idb::IDB::open(FILENAME)?;
+/// let (_, func) = idb
+///     .functions()
+///     .find(|(_, f)| f.name().unwrap() == "main")
+///     .unwrap();
+/// let filepath = std::path::Path::new(FILENAME).with_extension("dec").join("main.c");
+///
+/// let result = haruspex::decompile_to_file(&idb, &func, &filepath);
+/// # Ok(())
+/// # }
+/// ```
+///
 pub fn decompile_to_file(idb: &IDB, func: &Function, filepath: &Path) -> Result<(), HaruspexError> {
     // Decompile function
     let decomp = idb.decompile(func)?;
