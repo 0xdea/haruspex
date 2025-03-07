@@ -112,10 +112,13 @@ use thiserror::Error;
 /// Number of decompiled functions
 static COUNTER: AtomicUsize = AtomicUsize::new(0);
 
+/// Haruspex error type
 #[derive(Error, Debug)]
 pub enum HaruspexError {
+    /// Failure in decompiling the function
     #[error(transparent)]
     DecompileFailed(#[from] IDAError),
+    /// Failure in writing to output file
     #[error(transparent)]
     FileWriteFailed(#[from] std::io::Error),
 }
