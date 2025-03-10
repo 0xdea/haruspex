@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["once_box"],"struct":["OnceBool","OnceBox","OnceNonZeroUsize","OnceRef"]};
+window.SIDEBAR_ITEMS = {"struct":["OnceBool","OnceBox","OnceNonZeroUsize","OnceRef"]};

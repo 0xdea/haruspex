@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["HaruspexError"],"fn":["decompile_to_file","run"],"static":["COUNTER"]};
+window.SIDEBAR_ITEMS = {"enum":["HaruspexError"],"fn":["decompile_to_file","run"]};

@@ -222,7 +222,36 @@
 <a href="#221" id="221">221</a>
 <a href="#222" id="222">222</a>
 <a href="#223" id="223">223</a>
-<a href="#224" id="224">224</a></pre></div><pre class="rust"><code><span class="doccomment">//!
+<a href="#224" id="224">224</a>
+<a href="#225" id="225">225</a>
+<a href="#226" id="226">226</a>
+<a href="#227" id="227">227</a>
+<a href="#228" id="228">228</a>
+<a href="#229" id="229">229</a>
+<a href="#230" id="230">230</a>
+<a href="#231" id="231">231</a>
+<a href="#232" id="232">232</a>
+<a href="#233" id="233">233</a>
+<a href="#234" id="234">234</a>
+<a href="#235" id="235">235</a>
+<a href="#236" id="236">236</a>
+<a href="#237" id="237">237</a>
+<a href="#238" id="238">238</a>
+<a href="#239" id="239">239</a>
+<a href="#240" id="240">240</a>
+<a href="#241" id="241">241</a>
+<a href="#242" id="242">242</a>
+<a href="#243" id="243">243</a>
+<a href="#244" id="244">244</a>
+<a href="#245" id="245">245</a>
+<a href="#246" id="246">246</a>
+<a href="#247" id="247">247</a>
+<a href="#248" id="248">248</a>
+<a href="#249" id="249">249</a>
+<a href="#250" id="250">250</a>
+<a href="#251" id="251">251</a>
+<a href="#252" id="252">252</a>
+<a href="#253" id="253">253</a></pre></div><pre class="rust"><code><span class="doccomment">//!
 //! haruspex - Tool to extract IDA decompiler's pseudo-code
 //! Copyright (c) 2024-2025 Marco Ivaldi &lt;raptor@0xdeadbeef.info&gt;
 //!
@@ -239,7 +268,7 @@
 //! * Blazing fast, headless user experience courtesy of IDA Pro 9 and Binarly's idalib Rust bindings.
 //! * Support for binary targets for any architecture implemented by IDA Pro's Hex-Rays decompiler.
 //! * Pseudo-code of each function is stored in a separated file in the output directory for easy inspection.
-//! * External crates can invoke `decompile_to_file` to decompile a function and save its pseudo-code to disk.
+//! * External crates can invoke [`decompile_to_file`] to decompile a function and save its pseudo-code to disk.
 //!
 //! ## Blog post
 //! * &lt;https://security.humanativaspa.it/streamlining-vulnerability-research-with-ida-pro-and-rust&gt;
@@ -273,7 +302,7 @@
 //! 2. Download and extract the IDA SDK (see &lt;https://docs.hex-rays.com/developer-guide&gt;).
 //! 3. Compile haruspex as follows:
 //!     ```sh
-//!     $ git clone https://github.com/0xdea/haruspex
+//!     $ git clone --depth 1 https://github.com/0xdea/haruspex
 //!     $ cd haruspex
 //!     $ export IDASDKDIR=/path/to/idasdk # or edit .cargo/config.toml
 //!     $ export IDADIR=/path/to/ida # if not set, the build script will check common locations
@@ -336,17 +365,22 @@
 <span class="doccomment">/// Number of decompiled functions
 </span><span class="kw">static </span>COUNTER: AtomicUsize = AtomicUsize::new(<span class="number">0</span>);
 
-<span class="attr">#[derive(Error, Debug)]
+<span class="doccomment">/// Haruspex error type
+</span><span class="attr">#[derive(Error, Debug)]
 </span><span class="kw">pub enum </span>HaruspexError {
-    <span class="attr">#[error(transparent)]
+    <span class="doccomment">/// Failure in decompiling the function
+    </span><span class="attr">#[error(transparent)]
     </span>DecompileFailed(<span class="attr">#[from] </span>IDAError),
-    <span class="attr">#[error(transparent)]
+    <span class="doccomment">/// Failure in writing to output file
+    </span><span class="attr">#[error(transparent)]
     </span>FileWriteFailed(<span class="attr">#[from] </span>std::io::Error),
 }
 
 <span class="doccomment">/// Extract pseudo-code of functions in the binary file at `filepath` and save it in `filepath.dec`.
 ///
-/// Return how many functions were decompiled, or an error in case something goes wrong.
+/// ## Errors
+///
+/// Returns how many functions were decompiled, or a generic error in case something goes wrong.
 </span><span class="kw">pub fn </span>run(filepath: <span class="kw-2">&amp;</span>Path) -&gt; anyhow::Result&lt;usize&gt; {
     <span class="comment">// Open target binary and run auto-analysis
     </span><span class="macro">println!</span>(<span class="string">"[*] Trying to analyze binary file {filepath:?}"</span>);
@@ -432,7 +466,31 @@
 
 <span class="doccomment">/// Decompile function `func` in IDB `idb` and save its pseudo-code to output file at `filepath`.
 ///
-/// Return the appropriate `HaruspexError` in case something goes wrong.
+/// ## Errors
+///
+/// Returns the appropriate [`HaruspexError`] in case something goes wrong.
+///
+/// ## Examples
+///
+/// Basic usage:
+/// ```
+/// # fn main() -&gt; anyhow::Result&lt;()&gt; {
+/// # let base_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/bin");
+/// let input_file = base_dir.join("ls");
+/// let output_file = base_dir.join("ls-main.c");
+///
+/// let idb = idalib::idb::IDB::open(&amp;input_file)?;
+/// let (_, func) = idb
+///     .functions()
+///     .find(|(_, f)| f.name().unwrap() == "main")
+///     .unwrap();
+///
+/// haruspex::decompile_to_file(&amp;idb, &amp;func, &amp;output_file)?;
+/// # std::fs::remove_file(output_file)?;
+/// # Ok(())
+/// # }
+/// ```
+///
 </span><span class="kw">pub fn </span>decompile_to_file(idb: <span class="kw-2">&amp;</span>IDB, func: <span class="kw-2">&amp;</span>Function, filepath: <span class="kw-2">&amp;</span>Path) -&gt; <span class="prelude-ty">Result</span>&lt;(), HaruspexError&gt; {
     <span class="comment">// Decompile function
     </span><span class="kw">let </span>decomp = idb.decompile(func)<span class="question-mark">?</span>;

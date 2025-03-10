@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["deserialize","serialize"],"struct":["SeqVisitor"]};
+window.SIDEBAR_ITEMS = {"fn":["deserialize","serialize"]};
