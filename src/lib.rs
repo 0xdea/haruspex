@@ -121,6 +121,12 @@ use thiserror::Error;
 /// Number of decompiled functions
 static COUNTER: AtomicUsize = AtomicUsize::new(0);
 
+/// Reserved characters in filenames
+#[cfg(unix)]
+static RESERVED_CHARS: &[char] = &['.', '/'];
+#[cfg(windows)]
+static RESERVED_CHARS: &[char] = &['.', '/', '<', '>', ':', '"', '\\', '|', '?', '*'];
+
 /// Haruspex error type
 #[derive(Error, Debug)]
 pub enum HaruspexError {
@@ -146,7 +152,7 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
     println!();
 
     // Print binary file information
-    println!("[-] Processor: {}", idb.processor().long_name(),);
+    println!("[-] Processor: {}", idb.processor().long_name());
     println!("[-] Compiler: {:?}", idb.meta().cc_id());
     println!("[-] File type: {:?}", idb.meta().filetype());
     println!();
@@ -180,7 +186,7 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
         let func_name = f
             .name()
             .unwrap_or_else(|| "<no name>".into())
-            .replace(['.', '/'], "_");
+            .replace(RESERVED_CHARS, "_");
         let output_file = format!("{func_name}@{:X}", f.start_address());
         let output_path = dirpath.join(output_file).with_extension("c");
 
@@ -190,10 +196,10 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
 
             // Return an error if Hex-Rays decompiler license is not available
             Err(HaruspexError::DecompileFailed(IDAError::HexRays(e)))
-                if e.code() == HexRaysErrorCode::License =>
-            {
-                return Err(e.into());
-            }
+            if e.code() == HexRaysErrorCode::License =>
+                {
+                    return Err(e.into());
+                }
 
             // Ignore other IDA errors
             Err(HaruspexError::DecompileFailed(_)) => continue,

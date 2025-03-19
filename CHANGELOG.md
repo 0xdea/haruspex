@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+* Handle reserved characters in Windows filenames.
 * Fix typo in documentation.
 
 ## [0.5.2] - 2025-03-19
