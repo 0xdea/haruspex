@@ -188,7 +188,9 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
             .unwrap_or_else(|| "<no name>".into())
             .replace(RESERVED_CHARS, "_");
         let output_file = format!("{func_name}@{:X}", f.start_address());
-        let output_path = dirpath.join(output_file).with_extension("c");
+        let output_path = dirpath
+            .join(truncate_str(&output_file, 64))
+            .with_extension("c");
 
         match decompile_to_file(&idb, &f, &output_path) {
             // Print output path in case of successful function decompilation
@@ -265,4 +267,12 @@ pub fn decompile_to_file(idb: &IDB, func: &Function, filepath: &Path) -> Result<
     writer.flush()?;
 
     Ok(())
+}
+
+/// Truncate string `s` to a maximum of `max_chars` characters
+fn truncate_str(s: &str, max_chars: usize) -> &str {
+    match s.char_indices().nth(max_chars) {
+        None => s,
+        Some((idx, _)) => &s[..idx],
+    }
 }
