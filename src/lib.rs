@@ -96,7 +96,6 @@
 //! * <https://github.com/0xdea/haruspex/blob/master/CHANGELOG.md>
 //!
 //! ## TODO
-//! * Implement support for the `windows` target family.
 //! * Integrate with Semgrep scanning (see <https://github.com/0xdea/semgrep-rules>).
 //! * Integrate with weggli scanning (see <https://github.com/0xdea/weggli-patterns>).
 //! * Improve decompiler output in the style of [HexRaysPyTools](https://github.com/igogo-x86/HexRaysPyTools)
