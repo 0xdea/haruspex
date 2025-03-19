@@ -34,11 +34,19 @@
 //! 1. Download, install, and configure IDA Pro (see <https://hex-rays.com/ida-pro>).
 //! 2. Download and extract the IDA SDK (see <https://docs.hex-rays.com/developer-guide>).
 //! 3. Install LLVM/Clang (see <https://rust-lang.github.io/rust-bindgen/requirements.html>).
-//! 4. Install haruspex as follows:
+//! 4. On Linux/macOS, install as follows:
 //!     ```sh
-//!     $ export IDASDKDIR=/path/to/idasdk
-//!     $ export IDADIR=/path/to/ida # if not set, the build script will check common locations
-//!     $ cargo install haruspex # or run cargo add haruspex to install as a library
+//!     export IDASDKDIR=/path/to/idasdk
+//!     export IDADIR=/path/to/ida # if not set, the build script will check common locations
+//!     cargo install haruspex
+//!     ```
+//!    On Windows, instead, use the following commands:
+//!     ```powershell
+//!     $env:LIBCLANG_PATH="\path\to\clang+llvm\bin"
+//!     $env:PATH="\path\to\ida;$env:PATH"
+//!     $env:IDASDKDIR="\path\to\idasdk"
+//!     $env:IDADIR="\path\to\ida" # if not set, the build script will check common locations
+//!     cargo build haruspex
 //!     ```
 //!
 //! ## Compiling
@@ -46,25 +54,35 @@
 //! 1. Download, install, and configure IDA Pro (see <https://hex-rays.com/ida-pro>).
 //! 2. Download and extract the IDA SDK (see <https://docs.hex-rays.com/developer-guide>).
 //! 3. Install LLVM/Clang (see <https://rust-lang.github.io/rust-bindgen/requirements.html>).
-//! 4. Compile haruspex as follows:
+//! 4. On Linux/macOS, compile as follows:
 //!     ```sh
-//!     $ git clone --depth 1 https://github.com/0xdea/haruspex
-//!     $ cd haruspex
-//!     $ export IDASDKDIR=/path/to/idasdk # or edit .cargo/config.toml
-//!     $ export IDADIR=/path/to/ida # if not set, the build script will check common locations
-//!     $ cargo build --release
+//!     git clone --depth 1 https://github.com/0xdea/haruspex
+//!     cd haruspex
+//!     export IDASDKDIR=/path/to/idasdk # or edit .cargo/config.toml
+//!     export IDADIR=/path/to/ida # if not set, the build script will check common locations
+//!     cargo build --release
+//!     ```
+//!    On Windows, instead, use the following commands:
+//!     ```powershell
+//!     git clone --depth 1 https://github.com/0xdea/haruspex
+//!     cd haruspex
+//!     $env:LIBCLANG_PATH="\path\to\clang+llvm\bin"
+//!     $env:PATH="\path\to\ida;$env:PATH"
+//!     $env:IDASDKDIR="\path\to\idasdk"
+//!     $env:IDADIR="\path\to\ida" # if not set, the build script will check common locations
+//!     cargo build --release
 //!     ```
 //!
 //! ## Usage
 //! 1. Make sure IDA Pro is properly configured with a valid license.
 //! 2. Run haruspex as follows:
 //!     ```sh
-//!     $ haruspex <binary_file>
+//!     haruspex <binary_file>
 //!     ```
 //! 3. Find the extracted pseudo-code of each decompiled function in the `binary_file.dec` directory:
 //!     ```sh
-//!     $ vim <binary_file>.dec
-//!     $ code <binary_file>.dec
+//!     vim <binary_file>.dec
+//!     code <binary_file>.dec
 //!     ```
 //!
 //! ## Compatibility
@@ -72,8 +90,7 @@
 //! * IDA Pro 9.0.241217 - Latest compatible: v0.4.2.
 //! * IDA Pro 9.1.250226 - Latest compatible: current version.
 //!
-//! *Note: only the `unix` target family is currently supported, check [idalib](https://github.com/binarly-io/idalib)
-//! documentation if you're interested in a `windows` port.*
+//! *Note: check [idalib](https://github.com/binarly-io/idalib) documentation for additional information.*
 //!
 //! ## Changelog
 //! * <https://github.com/0xdea/haruspex/blob/master/CHANGELOG.md>
@@ -88,9 +105,6 @@
 //!
 
 #![doc(html_logo_url = "https://raw.githubusercontent.com/0xdea/haruspex/master/.img/logo.png")]
-
-#[cfg(not(unix))]
-compile_error!("only the `unix` target family is currently supported");
 
 use std::fs;
 use std::fs::File;
