@@ -196,10 +196,10 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
 
             // Return an error if Hex-Rays decompiler license is not available
             Err(HaruspexError::DecompileFailed(IDAError::HexRays(e)))
-            if e.code() == HexRaysErrorCode::License =>
-                {
-                    return Err(e.into());
-                }
+                if e.code() == HexRaysErrorCode::License =>
+            {
+                return Err(e.into());
+            }
 
             // Ignore other IDA errors
             Err(HaruspexError::DecompileFailed(_)) => continue,
