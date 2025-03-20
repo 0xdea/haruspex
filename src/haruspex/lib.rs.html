@@ -261,7 +261,20 @@
 <a href="#260" id="260">260</a>
 <a href="#261" id="261">261</a>
 <a href="#262" id="262">262</a>
-<a href="#263" id="263">263</a></pre></div><pre class="rust"><code><span class="doccomment">//!
+<a href="#263" id="263">263</a>
+<a href="#264" id="264">264</a>
+<a href="#265" id="265">265</a>
+<a href="#266" id="266">266</a>
+<a href="#267" id="267">267</a>
+<a href="#268" id="268">268</a>
+<a href="#269" id="269">269</a>
+<a href="#270" id="270">270</a>
+<a href="#271" id="271">271</a>
+<a href="#272" id="272">272</a>
+<a href="#273" id="273">273</a>
+<a href="#274" id="274">274</a>
+<a href="#275" id="275">275</a>
+<a href="#276" id="276">276</a></pre></div><pre class="rust"><code><span class="doccomment">//!
 //! haruspex - Tool to extract IDA decompiler's pseudo-code
 //! Copyright (c) 2024-2025 Marco Ivaldi &lt;raptor@0xdeadbeef.info&gt;
 //!
@@ -338,7 +351,7 @@
 //!
 //! ## Usage
 //! 1. Make sure IDA Pro is properly configured with a valid license.
-//! 2. Run haruspex as follows:
+//! 2. Run as follows:
 //!     ```sh
 //!     haruspex &lt;binary_file&gt;
 //!     ```
@@ -359,7 +372,6 @@
 //! * &lt;https://github.com/0xdea/haruspex/blob/master/CHANGELOG.md&gt;
 //!
 //! ## TODO
-//! * Implement support for the `windows` target family.
 //! * Integrate with Semgrep scanning (see &lt;https://github.com/0xdea/semgrep-rules&gt;).
 //! * Integrate with weggli scanning (see &lt;https://github.com/0xdea/weggli-patterns&gt;).
 //! * Improve decompiler output in the style of [HexRaysPyTools](https://github.com/igogo-x86/HexRaysPyTools)
@@ -384,6 +396,15 @@
 
 <span class="doccomment">/// Number of decompiled functions
 </span><span class="kw">static </span>COUNTER: AtomicUsize = AtomicUsize::new(<span class="number">0</span>);
+
+<span class="doccomment">/// Reserved characters in filenames
+</span><span class="attr">#[cfg(unix)]
+</span><span class="kw">static </span>RESERVED_CHARS: <span class="kw-2">&amp;</span>[char] = <span class="kw-2">&amp;</span>[<span class="string">'.'</span>, <span class="string">'/'</span>];
+<span class="attr">#[cfg(windows)]
+</span><span class="kw">static </span>RESERVED_CHARS: <span class="kw-2">&amp;</span>[char] = <span class="kw-2">&amp;</span>[<span class="string">'.'</span>, <span class="string">'/'</span>, <span class="string">'&lt;'</span>, <span class="string">'&gt;'</span>, <span class="string">':'</span>, <span class="string">'"'</span>, <span class="string">'\\'</span>, <span class="string">'|'</span>, <span class="string">'?'</span>, <span class="string">'*'</span>];
+
+<span class="doccomment">/// Maximum length of filenames
+</span><span class="kw">static </span>MAX_FILENAME_LEN: usize = <span class="number">64</span>;
 
 <span class="doccomment">/// Haruspex error type
 </span><span class="attr">#[derive(Error, Debug)]
@@ -410,7 +431,7 @@
     <span class="macro">println!</span>();
 
     <span class="comment">// Print binary file information
-    </span><span class="macro">println!</span>(<span class="string">"[-] Processor: {}"</span>, idb.processor().long_name(),);
+    </span><span class="macro">println!</span>(<span class="string">"[-] Processor: {}"</span>, idb.processor().long_name());
     <span class="macro">println!</span>(<span class="string">"[-] Compiler: {:?}"</span>, idb.meta().cc_id());
     <span class="macro">println!</span>(<span class="string">"[-] File type: {:?}"</span>, idb.meta().filetype());
     <span class="macro">println!</span>();
@@ -441,11 +462,16 @@
         }
 
         <span class="comment">// Decompile function and write pseudo-code to output file
-        </span><span class="kw">let </span>func_name = f
-            .name()
-            .unwrap_or_else(|| <span class="string">"&lt;no name&gt;"</span>.into())
-            .replace([<span class="string">'.'</span>, <span class="string">'/'</span>], <span class="string">"_"</span>);
-        <span class="kw">let </span>output_file = <span class="macro">format!</span>(<span class="string">"{func_name}@{:X}"</span>, f.start_address());
+        </span><span class="kw">let </span>func_name = f.name().unwrap_or_else(|| <span class="string">"&lt;no name&gt;"</span>.into());
+        <span class="kw">let </span>output_file = <span class="macro">format!</span>(
+            <span class="string">"{}@{:X}"</span>,
+            func_name
+                .replace(RESERVED_CHARS, <span class="string">"_"</span>)
+                .chars()
+                .take(MAX_FILENAME_LEN)
+                .collect::&lt;String&gt;(),
+            f.start_address()
+        );
         <span class="kw">let </span>output_path = dirpath.join(output_file).with_extension(<span class="string">"c"</span>);
 
         <span class="kw">match </span>decompile_to_file(<span class="kw-2">&amp;</span>idb, <span class="kw-2">&amp;</span>f, <span class="kw-2">&amp;</span>output_path) {
