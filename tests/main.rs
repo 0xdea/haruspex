@@ -83,7 +83,7 @@ fn main() -> anyhow::Result<()> {
     #[cfg(unix)]
     let filepath = dirpath.join("invalid/filename");
     #[cfg(windows)]
-    let filepath = dirpath.join("invalid:<>|?*filename");
+    let filepath = dirpath.join("invalid<>?*filename");
     let result = haruspex::decompile_to_file(&idb, &func, &filepath);
     assert!(result.is_err());
     println!("Ok.");
