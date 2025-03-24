@@ -71,6 +71,23 @@ fn main() -> anyhow::Result<()> {
     );
     println!("Ok.");
 
+    // Check `decompile_to_file` handles file length limitations
+    print!("[*] Checking `decompile_to_file` handles file length limitations... ");
+    let filepath = dirpath.join("A".repeat(2048));
+    let result = haruspex::decompile_to_file(&idb, &func, &filepath);
+    assert!(result.is_err());
+    println!("Ok.");
+
+    // Check `decompile_to_file` handles file charset limitations
+    print!("[*] Checking `decompile_to_file` handles file charset limitations... ");
+    #[cfg(unix)]
+    let filepath = dirpath.join("invalid/filename");
+    #[cfg(windows)]
+    let filepath = dirpath.join("invalid:<>|?*filename");
+    let result = haruspex::decompile_to_file(&idb, &func, &filepath);
+    assert!(result.is_err());
+    println!("Ok.");
+
     // Remove output directory at the end
     if dirpath.exists() {
         fs::remove_dir_all(&dirpath)?;
