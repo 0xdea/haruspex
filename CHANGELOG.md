@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+* Use `impl AsRef<Path>` as `filepath` type in `decompile_to_file` to simplify API.
 * Refactor integration test directory structure.
 * Update dependencies.
 

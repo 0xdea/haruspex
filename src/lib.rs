@@ -261,7 +261,11 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
 /// # }
 /// ```
 ///
-pub fn decompile_to_file(idb: &IDB, func: &Function, filepath: &Path) -> Result<(), HaruspexError> {
+pub fn decompile_to_file(
+    idb: &IDB,
+    func: &Function,
+    filepath: impl AsRef<Path>,
+) -> Result<(), HaruspexError> {
     // Decompile function
     let decomp = idb.decompile(func)?;
     let source = decomp.pseudocode();
