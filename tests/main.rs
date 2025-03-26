@@ -8,7 +8,7 @@ use idalib::idb::IDB;
 /// Custom harness for integration tests
 fn main() -> anyhow::Result<()> {
     // Target binary path
-    const FILENAME: &str = "./tests/bin/ls";
+    const FILENAME: &str = "./tests/data/ls";
     // Expected number of decompiled functions
     const N_DECOMP: usize = 79;
 

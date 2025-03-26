@@ -245,7 +245,7 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
 /// Basic usage:
 /// ```
 /// # fn main() -> anyhow::Result<()> {
-/// # let base_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/bin");
+/// # let base_dir = std::path::Path::new("./tests/data");
 /// let input_file = base_dir.join("ls");
 /// let output_file = base_dir.join("ls-main.c");
 ///
