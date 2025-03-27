@@ -274,7 +274,11 @@
 <a href="#273" id="273">273</a>
 <a href="#274" id="274">274</a>
 <a href="#275" id="275">275</a>
-<a href="#276" id="276">276</a></pre></div><pre class="rust"><code><span class="doccomment">//!
+<a href="#276" id="276">276</a>
+<a href="#277" id="277">277</a>
+<a href="#278" id="278">278</a>
+<a href="#279" id="279">279</a>
+<a href="#280" id="280">280</a></pre></div><pre class="rust"><code><span class="doccomment">//!
 //! haruspex - Tool to extract IDA decompiler's pseudo-code
 //! Copyright (c) 2024-2025 Marco Ivaldi &lt;raptor@0xdeadbeef.info&gt;
 //!
@@ -521,7 +525,7 @@
 /// Basic usage:
 /// ```
 /// # fn main() -&gt; anyhow::Result&lt;()&gt; {
-/// # let base_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/bin");
+/// # let base_dir = std::path::Path::new("./tests/data");
 /// let input_file = base_dir.join("ls");
 /// let output_file = base_dir.join("ls-main.c");
 ///
@@ -537,14 +541,18 @@
 /// # }
 /// ```
 ///
-</span><span class="kw">pub fn </span>decompile_to_file(idb: <span class="kw-2">&amp;</span>IDB, func: <span class="kw-2">&amp;</span>Function, filepath: <span class="kw-2">&amp;</span>Path) -&gt; <span class="prelude-ty">Result</span>&lt;(), HaruspexError&gt; {
+</span><span class="kw">pub fn </span>decompile_to_file(
+    idb: <span class="kw-2">&amp;</span>IDB,
+    func: <span class="kw-2">&amp;</span>Function,
+    filepath: <span class="kw">impl </span>AsRef&lt;Path&gt;,
+) -&gt; <span class="prelude-ty">Result</span>&lt;(), HaruspexError&gt; {
     <span class="comment">// Decompile function
     </span><span class="kw">let </span>decomp = idb.decompile(func)<span class="question-mark">?</span>;
     <span class="kw">let </span>source = decomp.pseudocode();
 
     <span class="comment">// Write pseudo-code to output file
     // Note: for easier testing, we could use a generic function together with `std::io::Cursor`
-    </span><span class="kw">let </span><span class="kw-2">mut </span>writer = BufWriter::new(File::create(filepath)<span class="question-mark">?</span>);
+    </span><span class="kw">let </span><span class="kw-2">mut </span>writer = BufWriter::new(File::create(<span class="kw-2">&amp;</span>filepath)<span class="question-mark">?</span>);
     writer.write_all(source.as_bytes())<span class="question-mark">?</span>;
     writer.flush()<span class="question-mark">?</span>;
 
