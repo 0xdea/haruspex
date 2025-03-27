@@ -234,7 +234,7 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
     Ok(COUNTER.load(Ordering::Relaxed))
 }
 
-/// Decompile function `func` in IDB `idb` and save its pseudo-code to output file at `filepath`.
+/// Decompile [`Function`] `func` in [`IDB`] `idb` and save its pseudo-code to output file at `filepath`.
 ///
 /// ## Errors
 ///
