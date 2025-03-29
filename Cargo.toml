@@ -1,6 +1,6 @@
 [package]
 name = "haruspex"
-version = "0.5.6-alpha"
+version = "0.5.6"
 authors = ["Marco Ivaldi <raptor@0xdeadbeef.info>"]
 edition = "2024"
 description = "Vulnerability research assistant that extracts pseudo-code from IDA Hex-Rays decompiler."
@@ -9,7 +9,7 @@ repository = "https://github.com/0xdea/haruspex"
 documentation = "https://0xdeadbeef.info/haruspex/haruspex/"
 license = "MIT"
 keywords = ["reverse-engineering", "binary-file", "vuln-dev", "ida", "idalib"]
-categories = ["command-line-utilities"]
+categories = ["security", "command-line-utilities"]
 exclude = [".cargo/*", ".github/*", ".img/*", "tests/*"]
 
 [dependencies]
