@@ -147,7 +147,7 @@ pub enum HaruspexError {
 ///
 /// Returns how many functions were decompiled, or a generic error in case something goes wrong.
 pub fn run(filepath: &Path) -> anyhow::Result<usize> {
-    // Open target binary and run auto-analysis
+    // Open the target binary and run auto-analysis
     println!("[*] Trying to analyze binary file {filepath:?}");
     let idb = IDB::open(filepath)
         .with_context(|| format!("Failed to analyze binary file {filepath:?}"))?;
@@ -180,12 +180,12 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
     println!("[*] Extracting pseudo-code of functions...");
     println!();
     for (_id, f) in idb.functions() {
-        // Skip function if it has the `thunk` attribute
+        // Skip the function if it has the `thunk` attribute
         if f.flags().contains(FunctionFlags::THUNK) {
             continue;
         }
 
-        // Decompile function and write pseudo-code to output file
+        // Decompile function and write pseudo-code to the output file
         let func_name = f.name().unwrap_or_else(|| "<no name>".into());
         let output_file = format!(
             "{}@{:X}",
@@ -219,7 +219,7 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
         COUNTER.fetch_add(1, Ordering::Relaxed);
     }
 
-    // Remove output directory and return an error in case no functions were decompiled
+    // Remove the output directory and return an error in case no functions were decompiled
     if COUNTER.load(Ordering::Relaxed) == 0 {
         fs::remove_dir(&dirpath)
             .with_context(|| format!("Failed to remove directory {dirpath:?}"))?;
@@ -234,7 +234,7 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
     Ok(COUNTER.load(Ordering::Relaxed))
 }
 
-/// Decompile [`Function`] `func` in [`IDB`] `idb` and save its pseudo-code to output file at `filepath`.
+/// Decompile [`Function`] `func` in [`IDB`] `idb` and save its pseudo-code to the output file at `filepath`.
 ///
 /// ## Errors
 ///

@@ -35,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 * Use `impl AsRef<Path>` as `filepath` type in `decompile_to_file` to simplify the public API.
-* Refactor integration test directory structure.
+* Refactor the integration test directory structure.
 * Update dependencies.
 
 ## [0.5.4] - 2025-03-21
@@ -85,7 +85,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-* Remove target file check that is no longer necessary.
+* Remove the target file check that is no longer necessary.
 
 ## [0.4.2] - 2025-02-28
 
