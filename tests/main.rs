@@ -54,7 +54,8 @@ fn main() -> anyhow::Result<()> {
     assert!(result.is_ok());
     assert!(
         filepath.metadata()?.len() > 0,
-        "output file {filepath:?} is empty"
+        "output file `{}` is empty",
+        filepath.display()
     );
     println!("Ok.");
 
@@ -67,7 +68,8 @@ fn main() -> anyhow::Result<()> {
     assert!(result.is_err());
     assert!(
         filepath.metadata()?.len() > 0,
-        "output file {filepath:?} is empty"
+        "output file `{}` is empty",
+        filepath.display()
     );
     println!("Ok.");
 
