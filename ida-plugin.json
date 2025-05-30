@@ -1,0 +1,15 @@
+{
+  "IDAMetadataDescriptorVersion": 1,
+  "plugin": {
+    "name": "haruspex",
+    "entryPoint": "haruspex",
+    "categories": [
+      "vulnerability-research-and-exploit-development",
+      "decompilation"
+    ],
+    "logoPath": ".img/logo.png",
+    "idaVersions": "9.1",
+    "description": "Vulnerability research assistant that extracts pseudo-code from the IDA Hex-Rays decompiler.",
+    "version": "0.6.0"
+  }
+}
