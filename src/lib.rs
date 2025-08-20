@@ -148,7 +148,7 @@ pub enum HaruspexError {
 /// Returns how many functions were decompiled, or a generic error in case something goes wrong.
 pub fn run(filepath: &Path) -> anyhow::Result<usize> {
     // Open the target binary and run auto-analysis
-    println!("[*] Trying to analyze binary file `{}`", filepath.display());
+    println!("[*] Analyzing binary file `{}`", filepath.display());
     let idb = IDB::open(filepath)
         .with_context(|| format!("Failed to analyze binary file `{}`", filepath.display()))?;
     println!("[+] Successfully analyzed binary file");
