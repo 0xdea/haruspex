@@ -10,6 +10,6 @@
     "logoPath": ".img/logo.png",
     "idaVersions": ">=9.0",
     "description": "Vulnerability research assistant that extracts pseudo-code from the IDA Hex-Rays decompiler.",
-    "version": "0.7.0"
+    "version": "0.7.1"
   }
 }
