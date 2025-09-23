@@ -7,7 +7,7 @@ const PROGRAM: &str = env!("CARGO_PKG_NAME");
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 fn main() {
-    println!("{PROGRAM} {VERSION} - Tool to extract IDA decompiler's pseudo-code");
+    println!("{PROGRAM} {VERSION} - Tool to extract IDA decompiler's pseudocode");
     println!("Copyright (c) 2024-2025 Marco Ivaldi <raptor@0xdeadbeef.info>");
     println!();
 
