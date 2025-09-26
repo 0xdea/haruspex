@@ -28,7 +28,7 @@ or [oneiromancer](https://crates.io/crates/oneiromancer).
 
 ## Blog post
 
-* <https://security.humanativaspa.it/streamlining-vulnerability-research-with-ida-pro-and-rust>
+* <https://hnsecurity.it/blog/streamlining-vulnerability-research-with-ida-pro-and-rust>
 
 ## See also
 
@@ -38,7 +38,7 @@ or [oneiromancer](https://crates.io/crates/oneiromancer).
 * <https://docs.hex-rays.com/release-notes/9_0#headless-processing-with-idalib>
 * <https://github.com/binarly-io/idalib>
 * <https://github.com/xorpse/parascope>
-* <https://security.humanativaspa.it/automating-binary-vulnerability-discovery-with-ghidra-and-semgrep>
+* <https://hnsecurity.it/blog/automating-binary-vulnerability-discovery-with-ghidra-and-semgrep>
 
 ## Installing
 
