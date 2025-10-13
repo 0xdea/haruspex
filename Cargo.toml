@@ -1,6 +1,6 @@
 [package]
 name = "haruspex"
-version = "0.7.2-alpha"
+version = "0.7.2"
 authors = ["Marco Ivaldi <raptor@0xdeadbeef.info>"]
 edition = "2024"
 description = "Vulnerability research assistant that extracts pseudocode from IDA Hex-Rays decompiler."
