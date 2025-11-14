@@ -2,14 +2,35 @@
   "IDAMetadataDescriptorVersion": 1,
   "plugin": {
     "name": "haruspex",
-    "entryPoint": "haruspex",
+    "entryPoint": "src/main.rs",
+    "version": "0.7.2",
+    "idaVersions": [
+      "9.0",
+      "9.1",
+      "9.2"
+    ],
+    "description": "Vulnerability research assistant that extracts pseudocode from the IDA Hex-Rays decompiler.",
+    "license": "MIT",
     "categories": [
       "vulnerability-research-and-exploit-development",
       "decompilation"
     ],
-    "logoPath": ".img/logo.png",
-    "idaVersions": ">=9.0",
-    "description": "Vulnerability research assistant that extracts pseudocode from the IDA Hex-Rays decompiler.",
-    "version": "0.7.2"
+    "urls": {
+      "repository": "https://github.com/0xdea/haruspex"
+    },
+    "authors": [
+      {
+        "name": "Marco Ivaldi",
+        "email": "raptor@0xdeadbeef.info"
+      }
+    ],
+    "keywords": [
+      "vulnerability-research",
+      "reverse-engineering",
+      "security",
+      "idalib",
+      "rust"
+    ],
+    "logoPath": ".img/logo.png"
   }
 }
