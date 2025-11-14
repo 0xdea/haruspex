@@ -111,6 +111,8 @@ Alternatively, you can build from [source](https://github.com/0xdea/haruspex):
 
 ## TODO
 
+* Use the `.cpp` extension instead of `.c` to output pseudocode (see
+  this [issue](https://github.com/0xdea/semgrep-rules/issues/12))?
 * Integrate with Semgrep scanning (see <https://github.com/0xdea/semgrep-rules>).
 * Integrate with weggli scanning (see <https://github.com/0xdea/weggli-patterns>).
 * Improve decompiler output in the style of [HexRaysPyTools](https://github.com/igogo-x86/HexRaysPyTools)
