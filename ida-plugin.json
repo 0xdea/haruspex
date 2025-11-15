@@ -2,8 +2,8 @@
   "IDAMetadataDescriptorVersion": 1,
   "plugin": {
     "name": "haruspex",
-    "entryPoint": "src/main.rs",
-    "version": "0.7.2",
+    "entryPoint": "ida-plugin-stub.py",
+    "version": "0.7.3",
     "idaVersions": [
       "9.0",
       "9.1",
@@ -16,7 +16,8 @@
       "decompilation"
     ],
     "urls": {
-      "repository": "https://github.com/0xdea/haruspex"
+      "repository": "https://github.com/0xdea/haruspex",
+      "documentation": "https://0xdeadbeef.info/haruspex/haruspex/"
     },
     "authors": [
       {
@@ -26,7 +27,7 @@
     ],
     "keywords": [
       "vulnerability-research",
-      "reverse-engineering",
+      "static-analysis",
       "security",
       "idalib",
       "rust"
