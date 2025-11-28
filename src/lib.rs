@@ -156,10 +156,8 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
     println!("[-] File type: {:?}", idb.meta().filetype());
     println!();
 
-    // Check if Hex-Rays decompiler is available
-    if !idb.decompiler_available() {
-        return Err(anyhow::anyhow!("Decompiler is not available"));
-    }
+    // Ensure Hex-Rays decompiler is available
+    anyhow::ensure!(idb.decompiler_available(), "Decompiler is not available");
 
     // Create a new output directory, returning an error if it already exists, and it's not empty
     let dirpath = filepath.with_extension("dec");
@@ -219,9 +217,7 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
     if COUNTER.load(Ordering::Relaxed) == 0 {
         fs::remove_dir(&dirpath)
             .with_context(|| format!("Failed to remove directory `{}`", dirpath.display()))?;
-        return Err(anyhow::anyhow!(
-            "No functions were decompiled, check your input file"
-        ));
+        anyhow::bail!("No functions were decompiled, check your input file");
     }
 
     println!();
