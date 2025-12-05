@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 * Use idiomatic `anyhow` macros for early returns.
+* Include `README.md` as the crate documentation to avoid writing it twice.
 * Update dependencies.
 
 ### Fixed
