@@ -52,7 +52,7 @@ fn main() -> anyhow::Result<()> {
         .unwrap();
     let filepath = dirpath.join("main.c");
     let result = haruspex::decompile_to_file(&idb, &func, &filepath);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "decompile to file failed");
     assert!(
         filepath.metadata()?.len() > 0,
         "output file `{}` is empty",
