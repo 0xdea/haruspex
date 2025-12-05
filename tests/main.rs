@@ -51,8 +51,7 @@ fn main() -> anyhow::Result<()> {
         .find(|(_, f)| f.name().unwrap() == "main")
         .unwrap();
     let filepath = dirpath.join("main.c");
-    let result = haruspex::decompile_to_file(&idb, &func, &filepath);
-    assert!(result.is_ok(), "decompile to file failed");
+    haruspex::decompile_to_file(&idb, &func, &filepath)?;
     assert!(
         filepath.metadata()?.len() > 0,
         "output file `{}` is empty",
