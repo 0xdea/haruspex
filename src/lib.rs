@@ -19,12 +19,12 @@ static COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 /// Reserved characters in filenames
 #[cfg(unix)]
-static RESERVED_CHARS: &[char] = &['.', '/'];
+const RESERVED_CHARS: &[char] = &['.', '/'];
 #[cfg(windows)]
-static RESERVED_CHARS: &[char] = &['.', '/', '<', '>', ':', '"', '\\', '|', '?', '*'];
+const RESERVED_CHARS: &[char] = &['.', '/', '<', '>', ':', '"', '\\', '|', '?', '*'];
 
 /// Maximum length of filenames
-static MAX_FILENAME_LEN: usize = 64;
+const MAX_FILENAME_LEN: usize = 64;
 
 /// Haruspex error type
 #[derive(Error, Debug)]
