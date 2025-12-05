@@ -3,6 +3,7 @@
 use std::fs;
 use std::path::Path;
 
+use haruspex::HaruspexError;
 use idalib::idb::IDB;
 
 /// Custom harness for integration tests
@@ -65,7 +66,11 @@ fn main() -> anyhow::Result<()> {
     perms.set_readonly(true);
     fs::set_permissions(&filepath, perms)?;
     let result = haruspex::decompile_to_file(&idb, &func, &filepath);
-    assert!(result.is_err());
+    assert!(result.is_err(), "file write succeeded unexpectedly");
+    assert!(
+        matches!(result, Err(HaruspexError::FileWriteFailed(_))),
+        "wrong error type returned: {result:?}"
+    );
     assert!(
         filepath.metadata()?.len() > 0,
         "output file `{}` is empty",
@@ -77,7 +82,11 @@ fn main() -> anyhow::Result<()> {
     print!("[*] Checking `decompile_to_file` handles file length limitations... ");
     let filepath = dirpath.join("A".repeat(2048));
     let result = haruspex::decompile_to_file(&idb, &func, &filepath);
-    assert!(result.is_err());
+    assert!(result.is_err(), "file write succeeded unexpectedly");
+    assert!(
+        matches!(result, Err(HaruspexError::FileWriteFailed(_))),
+        "wrong error type returned: {result:?}"
+    );
     println!("Ok.");
 
     // Check `decompile_to_file` handles file charset limitations
@@ -87,7 +96,11 @@ fn main() -> anyhow::Result<()> {
     #[cfg(windows)]
     let filepath = dirpath.join("invalid<>?*filename");
     let result = haruspex::decompile_to_file(&idb, &func, &filepath);
-    assert!(result.is_err());
+    assert!(result.is_err(), "file write succeeded unexpectedly");
+    assert!(
+        matches!(result, Err(HaruspexError::FileWriteFailed(_))),
+        "wrong error type returned: {result:?}"
+    );
     println!("Ok.");
 
     // Remove the output directory at the end
