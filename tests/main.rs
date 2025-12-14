@@ -48,39 +48,39 @@ fn main() -> anyhow::Result<()> {
     let idb = IDB::open(filepath)?;
     let (_, func) = idb
         .functions()
-        .find(|(_, f)| f.name().unwrap() == "main")
-        .unwrap();
-    let filepath = dirpath.join("main.c");
-    haruspex::decompile_to_file(&idb, &func, &filepath)?;
+        .find(|(_, f)| f.name().expect("invalid function name") == "main")
+        .expect("failed to find function `main`");
+    let output_file = dirpath.join("main.c");
+    haruspex::decompile_to_file(&idb, &func, &output_file)?;
     assert!(
-        filepath.metadata()?.len() > 0,
+        output_file.metadata()?.len() > 0,
         "output file `{}` is empty",
-        filepath.display()
+        output_file.display()
     );
     println!("Ok.");
 
     // Check `decompile_to_file` handles filesystem errors
     print!("[*] Checking `decompile_to_file` handles filesystem errors... ");
-    let mut perms = filepath.metadata()?.permissions();
+    let mut perms = output_file.metadata()?.permissions();
     perms.set_readonly(true);
-    fs::set_permissions(&filepath, perms)?;
-    let result = haruspex::decompile_to_file(&idb, &func, &filepath);
+    fs::set_permissions(&output_file, perms)?;
+    let result = haruspex::decompile_to_file(&idb, &func, &output_file);
     assert!(result.is_err(), "file write succeeded unexpectedly");
     assert!(
         matches!(result, Err(HaruspexError::FileWriteFailed(_))),
         "wrong error type returned: {result:?}"
     );
     assert!(
-        filepath.metadata()?.len() > 0,
+        output_file.metadata()?.len() > 0,
         "output file `{}` is empty",
-        filepath.display()
+        output_file.display()
     );
     println!("Ok.");
 
     // Check `decompile_to_file` handles file length limitations
     print!("[*] Checking `decompile_to_file` handles file length limitations... ");
-    let filepath = dirpath.join("A".repeat(2048));
-    let result = haruspex::decompile_to_file(&idb, &func, &filepath);
+    let output_file = dirpath.join("A".repeat(2048));
+    let result = haruspex::decompile_to_file(&idb, &func, &output_file);
     assert!(result.is_err(), "file write succeeded unexpectedly");
     assert!(
         matches!(result, Err(HaruspexError::FileWriteFailed(_))),
@@ -91,10 +91,10 @@ fn main() -> anyhow::Result<()> {
     // Check `decompile_to_file` handles file charset limitations
     print!("[*] Checking `decompile_to_file` handles file charset limitations... ");
     #[cfg(unix)]
-    let filepath = dirpath.join("invalid/filename");
+    let output_file = dirpath.join("invalid/filename");
     #[cfg(windows)]
-    let filepath = dirpath.join("invalid<>?*filename");
-    let result = haruspex::decompile_to_file(&idb, &func, &filepath);
+    let output_file = dirpath.join("invalid<>?*filename");
+    let result = haruspex::decompile_to_file(&idb, &func, &output_file);
     assert!(result.is_err(), "file write succeeded unexpectedly");
     assert!(
         matches!(result, Err(HaruspexError::FileWriteFailed(_))),
