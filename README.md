@@ -38,7 +38,7 @@ or [oneiromancer](https://crates.io/crates/oneiromancer).
 * <https://github.com/0xdea/semgrep-rules>
 * <https://github.com/0xdea/weggli-patterns>
 * <https://docs.hex-rays.com/release-notes/9_0#headless-processing-with-idalib>
-* <https://github.com/binarly-io/idalib>
+* <https://github.com/idalib-rs/idalib>
 * <https://github.com/xorpse/parascope>
 * <https://hnsecurity.it/blog/automating-binary-vulnerability-discovery-with-ghidra-and-semgrep>
 
@@ -104,7 +104,7 @@ Alternatively, you can build from [source](https://github.com/0xdea/haruspex):
 * IDA Pro 9.1.250226 - Latest compatible: v0.6.2.
 * IDA Pro 9.2.250908 - Latest compatible: current version.
 
-*Note: check [idalib](https://github.com/binarly-io/idalib) documentation for additional information.*
+*Note: check [idalib](https://github.com/idalib-rs/idalib) documentation for additional information.*
 
 ## Changelog
 

@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Improve command line parsing, error handling, and usage messages.
 * Improve tests and documentation.
+* Update links to the idalib-rs repository.
 * Update copyright notice.
 * Update dependencies.
 
