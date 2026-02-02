@@ -78,7 +78,7 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
         }
 
         // Decompile function and write pseudocode to the output file
-        let func_name = f.name().unwrap_or_else(|| "<no name>".into());
+        let func_name = f.name().unwrap_or_else(|| "[no name]".into());
         let output_file = format!(
             "{}@{:X}",
             func_name

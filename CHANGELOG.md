@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Update copyright notice.
 * Update dependencies.
 
+### Fixed
+
+* Replace `<no name>` with `[no name]` to avoid using reserved chars.
+
 ### Removed
 
 * Remove the unnecessary `flush` in `decompile_to_file`.
