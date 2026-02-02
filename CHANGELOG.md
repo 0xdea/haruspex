@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+* Use a local counter instead of a global atomic
 * Improve command line parsing, error handling, and usage messages.
 * Improve tests and documentation.
 * Update links to the idalib-rs repository.

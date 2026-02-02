@@ -5,7 +5,6 @@ use std::fs;
 use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::Path;
-use std::sync::atomic::{AtomicUsize, Ordering};
 
 use anyhow::Context;
 use idalib::IDAError;
@@ -22,9 +21,6 @@ const RESERVED_CHARS: &[char] = &['.', '/', '<', '>', ':', '"', '\\', '|', '?', 
 
 /// Maximum length of filenames
 const MAX_FILENAME_LEN: usize = 64;
-
-/// Number of decompiled functions
-static COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 /// Haruspex error type
 #[derive(Error, Debug)]
@@ -69,6 +65,8 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
         .with_context(|| format!("Failed to create directory `{}`", dirpath.display()))?;
     println!("[+] Output directory is ready");
 
+    let mut decompiled_count: usize = 0;
+
     // Extract pseudocode of functions
     println!();
     println!("[*] Extracting pseudocode of functions...");
@@ -94,7 +92,10 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
 
         match decompile_to_file(&idb, &f, &output_path) {
             // Print the output path in case of successful function decompilation
-            Ok(()) => println!("{func_name} -> `{}`", output_path.display()),
+            Ok(()) => {
+                println!("{func_name} -> `{}`", output_path.display());
+                decompiled_count += 1;
+            }
 
             // Return an error if Hex-Rays decompiler license is not available
             Err(HaruspexError::DecompileFailed(IDAError::HexRays(e)))
@@ -104,17 +105,15 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
             }
 
             // Ignore other IDA errors
-            Err(HaruspexError::DecompileFailed(_)) => continue,
+            Err(HaruspexError::DecompileFailed(_)) => (),
 
             // Return any other error
             Err(e) => return Err(e.into()),
         }
-
-        COUNTER.fetch_add(1, Ordering::Relaxed);
     }
 
     // Remove the output directory and return an error in case no functions were decompiled
-    if COUNTER.load(Ordering::Relaxed) == 0 {
+    if decompiled_count == 0 {
         fs::remove_dir(&dirpath)
             .with_context(|| format!("Failed to remove directory `{}`", dirpath.display()))?;
         anyhow::bail!("No functions were decompiled, check your input file");
@@ -122,11 +121,11 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
 
     println!();
     println!(
-        "[+] Decompiled {COUNTER:?} functions into `{}`",
+        "[+] Decompiled {decompiled_count} functions into `{}`",
         dirpath.display()
     );
     println!("[+] Done processing binary file `{}`", filepath.display());
-    Ok(COUNTER.load(Ordering::Relaxed))
+    Ok(decompiled_count)
 }
 
 /// Decompile [`Function`] `func` in [`IDB`] `idb` and save its pseudocode to the output file at `filepath`.
