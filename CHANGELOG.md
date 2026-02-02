@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Update copyright notice.
 * Update dependencies.
 
+### Removed
+
+* Remove the unnecessary `flush` in `decompile_to_file`.
+
 ## [0.7.4] - 2025-12-05
 
 ### Changed

@@ -168,7 +168,6 @@ pub fn decompile_to_file(
     // Note: for easier testing, we could use a generic function together with `std::io::Cursor`
     let mut writer = BufWriter::new(File::create(&filepath)?);
     writer.write_all(source.as_bytes())?;
-    writer.flush()?;
 
     Ok(())
 }
