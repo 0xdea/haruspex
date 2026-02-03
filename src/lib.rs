@@ -37,7 +37,7 @@ pub enum HaruspexError {
 ///
 /// ## Errors
 ///
-/// Returns how many functions were decompiled, or a generic error in case something goes wrong.
+/// Returns how many functions were decompiled, or an error in case something goes wrong.
 pub fn run(filepath: &Path) -> anyhow::Result<usize> {
     // Open the target binary and run auto-analysis
     println!("[*] Analyzing binary file `{}`", filepath.display());
