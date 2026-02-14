@@ -65,7 +65,7 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
         .with_context(|| format!("Failed to create directory `{}`", dirpath.display()))?;
     println!("[+] Output directory is ready");
 
-    let mut decompiled_count: usize = 0;
+    let mut decompiled_count = 0;
 
     // Extract pseudocode of functions
     println!();
