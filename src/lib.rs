@@ -24,6 +24,7 @@ const MAX_FILENAME_LEN: usize = 64;
 
 /// Haruspex error type
 #[derive(Error, Debug)]
+#[non_exhaustive]
 pub enum HaruspexError {
     /// Failure in decompiling the function
     #[error(transparent)]
