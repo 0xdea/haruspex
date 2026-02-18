@@ -391,7 +391,7 @@ checksum = "0cc23270f6e1808e30a928bdc84dea0b9b4136a8bc82338574f23baf47bbd280"
 
 [[package]]
 name = "haruspex"
-version = "0.7.6-alpha"
+version = "0.8.0-alpha"
 dependencies = [
  "anyhow",
  "idalib",
