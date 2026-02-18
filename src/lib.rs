@@ -3,10 +3,10 @@
 
 use std::fs;
 use std::fs::File;
-use std::io::{BufWriter, Write};
+use std::io::{BufWriter, Write as _};
 use std::path::Path;
 
-use anyhow::Context;
+use anyhow::Context as _;
 use idalib::IDAError;
 use idalib::decompiler::HexRaysErrorCode;
 use idalib::func::{Function, FunctionFlags};
