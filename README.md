@@ -105,7 +105,8 @@ Alternatively, you can build from [source](https://github.com/0xdea/haruspex):
 * IDA Pro 9.2.250908 - Latest compatible: v0.7.5.
 * IDA Pro 9.3.260213 - Latest compatible: current version.
 
-*Note: check [idalib](https://github.com/idalib-rs/idalib) documentation for additional information.*
+> [!NOTE]
+> Check the [idalib](https://github.com/idalib-rs/idalib) documentation for additional information.
 
 ## Changelog
 
