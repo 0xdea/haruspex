@@ -1,5 +1,6 @@
 import idaapi
 
+
 class HaruspexStub(idaapi.plugin_t):
     flags = 0
     comment = "Stub for haruspex (based on idalib's Rust bindings)"

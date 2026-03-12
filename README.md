@@ -22,25 +22,25 @@ or [oneiromancer](https://crates.io/crates/oneiromancer).
 
 ## Features
 
-* Blazing fast, headless user experience courtesy of IDA Pro 9.x and Binarly's idalib Rust bindings.
-* Support for binary targets for any architecture implemented by IDA Pro's Hex-Rays decompiler.
-* Pseudocode of each function is stored in a separated file in the output directory for easy inspection.
-* External crates can invoke [`decompile_to_file`] to decompile a function and save its pseudocode to disk.
+- Blazing fast, headless user experience courtesy of IDA Pro 9.x and Binarly's idalib Rust bindings.
+- Support for binary targets for any architecture implemented by IDA Pro's Hex-Rays decompiler.
+- Pseudocode of each function is stored in a separated file in the output directory for easy inspection.
+- External crates can invoke [`decompile_to_file`] to decompile a function and save its pseudocode to disk.
 
 ## Blog posts
 
-* <https://hex-rays.com/blog/streamlining-vulnerability-research-idalib-rust-bindings>
-* <https://hnsecurity.it/blog/streamlining-vulnerability-research-with-ida-pro-and-rust>
+- <https://hex-rays.com/blog/streamlining-vulnerability-research-idalib-rust-bindings>
+- <https://hnsecurity.it/blog/streamlining-vulnerability-research-with-ida-pro-and-rust>
 
 ## See also
 
-* <https://github.com/0xdea/ghidra-scripts/blob/main/Haruspex.java>
-* <https://github.com/0xdea/semgrep-rules>
-* <https://github.com/0xdea/weggli-patterns>
-* <https://docs.hex-rays.com/release-notes/9_0#headless-processing-with-idalib>
-* <https://github.com/idalib-rs/idalib>
-* <https://github.com/xorpse/parascope>
-* <https://hnsecurity.it/blog/automating-binary-vulnerability-discovery-with-ghidra-and-semgrep>
+- <https://github.com/0xdea/ghidra-scripts/blob/main/Haruspex.java>
+- <https://github.com/0xdea/semgrep-rules>
+- <https://github.com/0xdea/weggli-patterns>
+- <https://docs.hex-rays.com/release-notes/9_0#headless-processing-with-idalib>
+- <https://github.com/idalib-rs/idalib>
+- <https://github.com/xorpse/parascope>
+- <https://hnsecurity.it/blog/automating-binary-vulnerability-discovery-with-ghidra-and-semgrep>
 
 ## Installing
 
@@ -49,17 +49,17 @@ The easiest way to get the latest release is via [crates.io](https://crates.io/c
 1. Download, install, and configure IDA Pro (see <https://hex-rays.com/ida-pro>).
 2. Install LLVM/Clang (see <https://rust-lang.github.io/rust-bindgen/requirements.html>).
 3. On Linux/macOS, install as follows:
-    ```sh
-    export IDADIR=/path/to/ida # if not set, the build script will check common locations
-    cargo install haruspex
-    ```
+   ```sh
+   export IDADIR=/path/to/ida # if not set, the build script will check common locations
+   cargo install haruspex
+   ```
    On Windows, instead, use the following commands:
-    ```powershell
-    $env:LIBCLANG_PATH="\path\to\clang+llvm\bin"
-    $env:PATH="\path\to\ida;$env:PATH"
-    $env:IDADIR="\path\to\ida" # if not set, the build script will check common locations
-    cargo install haruspex
-    ```
+   ```powershell
+   $env:LIBCLANG_PATH="\path\to\clang+llvm\bin"
+   $env:PATH="\path\to\ida;$env:PATH"
+   $env:IDADIR="\path\to\ida" # if not set, the build script will check common locations
+   cargo install haruspex
+   ```
 
 ## Compiling
 
@@ -68,56 +68,56 @@ Alternatively, you can build from [source](https://github.com/0xdea/haruspex):
 1. Download, install, and configure IDA Pro (see <https://hex-rays.com/ida-pro>).
 2. Install LLVM/Clang (see <https://rust-lang.github.io/rust-bindgen/requirements.html>).
 3. On Linux/macOS, compile as follows:
-    ```sh
-    git clone --depth 1 https://github.com/0xdea/haruspex
-    cd haruspex
-    export IDADIR=/path/to/ida # if not set, the build script will check common locations
-    cargo build --release
-    ```
+   ```sh
+   git clone --depth 1 https://github.com/0xdea/haruspex
+   cd haruspex
+   export IDADIR=/path/to/ida # if not set, the build script will check common locations
+   cargo build --release
+   ```
    On Windows, instead, use the following commands:
-    ```powershell
-    git clone --depth 1 https://github.com/0xdea/haruspex
-    cd haruspex
-    $env:LIBCLANG_PATH="\path\to\clang+llvm\bin"
-    $env:PATH="\path\to\ida;$env:PATH"
-    $env:IDADIR="\path\to\ida" # if not set, the build script will check common locations
-    cargo build --release
-    ```
+   ```powershell
+   git clone --depth 1 https://github.com/0xdea/haruspex
+   cd haruspex
+   $env:LIBCLANG_PATH="\path\to\clang+llvm\bin"
+   $env:PATH="\path\to\ida;$env:PATH"
+   $env:IDADIR="\path\to\ida" # if not set, the build script will check common locations
+   cargo build --release
+   ```
 
 ## Usage
 
 1. Make sure IDA Pro is properly configured with a valid license.
 2. Run as follows:
-    ```sh
-    haruspex <binary_file>
-    ```
+   ```sh
+   haruspex <binary_file>
+   ```
 3. Find the extracted pseudocode of each decompiled function in the `binary_file.dec` directory:
-    ```sh
-    vim <binary_file>.dec
-    code <binary_file>.dec
-    ```
+   ```sh
+   vim <binary_file>.dec
+   code <binary_file>.dec
+   ```
 
 ## Compatibility
 
-* IDA Pro 9.0.240925 - Latest compatible: v0.2.4.
-* IDA Pro 9.0.241217 - Latest compatible: v0.3.5.
-* IDA Pro 9.1.250226 - Latest compatible: v0.6.2.
-* IDA Pro 9.2.250908 - Latest compatible: v0.7.5.
-* IDA Pro 9.3.260213 - Latest compatible: current version.
+- IDA Pro 9.0.240925 - Latest compatible: v0.2.4.
+- IDA Pro 9.0.241217 - Latest compatible: v0.3.5.
+- IDA Pro 9.1.250226 - Latest compatible: v0.6.2.
+- IDA Pro 9.2.250908 - Latest compatible: v0.7.5.
+- IDA Pro 9.3.260213 - Latest compatible: current version.
 
 > [!NOTE]
 > Check the [idalib](https://github.com/idalib-rs/idalib) documentation for additional information.
 
 ## Changelog
 
-* [CHANGELOG.md](CHANGELOG.md)
+- [CHANGELOG.md](CHANGELOG.md)
 
 ## TODO
 
-* Use the `.cpp` extension instead of `.c` to output pseudocode (see
+- Use the `.cpp` extension instead of `.c` to output pseudocode (see
   this [issue](https://github.com/0xdea/semgrep-rules/issues/12))?
-* Integrate with Semgrep scanning (see <https://github.com/0xdea/semgrep-rules>).
-* Integrate with weggli scanning (see <https://github.com/0xdea/weggli-patterns>).
-* Improve decompiler output in the style of [HexRaysPyTools](https://github.com/igogo-x86/HexRaysPyTools)
+- Integrate with Semgrep scanning (see <https://github.com/0xdea/semgrep-rules>).
+- Integrate with weggli scanning (see <https://github.com/0xdea/weggli-patterns>).
+- Improve decompiler output in the style of [HexRaysPyTools](https://github.com/igogo-x86/HexRaysPyTools)
   and [abyss](https://github.com/patois/abyss).
-* Implement parallel analysis (see <https://github.com/fugue-re/fugue-mptp>).
+- Implement parallel analysis (see <https://github.com/fugue-re/fugue-mptp>).

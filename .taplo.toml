@@ -1,0 +1,3 @@
+[formatting]
+column_width = 120      # increase column width before expanding
+allowed_blank_lines = 1 # allow at most one blank line in a row
