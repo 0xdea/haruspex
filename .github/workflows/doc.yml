@@ -25,7 +25,7 @@ jobs:
         run: cargo doc
       - name: git configuration
         run: |
-          git config user.name "GitHub Actions for {{project-name}}"
+          git config user.name "GitHub Actions for haruspex"
           git config user.email "raptor@0xdeadbeef.info"
           git config push.autosetupremote true
       - name: deploy
