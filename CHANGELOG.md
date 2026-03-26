@@ -7,8 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add `semver-checks` to GitHub workflows to enforce semantic versioning.
+
 ### Changed
 
+- Improve integration tests.
 - Update dependencies.
 
 ### Security

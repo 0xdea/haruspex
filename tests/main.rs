@@ -15,8 +15,7 @@ fn main() -> anyhow::Result<()> {
     const N_DECOMP: usize = 79;
 
     // Remove the IDB file if it exists
-    let idb_path = &format!("{FILENAME}.i64");
-    let idb_path = Path::new(idb_path);
+    let idb_path = Path::new(FILENAME).with_extension("i64");
     if idb_path.is_file() {
         fs::remove_file(idb_path)?;
     }
