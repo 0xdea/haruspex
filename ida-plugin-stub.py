@@ -10,8 +10,8 @@ class HaruspexStub(idaapi.plugin_t):
 
     def init(self):
         print(
-            "[WARN] haruspex is a headless plugin based on idalib's Rust bindings and should be used via the "
-            "`haruspex` crate via crates.io or from source, not as a regular IDA plugin."
+            "[WARN] haruspex is a headless plugin based on idalib's Rust bindings and should be installed via the "
+            "`haruspex` crate in crates.io or from source, not as a regular IDA plugin."
         )
         return idaapi.PLUGIN_SKIP
 
