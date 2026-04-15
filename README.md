@@ -116,7 +116,7 @@ summarizes the latest compatible release for each IDA Pro version:
 
 ## Changelog
 
-- [CHANGELOG.md](CHANGELOG.md)
+- [CHANGELOG.md](https://github.com/0xdea/haruspex/blob/master/CHANGELOG.md)
 
 ## TODO
 
