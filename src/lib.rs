@@ -60,7 +60,8 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
     let dirpath = filepath.with_extension("dec");
     println!("[*] Preparing output directory `{}`", dirpath.display());
     if dirpath.exists() {
-        fs::remove_dir(&dirpath).map_err(|_| anyhow::anyhow!("Output directory already exists"))?;
+        fs::remove_dir(&dirpath)
+            .with_context(|| format!("Output directory `{}` already exists", dirpath.display()))?;
     }
     fs::create_dir_all(&dirpath)
         .with_context(|| format!("Failed to create directory `{}`", dirpath.display()))?;
