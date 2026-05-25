@@ -121,6 +121,7 @@ summarizes the latest compatible release for each IDA Pro version:
 
 ## TODO
 
+- Add global and per-function type extraction (see this [issue](https://github.com/0xdea/haruspex/issues/3)).
 - Use the `.cpp` extension instead of `.c` to output pseudocode (see
   this [issue](https://github.com/0xdea/semgrep-rules/issues/12))?
 - Integrate with Semgrep scanning (see <https://github.com/0xdea/semgrep-rules>).
