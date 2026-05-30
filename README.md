@@ -87,11 +87,12 @@ Alternatively, you can build from [source](https://github.com/0xdea/haruspex):
 ## Usage
 
 1. Make sure IDA Pro is properly configured with a valid license.
-2. Run as follows:
+2. Make sure the `IDADIR` environment variable is set if your IDA Pro installation is in a non-standard location.
+3. Run as follows:
    ```sh
    haruspex <binary_file>
    ```
-3. Find the extracted pseudocode of each decompiled function in the `binary_file.dec` directory:
+4. Find the extracted pseudocode of each decompiled function in the `binary_file.dec` directory:
    ```sh
    vim <binary_file>.dec
    code <binary_file>.dec
