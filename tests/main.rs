@@ -48,8 +48,9 @@ fn main() -> anyhow::Result<()> {
     println!("Ok.");
 
     // Check `run` fails when the output directory is not empty
-    print!("[*] Checking `run` fails when output directory is not empty... ");
+    println!();
     let result = haruspex::run(filepath);
+    print!("[*] Checking `run` fails when output directory is not empty... ");
     assert!(
         result.is_err(),
         "run succeeded unexpectedly with a non-empty output directory"
@@ -57,12 +58,13 @@ fn main() -> anyhow::Result<()> {
     println!("Ok.");
 
     // Check `run` succeeds when the output directory exists but is empty
-    print!("[*] Checking `run` succeeds when output directory is empty... ");
     fs::remove_dir_all(&dirpath)?;
     fs::create_dir_all(&dirpath)?;
+    println!();
+    let n_decomp = haruspex::run(Path::new(FILENAME))?;
+    print!("[*] Checking `run` succeeds when output directory is empty... ");
     assert_eq!(
-        haruspex::run(filepath)?,
-        N_DECOMP,
+        n_decomp, N_DECOMP,
         "wrong number of decompiled functions on second run"
     );
     println!("Ok.");
