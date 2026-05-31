@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Extract `output_path_for_function` and `prepare_output_dir` helper functions.
 - Use workspace lints and add some lints in the `clippy::restriction` category.
 - Improve documentation.
 - Update dependencies.

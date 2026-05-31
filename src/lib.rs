@@ -4,7 +4,7 @@
 use std::fs;
 use std::fs::File;
 use std::io::{BufWriter, Write as _};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anyhow::Context as _;
 use idalib::IDAError;
@@ -58,14 +58,7 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
 
     // Create a new output directory, returning an error if it already exists, and it's not empty
     let dirpath = filepath.with_extension("dec");
-    println!("[*] Preparing output directory `{}`", dirpath.display());
-    if dirpath.exists() {
-        fs::remove_dir(&dirpath)
-            .with_context(|| format!("Output directory `{}` already exists", dirpath.display()))?;
-    }
-    fs::create_dir_all(&dirpath)
-        .with_context(|| format!("Failed to create directory `{}`", dirpath.display()))?;
-    println!("[+] Output directory is ready");
+    prepare_output_dir(&dirpath)?;
 
     let mut decompiled_count = 0;
 
@@ -81,16 +74,7 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
 
         // Decompile function and write pseudocode to the output file
         let func_name = f.name().unwrap_or_else(|| "[no name]".into());
-        let output_file = format!(
-            "{}@{:X}",
-            func_name
-                .replace(RESERVED_CHARS, "_")
-                .chars()
-                .take(MAX_FILENAME_LEN)
-                .collect::<String>(),
-            f.start_address()
-        );
-        let output_path = dirpath.join(output_file).with_extension("c");
+        let output_path = output_path_for_function(&f, &dirpath);
 
         match decompile_to_file(&idb, &f, &output_path) {
             // Print the output path in case of successful function decompilation
@@ -128,6 +112,34 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
     );
     println!("[+] Done processing binary file `{}`", filepath.display());
     Ok(decompiled_count)
+}
+
+/// Create a fresh output directory at `dirpath`, removing it first if it exists and is empty
+fn prepare_output_dir(dirpath: &Path) -> anyhow::Result<()> {
+    println!("[*] Preparing output directory `{}`", dirpath.display());
+    if dirpath.exists() {
+        fs::remove_dir(dirpath)
+            .with_context(|| format!("Output directory `{}` already exists", dirpath.display()))?;
+    }
+    fs::create_dir_all(dirpath)
+        .with_context(|| format!("Failed to create directory `{}`", dirpath.display()))?;
+    println!("[+] Output directory is ready");
+    Ok(())
+}
+
+/// Build the output file path for `func` inside `dirpath`
+fn output_path_for_function(func: &Function, dirpath: &Path) -> PathBuf {
+    let func_name = func.name().unwrap_or_else(|| "[no name]".into());
+    let stem = format!(
+        "{}@{:X}",
+        func_name
+            .replace(RESERVED_CHARS, "_")
+            .chars()
+            .take(MAX_FILENAME_LEN)
+            .collect::<String>(),
+        func.start_address()
+    );
+    dirpath.join(stem).with_extension("c")
 }
 
 /// Decompile [`Function`] `func` in [`IDB`] `idb` and save its pseudocode to the output file at `filepath`.
