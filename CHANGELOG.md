@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add integration tests for existing output directory and pseudocode sanity check.
+
 ### Changed
 
 - Extract `output_path_for_function` and `prepare_output_dir` helper functions.

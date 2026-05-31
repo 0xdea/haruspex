@@ -8,6 +8,10 @@ use idalib::idb::IDB;
 
 /// Custom harness for integration tests
 #[expect(clippy::expect_used, reason = "tests can use `expect`")]
+#[expect(
+    clippy::too_many_lines,
+    reason = "test code is more readable when not split into multiple functions"
+)]
 fn main() -> anyhow::Result<()> {
     // Target binary path
     const FILENAME: &str = "./tests/data/ls";
@@ -43,6 +47,26 @@ fn main() -> anyhow::Result<()> {
     );
     println!("Ok.");
 
+    // Check `run` fails when the output directory is not empty
+    print!("[*] Checking `run` fails when output directory is not empty... ");
+    let result = haruspex::run(filepath);
+    assert!(
+        result.is_err(),
+        "run succeeded unexpectedly with a non-empty output directory"
+    );
+    println!("Ok.");
+
+    // Check `run` succeeds when the output directory exists but is empty
+    print!("[*] Checking `run` succeeds when output directory is empty... ");
+    fs::remove_dir_all(&dirpath)?;
+    fs::create_dir_all(&dirpath)?;
+    assert_eq!(
+        haruspex::run(filepath)?,
+        N_DECOMP,
+        "wrong number of decompiled functions on second run"
+    );
+    println!("Ok.");
+
     // Check `decompile_to_file` works as expected
     print!("[*] Checking `decompile_to_file` works as expected... ");
     let idb = IDB::open(filepath)?;
@@ -55,6 +79,16 @@ fn main() -> anyhow::Result<()> {
     assert!(
         output_file.metadata()?.len() > 0,
         "output file `{}` is empty",
+        output_file.display()
+    );
+    println!("Ok.");
+
+    // Check pseudocode content is valid C
+    print!("[*] Checking pseudocode content is valid C... ");
+    let content = fs::read_to_string(&output_file)?;
+    assert!(
+        content.contains("main"),
+        "output file `{}` does not contain expected pseudocode",
         output_file.display()
     );
     println!("Ok.");
