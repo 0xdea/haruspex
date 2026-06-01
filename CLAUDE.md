@@ -9,9 +9,11 @@ Haruspex is a headless IDA Pro plugin written in Rust that extracts Hex-Rays pse
 ## Build requirements
 
 **IDADIR** must be set to the IDA Pro installation directory at both build time and runtime:
+
 ```
 export IDADIR=/path/to/ida
 ```
+
 The build script (`build.rs`) checks common default locations as a fallback, but setting it explicitly is safer. IDA Pro 9.3+ with a valid license is required. LLVM/Clang must be installed (used by bindgen when building `idalib`).
 
 ## Commands
@@ -59,6 +61,6 @@ The workspace enforces very strict Clippy lints (all/pedantic/nursery/cargo + re
 
 ## Tests
 
-**Unit tests** live in `src/lib.rs` under `#[cfg(test)] mod tests`. They do not require IDA Pro and run with `cargo test --lib`. They cover `prepare_output_dir` (create, empty-dir recreate, non-empty failure) and `sanitize_filename` (plain names, reserved-char replacement, truncation).
+**Unit tests** live in `src/lib.rs` under `#[cfg(test)] mod tests`. They do not require IDA Pro and run with `cargo test --lib`. Only executed in CI on Linux; macOS and Windows cannot run them because `dyld`/the Windows loader requires all linked dylibs (including `libida`) to be present at process startup, whereas Linux's lazy binding allows the test binary to start without resolving IDA symbols. They cover `prepare_output_dir` (create, empty-dir recreate, non-empty failure) and `sanitize_filename` (plain names, reserved-char replacement, truncation).
 
 **Integration tests** live in `tests/main.rs` with `harness = false` (custom runner). They require IDA Pro to be available and `IDADIR` set. The test binary is `tests/data/ls` (x86-64 ELF). Tests validate function count, output file count, output directory behavior (non-empty dir error, empty-dir success), the `decompile_to_file` API, pseudocode content, and error-path behavior (read-only files, path length limits, invalid filenames).
