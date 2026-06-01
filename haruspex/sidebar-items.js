@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["HaruspexError"],"fn":["decompile_to_file","run"]};
+window.SIDEBAR_ITEMS = {"enum":["HaruspexError"],"fn":["decompile_to_file","output_path_for_function","prepare_output_dir","run","sanitize_filename"]};
