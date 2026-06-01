@@ -189,10 +189,11 @@ pub fn output_path_for_function(func: &Function, dirpath: &Path) -> PathBuf {
         .with_extension("c")
 }
 
-/// Replace reserved characters in `name` with underscores and truncate to [`MAX_FILENAME_LEN`]
+/// Replace reserved characters in `filename` with underscores and truncate to `MAX_FILENAME_LEN`
 #[must_use]
-pub fn sanitize_filename(name: &str) -> String {
-    name.replace(RESERVED_CHARS, "_")
+pub fn sanitize_filename(filename: &str) -> String {
+    filename
+        .replace(RESERVED_CHARS, "_")
         .chars()
         .take(MAX_FILENAME_LEN)
         .collect()
