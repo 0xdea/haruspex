@@ -21,7 +21,10 @@ The build script (`build.rs`) checks common default locations as a fallback, but
 cargo build            # debug (debug info stripped for faster startup)
 cargo build --release  # optimized, LTO, stripped
 
-# Test (custom harness, tests against ./tests/data/ls)
+# Test (unit tests only, no IDA Pro required)
+cargo test --lib
+
+# Test (integration tests, custom harness, tests against ./tests/data/ls)
 cargo test
 cargo test --test tests -- --nocapture   # verbose
 
@@ -36,13 +39,17 @@ cargo doc
 
 ## Architecture
 
-Single-crate, two public surfaces:
+Single-crate, five public surfaces in `src/lib.rs`:
 
 **`haruspex::run(filepath)`** — opens a binary with IDA, auto-analyzes it, iterates all functions, skips thunks, and calls `decompile_to_file` for each one. This is what `main.rs` calls.
 
 **`haruspex::decompile_to_file(idb, func, filepath)`** — public API for external crates that already hold an open `idb` handle; decompiles one function and writes it to the given path.
 
-Filename construction and output directory setup are handled by private helpers `output_path_for_function` and `prepare_output_dir` in `src/lib.rs`. Output filenames follow the pattern `functionname@HEXADDR.c` with reserved-character sanitization (differs between Unix and Windows) and a 64-char truncation.
+**`haruspex::prepare_output_dir(dirpath)`** — creates a fresh output directory, removing it first if it exists and is empty; returns an error if it exists and is non-empty.
+
+**`haruspex::output_path_for_function(func, dirpath)`** — builds the output file path for a function inside the output directory. Output filenames follow the pattern `functionname@HEXADDR.c`, delegating sanitization to `sanitize_filename`.
+
+**`haruspex::sanitize_filename(name)`** — replaces reserved characters (differs between Unix and Windows) with underscores and truncates to 64 chars.
 
 The binary (`src/main.rs`) is a thin wrapper: it forces IDA batch mode via env var before calling `haruspex::run`.
 
@@ -52,4 +59,6 @@ The workspace enforces very strict Clippy lints (all/pedantic/nursery/cargo + re
 
 ## Tests
 
-Tests live in `tests/main.rs` with `harness = false` (custom runner). They require IDA Pro to be available and `IDADIR` set. The test binary is `tests/data/ls` (x86-64 ELF). Tests validate function count, output file count, output directory behavior (non-empty dir error, empty-dir success), the `decompile_to_file` API, pseudocode content, and error-path behavior (read-only files, path length limits, invalid filenames).
+**Unit tests** live in `src/lib.rs` under `#[cfg(test)] mod tests`. They do not require IDA Pro and run with `cargo test --lib`. They cover `prepare_output_dir` (create, empty-dir recreate, non-empty failure) and `sanitize_filename` (plain names, reserved-char replacement, truncation).
+
+**Integration tests** live in `tests/main.rs` with `harness = false` (custom runner). They require IDA Pro to be available and `IDADIR` set. The test binary is `tests/data/ls` (x86-64 ELF). Tests validate function count, output file count, output directory behavior (non-empty dir error, empty-dir success), the `decompile_to_file` API, pseudocode content, and error-path behavior (read-only files, path length limits, invalid filenames).

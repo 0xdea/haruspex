@@ -40,6 +40,8 @@ jobs:
         run: cargo fmt --all --check
       - name: clippy
         run: cargo clippy --all-targets -- -D warnings
+      - name: test
+        run: cargo test --lib
       - name: build
         run: cargo build
       - name: semver-checks

@@ -114,34 +114,6 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
     Ok(decompiled_count)
 }
 
-/// Create a fresh output directory at `dirpath`, removing it first if it exists and is empty
-fn prepare_output_dir(dirpath: &Path) -> anyhow::Result<()> {
-    println!("[*] Preparing output directory `{}`", dirpath.display());
-    if dirpath.exists() {
-        fs::remove_dir(dirpath)
-            .with_context(|| format!("Output directory `{}` already exists", dirpath.display()))?;
-    }
-    fs::create_dir_all(dirpath)
-        .with_context(|| format!("Failed to create directory `{}`", dirpath.display()))?;
-    println!("[+] Output directory is ready");
-    Ok(())
-}
-
-/// Build the output file path for `func` inside `dirpath`
-fn output_path_for_function(func: &Function, dirpath: &Path) -> PathBuf {
-    let func_name = func.name().unwrap_or_else(|| "[no name]".into());
-    let stem = format!(
-        "{}@{:X}",
-        func_name
-            .replace(RESERVED_CHARS, "_")
-            .chars()
-            .take(MAX_FILENAME_LEN)
-            .collect::<String>(),
-        func.start_address()
-    );
-    dirpath.join(stem).with_extension("c")
-}
-
 /// Decompile [`Function`] `func` in [`IDB`] `idb` and save its pseudocode to the output file at `filepath`.
 ///
 /// ## Errors
@@ -185,4 +157,172 @@ pub fn decompile_to_file(
     writer.flush()?;
 
     Ok(())
+}
+
+/// Create a fresh output directory at `dirpath`, removing it first if it exists and is empty
+///
+/// ## Errors
+///
+/// Returns an error if the directory already exists and is not empty, or if any filesystem operation fails.
+pub fn prepare_output_dir(dirpath: &Path) -> anyhow::Result<()> {
+    println!("[*] Preparing output directory `{}`", dirpath.display());
+    if dirpath.exists() {
+        fs::remove_dir(dirpath)
+            .with_context(|| format!("Output directory `{}` already exists", dirpath.display()))?;
+    }
+    fs::create_dir_all(dirpath)
+        .with_context(|| format!("Failed to create directory `{}`", dirpath.display()))?;
+    println!("[+] Output directory is ready");
+    Ok(())
+}
+
+/// Build the output file path for `func` inside `dirpath`
+#[must_use]
+pub fn output_path_for_function(func: &Function, dirpath: &Path) -> PathBuf {
+    let func_name = func.name().unwrap_or_else(|| "[no name]".into());
+    dirpath
+        .join(format!(
+            "{}@{:X}",
+            sanitize_filename(&func_name),
+            func.start_address()
+        ))
+        .with_extension("c")
+}
+
+/// Replace reserved characters in `name` with underscores and truncate to [`MAX_FILENAME_LEN`]
+#[must_use]
+pub fn sanitize_filename(name: &str) -> String {
+    name.replace(RESERVED_CHARS, "_")
+        .chars()
+        .take(MAX_FILENAME_LEN)
+        .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use std::{env, fs};
+
+    use super::*;
+
+    /// Return a unique temporary path scoped to the given label and current process
+    fn test_dir(label: &str) -> std::path::PathBuf {
+        env::temp_dir().join(format!("haruspex_{label}_{}", std::process::id()))
+    }
+
+    #[test]
+    fn prepare_output_dir_creates_missing_dir() -> anyhow::Result<()> {
+        let dir = test_dir("create");
+        if dir.exists() {
+            fs::remove_dir_all(&dir)?;
+        }
+
+        prepare_output_dir(&dir)?;
+        assert!(dir.is_dir(), "output directory should have been created");
+
+        fs::remove_dir(&dir)?;
+        Ok(())
+    }
+
+    #[test]
+    fn prepare_output_dir_removes_and_recreates_empty_dir() -> anyhow::Result<()> {
+        let dir = test_dir("empty");
+        if dir.exists() {
+            fs::remove_dir_all(&dir)?;
+        }
+        fs::create_dir_all(&dir)?;
+
+        prepare_output_dir(&dir)?;
+        assert!(
+            dir.is_dir(),
+            "output directory should still exist after prepare"
+        );
+
+        fs::remove_dir(&dir)?;
+        Ok(())
+    }
+
+    #[test]
+    fn prepare_output_dir_fails_on_nonempty_dir() -> anyhow::Result<()> {
+        let dir = test_dir("nonempty");
+        if dir.exists() {
+            fs::remove_dir_all(&dir)?;
+        }
+        fs::create_dir_all(&dir)?;
+        fs::write(dir.join("sentinel.txt"), b"block")?;
+
+        let result = prepare_output_dir(&dir);
+        assert!(
+            result.is_err(),
+            "prepare_output_dir should fail when directory is not empty"
+        );
+
+        fs::remove_dir_all(&dir)?;
+        Ok(())
+    }
+
+    #[test]
+    fn sanitize_filename_preserves_plain_names() {
+        assert_eq!(
+            sanitize_filename("hello_world"),
+            "hello_world",
+            "plain names should not be modified"
+        );
+    }
+
+    #[test]
+    fn sanitize_filename_replaces_dots() {
+        assert_eq!(
+            sanitize_filename("foo.bar"),
+            "foo_bar",
+            "dots should be replaced with underscores"
+        );
+    }
+
+    #[test]
+    fn sanitize_filename_replaces_slashes() {
+        assert_eq!(
+            sanitize_filename("foo/bar"),
+            "foo_bar",
+            "slashes should be replaced with underscores"
+        );
+    }
+
+    #[test]
+    fn sanitize_filename_empty_string() {
+        assert_eq!(
+            sanitize_filename(""),
+            "",
+            "empty input should produce empty output"
+        );
+    }
+
+    #[test]
+    fn sanitize_filename_truncates_long_names() {
+        let long = "a".repeat(MAX_FILENAME_LEN + 10);
+        assert_eq!(
+            sanitize_filename(&long).len(),
+            MAX_FILENAME_LEN,
+            "names exceeding `MAX_FILENAME_LEN` should be truncated"
+        );
+    }
+
+    #[test]
+    fn sanitize_filename_keeps_exact_max_len() {
+        let exact = "a".repeat(MAX_FILENAME_LEN);
+        assert_eq!(
+            sanitize_filename(&exact).len(),
+            MAX_FILENAME_LEN,
+            "names of exactly `MAX_FILENAME_LEN` chars should not be truncated"
+        );
+    }
+
+    #[test]
+    fn sanitize_filename_short_names_unchanged_length() {
+        let short = "a".repeat(MAX_FILENAME_LEN - 1);
+        assert_eq!(
+            sanitize_filename(&short).len(),
+            MAX_FILENAME_LEN - 1,
+            "names shorter than `MAX_FILENAME_LEN` should retain their length"
+        );
+    }
 }
