@@ -6,39 +6,39 @@ use std::path::Path;
 use haruspex::HaruspexError;
 use idalib::idb::IDB;
 
-/// Custom harness for integration tests
+/// Custom harness for integration tests.
 #[expect(clippy::expect_used, reason = "tests can use `expect`")]
 #[expect(
     clippy::too_many_lines,
     reason = "test code is more readable when not split into multiple functions"
 )]
 fn main() -> anyhow::Result<()> {
-    // Target binary path
+    // Target binary path.
     const FILENAME: &str = "./tests/data/ls";
-    // Expected number of decompiled functions
+    // Expected number of decompiled functions.
     const N_DECOMP: usize = 79;
 
-    // Remove the IDB file if it exists
+    // Remove the IDB file if it exists.
     let idb_path = Path::new(FILENAME).with_extension("i64");
     if idb_path.is_file() {
         fs::remove_file(idb_path)?;
     }
 
-    // Remove the output directory if it exists
+    // Remove the output directory if it exists.
     let filepath = Path::new(FILENAME);
     let dirpath = filepath.with_extension("dec");
     if dirpath.exists() {
         fs::remove_dir_all(&dirpath)?;
     }
 
-    // Run haruspex and check the number of decompiled functions
+    // Run haruspex and check the number of decompiled functions.
     let n_decomp = haruspex::run(Path::new(FILENAME))?;
     println!();
     print!("[*] Checking number of decompiled functions... ");
     assert_eq!(n_decomp, N_DECOMP, "wrong number of decompiled functions");
     println!("Ok.");
 
-    // Check the number of created files in the output directory
+    // Check the number of created files in the output directory.
     print!("[*] Checking number of files in output directory... ");
     assert_eq!(
         dirpath.read_dir()?.count(),
@@ -47,7 +47,7 @@ fn main() -> anyhow::Result<()> {
     );
     println!("Ok.");
 
-    // Check `run` fails when the output directory is not empty
+    // Check `run` fails when the output directory is not empty.
     println!();
     let result = haruspex::run(filepath);
     print!("[*] Checking `run` fails when output directory is not empty... ");
@@ -57,7 +57,7 @@ fn main() -> anyhow::Result<()> {
     );
     println!("Ok.");
 
-    // Check `run` succeeds when the output directory exists but is empty
+    // Check `run` succeeds when the output directory exists but is empty.
     fs::remove_dir_all(&dirpath)?;
     fs::create_dir_all(&dirpath)?;
     println!();
@@ -69,7 +69,7 @@ fn main() -> anyhow::Result<()> {
     );
     println!("Ok.");
 
-    // Check `decompile_to_file` works as expected
+    // Check `decompile_to_file` works as expected.
     print!("[*] Checking `decompile_to_file` works as expected... ");
     let idb = IDB::open(filepath)?;
     let (_, func) = idb
@@ -85,7 +85,7 @@ fn main() -> anyhow::Result<()> {
     );
     println!("Ok.");
 
-    // Check pseudocode content is valid C
+    // Check pseudocode content is valid C.
     print!("[*] Checking pseudocode content is valid C... ");
     let content = fs::read_to_string(&output_file)?;
     assert!(
@@ -95,7 +95,7 @@ fn main() -> anyhow::Result<()> {
     );
     println!("Ok.");
 
-    // Spot-check a known output file: verify the naming scheme and that decompilation produced output
+    // Spot-check a known output file: verify the naming scheme and that decompilation produced output.
     print!("[*] Checking known output file exists and is non-empty... ");
     let known_file = dirpath.join("sub_4AD0@4AD0.c");
     assert!(
@@ -110,7 +110,7 @@ fn main() -> anyhow::Result<()> {
     );
     println!("Ok.");
 
-    // Check `decompile_to_file` handles filesystem errors
+    // Check `decompile_to_file` handles filesystem errors.
     print!("[*] Checking `decompile_to_file` handles filesystem errors... ");
     let mut perms = output_file.metadata()?.permissions();
     perms.set_readonly(true);
@@ -128,7 +128,7 @@ fn main() -> anyhow::Result<()> {
     );
     println!("Ok.");
 
-    // Check `decompile_to_file` handles file length limitations
+    // Check `decompile_to_file` handles file length limitations.
     print!("[*] Checking `decompile_to_file` handles file length limitations... ");
     let output_file = dirpath.join("A".repeat(2048));
     let result = haruspex::decompile_to_file(&idb, &func, &output_file);
@@ -139,7 +139,7 @@ fn main() -> anyhow::Result<()> {
     );
     println!("Ok.");
 
-    // Check `decompile_to_file` handles file charset limitations
+    // Check `decompile_to_file` handles file charset limitations.
     print!("[*] Checking `decompile_to_file` handles file charset limitations... ");
     #[cfg(unix)]
     let output_file = dirpath.join("invalid/filename");
@@ -153,7 +153,7 @@ fn main() -> anyhow::Result<()> {
     );
     println!("Ok.");
 
-    // Remove the output directory at the end
+    // Remove the output directory at the end.
     if dirpath.exists() {
         fs::remove_dir_all(&dirpath)?;
     }
