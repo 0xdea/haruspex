@@ -39,11 +39,18 @@ pub enum HaruspexError {
 /// ## Errors
 ///
 /// Returns how many functions were decompiled, or an error in case something goes wrong.
-pub fn run(filepath: &Path) -> anyhow::Result<usize> {
+pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
     // Open the target binary and run auto-analysis.
-    println!("[*] Analyzing binary file `{}`", filepath.display());
-    let idb = IDB::open(filepath)
-        .with_context(|| format!("Failed to analyze binary file `{}`", filepath.display()))?;
+    println!(
+        "[*] Analyzing binary file `{}`",
+        filepath.as_ref().display()
+    );
+    let idb = IDB::open(&filepath).with_context(|| {
+        format!(
+            "Failed to analyze binary file `{}`",
+            filepath.as_ref().display()
+        )
+    })?;
     println!("[+] Successfully analyzed binary file");
     println!();
 
@@ -57,7 +64,7 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
     anyhow::ensure!(idb.decompiler_available(), "Decompiler is not available");
 
     // Create a new output directory, returning an error if it already exists, and it's not empty.
-    let dirpath = filepath.with_extension("dec");
+    let dirpath = filepath.as_ref().with_extension("dec");
     prepare_output_dir(&dirpath)?;
 
     let mut decompiled_count = 0;
@@ -110,7 +117,10 @@ pub fn run(filepath: &Path) -> anyhow::Result<usize> {
         "[+] Decompiled {decompiled_count} functions into `{}`",
         dirpath.display()
     );
-    println!("[+] Done processing binary file `{}`", filepath.display());
+    println!(
+        "[+] Done processing binary file `{}`",
+        filepath.as_ref().display()
+    );
     Ok(decompiled_count)
 }
 
@@ -164,23 +174,35 @@ pub fn decompile_to_file(
 /// ## Errors
 ///
 /// Returns an error if the directory already exists and is not empty, or if any filesystem operation fails.
-pub fn prepare_output_dir(dirpath: &Path) -> anyhow::Result<()> {
-    println!("[*] Preparing output directory `{}`", dirpath.display());
-    if dirpath.exists() {
-        fs::remove_dir(dirpath)
-            .with_context(|| format!("Output directory `{}` already exists", dirpath.display()))?;
+pub fn prepare_output_dir(dirpath: impl AsRef<Path>) -> anyhow::Result<()> {
+    println!(
+        "[*] Preparing output directory `{}`",
+        dirpath.as_ref().display()
+    );
+    if dirpath.as_ref().exists() {
+        fs::remove_dir(&dirpath).with_context(|| {
+            format!(
+                "Output directory `{}` already exists",
+                dirpath.as_ref().display()
+            )
+        })?;
     }
-    fs::create_dir_all(dirpath)
-        .with_context(|| format!("Failed to create directory `{}`", dirpath.display()))?;
+    fs::create_dir_all(&dirpath).with_context(|| {
+        format!(
+            "Failed to create directory `{}`",
+            dirpath.as_ref().display()
+        )
+    })?;
     println!("[+] Output directory is ready");
     Ok(())
 }
 
 /// Builds the output file path for `func` inside `dirpath`.
 #[must_use]
-pub fn output_path_for_function(func: &Function, dirpath: &Path) -> PathBuf {
+pub fn output_path_for_function(func: &Function, dirpath: impl AsRef<Path>) -> PathBuf {
     let func_name = func.name().unwrap_or_else(|| "[no name]".into());
     dirpath
+        .as_ref()
         .join(format!(
             "{}@{:X}",
             sanitize_filename(&func_name),
@@ -201,12 +223,13 @@ pub fn sanitize_filename(filename: &str) -> String {
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
     use std::{env, fs};
 
     use super::*;
 
     /// Returns a unique temporary path scoped to the given label and current process.
-    fn test_dir(label: &str) -> std::path::PathBuf {
+    fn test_dir(label: &str) -> PathBuf {
         env::temp_dir().join(format!("haruspex_{label}_{}", std::process::id()))
     }
 
