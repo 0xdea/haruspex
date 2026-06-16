@@ -36,9 +36,11 @@ pub enum HaruspexError {
 
 /// Extracts pseudocode of functions in the binary file at `filepath` and saves it in `filepath.dec`.
 ///
-/// ## Errors
+/// Returns how many functions were decompiled.
 ///
-/// Returns how many functions were decompiled, or an error in case something goes wrong.
+/// # Errors
+///
+/// Returns [`anyhow::Error`] in case something goes wrong with analyzing the binary file or decompiling functions.
 pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
     // Open the target binary and run auto-analysis.
     println!(
@@ -126,11 +128,11 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
 
 /// Decompiles [`Function`] `func` in [`IDB`] `idb` and saves its pseudocode to the output file at `filepath`.
 ///
-/// ## Errors
+/// # Errors
 ///
-/// Returns the appropriate [`HaruspexError`] in case something goes wrong.
+/// Returns the appropriate [`HaruspexError`] in case something goes wrong with decompiling or file I/O.
 ///
-/// ## Examples
+/// # Examples
 ///
 /// Basic usage:
 /// ```
@@ -171,9 +173,9 @@ pub fn decompile_to_file(
 
 /// Creates a fresh output directory at `dirpath`, removing it first if it exists and is empty.
 ///
-/// ## Errors
+/// # Errors
 ///
-/// Returns an error if the directory already exists and is not empty, or if any filesystem operation fails.
+/// Returns [`anyhow::Error`] if the directory already exists and is not empty, or if any filesystem operation fails.
 pub fn prepare_output_dir(dirpath: impl AsRef<Path>) -> anyhow::Result<()> {
     println!(
         "[*] Preparing output directory `{}`",
