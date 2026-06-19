@@ -1,4 +1,4 @@
-//! tests/main.rs
+//! tests/main.rs.
 
 use std::fs;
 use std::path::Path;
@@ -8,6 +8,11 @@ use idalib::idb::IDB;
 
 /// Custom harness for integration tests.
 #[expect(clippy::expect_used, reason = "tests can use `expect`")]
+#[expect(clippy::panic_in_result_fn, reason = "panics are allowed in test code")]
+#[expect(
+    clippy::shadow_unrelated,
+    reason = "shadowing can be convenient in test code"
+)]
 #[expect(
     clippy::too_many_lines,
     reason = "test code is more readable when not split into multiple functions"
@@ -74,7 +79,7 @@ fn main() -> anyhow::Result<()> {
     let idb = IDB::open(filepath)?;
     let (_, func) = idb
         .functions()
-        .find(|(_, f)| f.name().expect("invalid function name") == "main")
+        .find(|f| f.1.name().expect("invalid function name") == "main")
         .expect("failed to find function `main`");
     let output_file = dirpath.join("main.c");
     haruspex::decompile_to_file(&idb, &func, &output_file)?;

@@ -1,9 +1,11 @@
-#![doc = include_str!("../README.md")]
+#![doc = env!("CARGO_PKG_DESCRIPTION")]
+#![doc = ""]
+#![cfg_attr(doc, doc = include_str!("../README.md"))]
 #![doc(html_logo_url = "https://raw.githubusercontent.com/0xdea/haruspex/master/.img/logo.png")]
 
 use std::fs;
 use std::fs::File;
-use std::io::{BufWriter, Write as _};
+use std::io::{self, BufWriter, Write as _};
 use std::path::{Path, PathBuf};
 
 use anyhow::Context as _;
@@ -31,7 +33,7 @@ pub enum HaruspexError {
     DecompileFailed(#[from] IDAError),
     /// Failure in writing to the output file.
     #[error(transparent)]
-    FileWriteFailed(#[from] std::io::Error),
+    FileWriteFailed(#[from] io::Error),
 }
 
 /// Extracts pseudocode of functions in the binary file at `filepath` and saves it in `filepath.dec`.
@@ -85,6 +87,10 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
         let func_name = f.name().unwrap_or_else(|| "[no name]".into());
         let output_path = output_path_for_function(&f, &dirpath);
 
+        #[expect(
+            clippy::arithmetic_side_effects,
+            reason = "usize can hardly overflow here"
+        )]
         match decompile_to_file(&idb, &f, &output_path) {
             // Print the output path in case of successful function decompilation.
             Ok(()) => {
@@ -224,15 +230,16 @@ pub fn sanitize_filename(filename: &str) -> String {
 }
 
 #[cfg(test)]
+#[expect(clippy::panic_in_result_fn, reason = "panics are allowed in test code")]
 mod tests {
     use std::path::PathBuf;
-    use std::{env, fs};
+    use std::{env, fs, process};
 
     use super::*;
 
     /// Returns a unique temporary path scoped to the given label and current process.
     fn test_dir(label: &str) -> PathBuf {
-        env::temp_dir().join(format!("haruspex_{label}_{}", std::process::id()))
+        env::temp_dir().join(format!("haruspex_{label}_{}", process::id()))
     }
 
     #[test]
