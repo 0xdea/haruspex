@@ -53,11 +53,19 @@ Single-crate, five public surfaces in `src/lib.rs`:
 
 **`haruspex::sanitize_filename(name)`** — replaces reserved characters (differs between Unix and Windows) with underscores and truncates to 64 chars.
 
+Every public function that accepts a path takes `impl AsRef<Path>` rather than a concrete `&Path`/`PathBuf`.
+
 The binary (`src/main.rs`) is a thin wrapper: it forces IDA batch mode via env var before calling `haruspex::run`.
 
 ## Lint posture
 
-The workspace enforces very strict Clippy lints (all/pedantic/nursery/cargo + restriction lints). In non-test code: no `unwrap`, `expect`, `panic`, `todo`, `unimplemented`, `unreachable`, `dbg_macro`. All items must be documented. Unsafe blocks must have `// SAFETY:` comments. Taplo enforces TOML formatting (120-char line width, 4-space indent).
+The workspace enforces very strict Clippy lints (all/pedantic/nursery/cargo/restriction lints, beside some explicitly allowed lints). All items must be documented. Unsafe blocks must have `// SAFETY:` comments. Taplo enforces TOML formatting (120-char line width, 4-space indent).
+
+The crate-level documentation in `src/lib.rs` is assembled in a specific order to satisfy two restriction lints simultaneously, and should not be "simplified" back to a plain `#![doc = include_str!("../README.md")]`:
+
+- `#![doc = env!("CARGO_PKG_DESCRIPTION")]` is always present (pulls the `description` from `Cargo.toml` with no duplication) so the crate is documented in every build configuration — this satisfies `missing_docs`, which runs without `--cfg doc`.
+- `#![cfg_attr(doc, doc = include_str!("../README.md"))]` pulls in the README only under `cfg(doc)`, satisfying `clippy::doc_include_without_cfg`.
+- The `#![doc = ""]` between them forces a Markdown paragraph break so the description and the README's leading heading don't merge.
 
 ## Tests
 
