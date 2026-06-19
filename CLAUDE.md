@@ -41,7 +41,9 @@ cargo doc
 
 ## Architecture
 
-Single-crate, five public surfaces in `src/lib.rs`:
+Single-crate, six public surfaces in `src/lib.rs`:
+
+**`haruspex::HaruspexError`** — public error enum returned by `decompile_to_file`; variants are `DecompileFailed` (wraps `IDAError`) and `FileWriteFailed` (wraps `io::Error`).
 
 **`haruspex::run(filepath)`** — opens a binary with IDA, auto-analyzes it, iterates all functions, skips thunks, and calls `decompile_to_file` for each one. This is what `main.rs` calls.
 
@@ -55,7 +57,7 @@ Single-crate, five public surfaces in `src/lib.rs`:
 
 Every public function that accepts a path takes `impl AsRef<Path>` rather than a concrete `&Path`/`PathBuf`.
 
-The binary (`src/main.rs`) is a thin wrapper: it forces IDA batch mode via env var before calling `haruspex::run`.
+The binary (`src/main.rs`) is a thin wrapper: it calls `idalib::force_batch_mode()` to suppress IDA's UI before calling `haruspex::run`.
 
 ## Lint posture
 
@@ -71,4 +73,4 @@ The crate-level documentation in `src/lib.rs` is assembled in a specific order t
 
 **Unit tests** live in `src/lib.rs` under `#[cfg(test)] mod tests`. They do not require IDA Pro and run with `cargo test --lib`. Only executed in CI on Linux; macOS and Windows cannot run them because `dyld`/the Windows loader requires all linked dylibs (including `libida`) to be present at process startup, whereas Linux's lazy binding allows the test binary to start without resolving IDA symbols. They cover `prepare_output_dir` (create, empty-dir recreate, non-empty failure) and `sanitize_filename` (plain names, reserved-char replacement, truncation).
 
-**Integration tests** live in `tests/main.rs` with `harness = false` (custom runner). They require IDA Pro to be available and `IDADIR` set. The test binary is `tests/data/ls` (x86-64 ELF). Tests validate function count, output file count, output directory behavior (non-empty dir error, empty-dir success), the `decompile_to_file` API, pseudocode content, and error-path behavior (read-only files, path length limits, invalid filenames).
+**Integration tests** live in `tests/main.rs` with `harness = false` (custom runner). They require IDA Pro to be available and `IDADIR` set. The test binary is `tests/data/ls` (x86-64 ELF). Tests validate function count, output file count, output directory behavior (non-empty dir error, empty-dir success), the `decompile_to_file` API, pseudocode content, a spot-check of a known output file (`sub_4AD0@4AD0.c`) to verify the naming scheme, and error-path behavior (read-only files, path length limits, invalid filenames).

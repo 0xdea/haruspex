@@ -89,7 +89,7 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
 
         #[expect(
             clippy::arithmetic_side_effects,
-            reason = "usize can hardly overflow here"
+            reason = "`usize` can hardly overflow here"
         )]
         match decompile_to_file(&idb, &f, &output_path) {
             // Print the output path in case of successful function decompilation.
