@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Haruspex is a headless IDA Pro plugin written in Rust that extracts Hex-Rays pseudocode from binaries. It runs IDA Pro in batch mode via `idalib` (Binarly's Rust bindings to the IDA SDK), decompiles every non-thunk function, and writes each function's pseudocode to a `.c` file under a `.dec/` directory next to the input binary.
+Haruspex is a headless IDA Pro plugin written in Rust that extracts Hex-Rays pseudocode from binaries. It runs IDA Pro in batch mode via `idalib` ([idalib-rs](https://github.com/idalib-rs/idalib)'s Rust bindings to the IDA SDK), decompiles every non-thunk function, and writes each function's pseudocode to a `.c` file under a `.dec/` directory next to the input binary.
 
 ## Build requirements
 
@@ -34,6 +34,7 @@ cargo test --test tests -- --nocapture   # verbose
 cargo fmt --all --check
 cargo clippy --all-targets -- -D warnings
 cargo semver-checks
+cargo audit           # checks dependencies against the RustSec advisory database
 
 # Docs
 cargo doc
