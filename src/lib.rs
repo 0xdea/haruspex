@@ -38,11 +38,10 @@ pub enum HaruspexError {
 
 /// Argument name hints mode for function calls in pseudocode.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(u8)]
 #[non_exhaustive]
 pub enum ArgHintsMode {
     /// Argument name hints are disabled.
-    Disabled = 0,
+    Disabled,
     /// Argument names are displayed as comments (/*param=*/).
     Comment,
     /// Argument names are displayed as inlay hints (param:).
@@ -50,13 +49,14 @@ pub enum ArgHintsMode {
 }
 
 impl ArgHintsMode {
-    /// Returns the directive to use for setting the argument hints mode.
-    #[expect(
-        clippy::as_conversions,
-        reason = "argument hints mode is stored as a `u8`"
-    )]
-    fn directive(self) -> String {
-        format!("ARG_HINTS_MODE = {}", self as u8)
+    /// Returns the Hex-Rays config directive that applies this hints mode.
+    #[must_use]
+    pub const fn directive(self) -> &'static str {
+        match self {
+            Self::Disabled => "ARG_HINTS_MODE = 0",
+            Self::Comment => "ARG_HINTS_MODE = 1",
+            Self::Inlay => "ARG_HINTS_MODE = 2",
+        }
     }
 }
 
@@ -91,6 +91,10 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
     // Ensure Hex-Rays decompiler is available.
     anyhow::ensure!(idb.decompiler_available(), "Decompiler is not available");
 
+    // Configure the argument hints mode used for all decompiled functions.
+    idb.change_hexrays_config(ArgHintsMode::Disabled.directive())
+        .context("Failed to set decompiler's argument hints mode")?;
+
     // Create a new output directory, returning an error if it already exists, and it's not empty.
     let dirpath = filepath.as_ref().with_extension("dec");
     prepare_output_dir(&dirpath)?;
@@ -115,7 +119,7 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
             clippy::arithmetic_side_effects,
             reason = "`usize` can hardly overflow here"
         )]
-        match decompile_to_file(&idb, &f, &output_path, ArgHintsMode::Disabled) {
+        match decompile_to_file(&idb, &f, &output_path) {
             // Print the output path in case of successful function decompilation.
             Ok(()) => {
                 println!("{func_name} -> `{}`", output_path.display());
@@ -176,7 +180,7 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
 ///     .find(|(_, f)| f.name().unwrap() == "main")
 ///     .unwrap();
 ///
-/// haruspex::decompile_to_file(&idb, &func, &output_file, haruspex::ArgHintsMode::Disabled)?;
+/// haruspex::decompile_to_file(&idb, &func, &output_file)?;
 /// # std::fs::remove_file(output_file)?;
 /// # Ok::<(), anyhow::Error>(())
 /// ```
@@ -185,11 +189,7 @@ pub fn decompile_to_file(
     idb: &IDB,
     func: &Function,
     filepath: impl AsRef<Path>,
-    hints_mode: ArgHintsMode,
 ) -> Result<(), HaruspexError> {
-    // Set argument name hints mode.
-    idb.change_hexrays_config(hints_mode.directive())?;
-
     // Decompile function.
     let decomp = idb.decompile(func)?;
     let source = decomp.pseudocode();
