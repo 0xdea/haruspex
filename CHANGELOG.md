@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add functionality to handle the new argument name hints in the Hex-Rays decompiler.
+- Add functionality to disable the new argument name hints in the Hex-Rays decompiler.
+- Add unit test to verify argument name hints mode directives.
+- Add a regression test to check that argument name hints are not present in the extracted pseudocode.
 - Add an integration test to check naming and decompilation functionalities.
 
 ### Changed

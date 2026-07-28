@@ -50,6 +50,9 @@ pub enum ArgHintsMode {
 
 impl ArgHintsMode {
     /// Returns the Hex-Rays config directive that applies this hints mode.
+    ///
+    /// The numeric values match Hex-Rays' own `HAHM_DISABLED`/`HAHM_COMMENT`/`HAHM_INLAY`
+    /// constants defined in `hexrays.hpp`.
     #[must_use]
     pub const fn directive(self) -> &'static str {
         match self {
@@ -383,5 +386,12 @@ mod tests {
             MAX_FILENAME_LEN - 1,
             "names shorter than `MAX_FILENAME_LEN` should retain their length"
         );
+    }
+
+    #[test]
+    fn argument_name_hints_mode_directive_matches_hexrays_config_values() {
+        assert_eq!(ArgHintsMode::Disabled.directive(), "ARG_HINTS_MODE = 0");
+        assert_eq!(ArgHintsMode::Comment.directive(), "ARG_HINTS_MODE = 1");
+        assert_eq!(ArgHintsMode::Inlay.directive(), "ARG_HINTS_MODE = 2");
     }
 }

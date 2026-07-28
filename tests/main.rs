@@ -74,6 +74,34 @@ fn main() -> anyhow::Result<()> {
     );
     println!("Ok.");
 
+    // Check `run` disables the new Hex-Rays argument name hints by default.
+    print!("[*] Checking argument name hints are disabled by default... ");
+    let main_file = dirpath.join("main@2630.c");
+    let main_content = fs::read_to_string(&main_file)?;
+    assert!(
+        main_content.contains(
+            r#"fwrite("A NULL argv[0] was passed through an exec system call.\n", 1u, 0x37u, stderr);"#
+        ),
+        "output file `{}` contains argument name hints, expected them to be disabled",
+        main_file.display()
+    );
+    println!("Ok.");
+
+    // Spot-check a known output file: verify the naming scheme and that decompilation produced output.
+    print!("[*] Checking known output file exists and is non-empty... ");
+    let known_file = dirpath.join("sub_4AD0@4AD0.c");
+    assert!(
+        known_file.is_file(),
+        "expected output file missing: {}",
+        known_file.display()
+    );
+    assert!(
+        known_file.metadata()?.len() > 0,
+        "output file is empty: {}",
+        known_file.display()
+    );
+    println!("Ok.");
+
     // Check `decompile_to_file` works as expected.
     print!("[*] Checking `decompile_to_file` works as expected... ");
     let idb = IDB::open(filepath)?;
@@ -97,21 +125,6 @@ fn main() -> anyhow::Result<()> {
         content.contains("main"),
         "output file `{}` does not contain expected pseudocode",
         output_file.display()
-    );
-    println!("Ok.");
-
-    // Spot-check a known output file: verify the naming scheme and that decompilation produced output.
-    print!("[*] Checking known output file exists and is non-empty... ");
-    let known_file = dirpath.join("sub_4AD0@4AD0.c");
-    assert!(
-        known_file.is_file(),
-        "expected output file missing: {}",
-        known_file.display()
-    );
-    assert!(
-        known_file.metadata()?.len() > 0,
-        "output file is empty: {}",
-        known_file.display()
     );
     println!("Ok.");
 
