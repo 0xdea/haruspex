@@ -36,6 +36,30 @@ pub enum HaruspexError {
     FileWriteFailed(#[from] io::Error),
 }
 
+/// Argument name hints mode for function calls in pseudocode.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(u8)]
+#[non_exhaustive]
+pub enum ArgHintsMode {
+    /// Argument name hints are disabled.
+    Disabled = 0,
+    /// Argument names are displayed as comments (/*param=*/).
+    Comment,
+    /// Argument names are displayed as inlay hints (param:).
+    Inlay,
+}
+
+impl ArgHintsMode {
+    /// Returns the directive to use for setting the argument hints mode.
+    #[expect(
+        clippy::as_conversions,
+        reason = "argument hints mode is stored as a `u8`"
+    )]
+    fn directive(self) -> String {
+        format!("ARG_HINTS_MODE = {}", self as u8)
+    }
+}
+
 /// Extracts pseudocode of functions in the binary file at `filepath` and saves it in `filepath.dec`.
 ///
 /// Returns how many functions were decompiled.
@@ -91,7 +115,7 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
             clippy::arithmetic_side_effects,
             reason = "`usize` can hardly overflow here"
         )]
-        match decompile_to_file(&idb, &f, &output_path) {
+        match decompile_to_file(&idb, &f, &output_path, ArgHintsMode::Disabled) {
             // Print the output path in case of successful function decompilation.
             Ok(()) => {
                 println!("{func_name} -> `{}`", output_path.display());
@@ -152,7 +176,7 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
 ///     .find(|(_, f)| f.name().unwrap() == "main")
 ///     .unwrap();
 ///
-/// haruspex::decompile_to_file(&idb, &func, &output_file)?;
+/// haruspex::decompile_to_file(&idb, &func, &output_file, haruspex::ArgHintsMode::Disabled)?;
 /// # std::fs::remove_file(output_file)?;
 /// # Ok::<(), anyhow::Error>(())
 /// ```
@@ -161,7 +185,11 @@ pub fn decompile_to_file(
     idb: &IDB,
     func: &Function,
     filepath: impl AsRef<Path>,
+    hints_mode: ArgHintsMode,
 ) -> Result<(), HaruspexError> {
+    // Set argument name hints mode.
+    idb.change_hexrays_config(hints_mode.directive())?;
+
     // Decompile function.
     let decomp = idb.decompile(func)?;
     let source = decomp.pseudocode();

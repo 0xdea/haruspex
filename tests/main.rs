@@ -3,7 +3,7 @@
 use std::fs;
 use std::path::Path;
 
-use haruspex::HaruspexError;
+use haruspex::{ArgHintsMode, HaruspexError};
 use idalib::idb::IDB;
 
 /// Custom harness for integration tests.
@@ -82,7 +82,7 @@ fn main() -> anyhow::Result<()> {
         .find(|f| f.1.name().expect("invalid function name") == "main")
         .expect("failed to find function `main`");
     let output_file = dirpath.join("main.c");
-    haruspex::decompile_to_file(&idb, &func, &output_file)?;
+    haruspex::decompile_to_file(&idb, &func, &output_file, ArgHintsMode::Disabled)?;
     assert!(
         output_file.metadata()?.len() > 0,
         "output file `{}` is empty",
@@ -120,7 +120,7 @@ fn main() -> anyhow::Result<()> {
     let mut perms = output_file.metadata()?.permissions();
     perms.set_readonly(true);
     fs::set_permissions(&output_file, perms)?;
-    let result = haruspex::decompile_to_file(&idb, &func, &output_file);
+    let result = haruspex::decompile_to_file(&idb, &func, &output_file, ArgHintsMode::Disabled);
     assert!(result.is_err(), "file write succeeded unexpectedly");
     assert!(
         matches!(result, Err(HaruspexError::FileWriteFailed(_))),
@@ -136,7 +136,7 @@ fn main() -> anyhow::Result<()> {
     // Check `decompile_to_file` handles file length limitations.
     print!("[*] Checking `decompile_to_file` handles file length limitations... ");
     let output_file = dirpath.join("A".repeat(2048));
-    let result = haruspex::decompile_to_file(&idb, &func, &output_file);
+    let result = haruspex::decompile_to_file(&idb, &func, &output_file, ArgHintsMode::Disabled);
     assert!(result.is_err(), "file write succeeded unexpectedly");
     assert!(
         matches!(result, Err(HaruspexError::FileWriteFailed(_))),
@@ -150,7 +150,7 @@ fn main() -> anyhow::Result<()> {
     let output_file = dirpath.join("invalid/filename");
     #[cfg(windows)]
     let output_file = dirpath.join("invalid<>?*filename");
-    let result = haruspex::decompile_to_file(&idb, &func, &output_file);
+    let result = haruspex::decompile_to_file(&idb, &func, &output_file, ArgHintsMode::Disabled);
     assert!(result.is_err(), "file write succeeded unexpectedly");
     assert!(
         matches!(result, Err(HaruspexError::FileWriteFailed(_))),

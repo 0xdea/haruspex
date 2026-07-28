@@ -422,8 +422,7 @@ checksum = "15cdd26707701c53297e2fa6afb323d55fbc1d0810c3aec078ae3ef0424c3c15"
 [[package]]
 name = "idalib"
 version = "0.10.0+9.4.260714"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e7e4ee2c322adbddff3abb69dfa0d7528c153f3a451570632a828a52f3701ebe"
+source = "git+https://github.com/0xdea/idalib?branch=feature%2Fhexrays-improvements#fee2d6f4fbb5620ec2de2d274b48937c5804c2ef"
 dependencies = [
  "anyhow",
  "autocxx-idalib",
@@ -437,8 +436,7 @@ dependencies = [
 [[package]]
 name = "idalib-build"
 version = "0.10.0+9.4.260714"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0747dd2dcffd602afadcdf5850d025d176bf5a63cd6ec6393d68e2ee6143c8e7"
+source = "git+https://github.com/0xdea/idalib?branch=feature%2Fhexrays-improvements#fee2d6f4fbb5620ec2de2d274b48937c5804c2ef"
 dependencies = [
  "anyhow",
  "idalib-sys",
@@ -447,8 +445,7 @@ dependencies = [
 [[package]]
 name = "idalib-sys"
 version = "0.10.0+9.4.260714"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7da8ffa20d7765ad4a98b7f56f10f0f82ee407f9bae6c7feaca50e64cd762399"
+source = "git+https://github.com/0xdea/idalib?branch=feature%2Fhexrays-improvements#fee2d6f4fbb5620ec2de2d274b48937c5804c2ef"
 dependencies = [
  "anyhow",
  "autocxx-bindgen-idalib",

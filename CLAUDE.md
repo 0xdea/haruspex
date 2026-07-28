@@ -23,9 +23,6 @@ The build script (`build.rs`) checks common default locations as a fallback, but
 cargo build            # debug (debug info stripped for faster startup)
 cargo build --release  # optimized, LTO, stripped
 
-# Test (unit tests only, no IDA Pro required)
-cargo test --lib
-
 # Test (integration tests, custom harness, tests against ./tests/data/ls)
 cargo test
 cargo test --test tests -- --nocapture   # verbose
@@ -72,6 +69,6 @@ The crate-level documentation in `src/lib.rs` is assembled in a specific order t
 
 ## Tests
 
-**Unit tests** live in `src/lib.rs` under `#[cfg(test)] mod tests`. They do not require IDA Pro and run with `cargo test --lib`. Only executed in CI on Linux; macOS and Windows cannot run them because `dyld`/the Windows loader requires all linked dylibs (including `libida`) to be present at process startup, whereas Linux's lazy binding allows the test binary to start without resolving IDA symbols. They cover `prepare_output_dir` (create, empty-dir recreate, non-empty failure) and `sanitize_filename` (plain names, reserved-char replacement, truncation).
+**Unit tests** live in `src/lib.rs` under `#[cfg(test)] mod tests`. They cover `prepare_output_dir` (create, empty-dir recreate, non-empty failure) and `sanitize_filename` (plain names, reserved-char replacement, truncation).
 
 **Integration tests** live in `tests/main.rs` with `harness = false` (custom runner). They require IDA Pro to be available and `IDADIR` set. The test binary is `tests/data/ls` (x86-64 ELF). Tests validate function count, output file count, output directory behavior (non-empty dir error, empty-dir success), the `decompile_to_file` API, pseudocode content, a spot-check of a known output file (`sub_4AD0@4AD0.c`) to verify the naming scheme, and error-path behavior (read-only files, path length limits, invalid filenames).
