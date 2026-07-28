@@ -183,6 +183,11 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
 ///     .find(|(_, f)| f.name().unwrap() == "main")
 ///     .unwrap();
 ///
+/// // Decompile function with default `ArgHintsMode`.
+/// haruspex::decompile_to_file(&idb, &func, &output_file)?;
+///
+/// // Decompile again with a custom `ArgHintsMode`.
+/// idb.change_hexrays_config(haruspex::ArgHintsMode::Comment.directive())?;
 /// haruspex::decompile_to_file(&idb, &func, &output_file)?;
 /// # std::fs::remove_file(output_file)?;
 /// # Ok::<(), anyhow::Error>(())

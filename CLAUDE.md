@@ -14,7 +14,7 @@ Haruspex is a headless IDA Pro plugin written in Rust that extracts Hex-Rays pse
 export IDADIR=/path/to/ida
 ```
 
-The build script (`build.rs`) checks common default locations as a fallback, but setting it explicitly is safer. IDA Pro 9.3+ with a valid license is required. LLVM/Clang must be installed (used by bindgen when building `idalib`).
+The build script (`build.rs`) checks common default locations as a fallback, but setting it explicitly is safer. IDA Pro 9.4+ with a valid license is required. LLVM/Clang must be installed (used by bindgen when building `idalib`).
 
 ## Commands
 
@@ -39,13 +39,15 @@ cargo doc
 
 ## Architecture
 
-Single-crate, six public surfaces in `src/lib.rs`:
+Single-crate, seven public surfaces in `src/lib.rs`:
 
 **`haruspex::HaruspexError`** — public error enum returned by `decompile_to_file`; variants are `DecompileFailed` (wraps `IDAError`) and `FileWriteFailed` (wraps `io::Error`).
 
-**`haruspex::run(filepath)`** — opens a binary with IDA, auto-analyzes it, iterates all functions, skips thunks, and calls `decompile_to_file` for each one. This is what `main.rs` calls.
+**`haruspex::ArgHintsMode`** — typed wrapper around Hex-Rays' `ARG_HINTS_MODE` config directive (`Disabled`/`Comment`/`Inlay`, matching Hex-Rays' own `HAHM_*` constants); `directive()` returns the `&'static str` to pass to `idb.change_hexrays_config`. IDA 9.4 enabled inlay argument-name hints by default in decompiler output, so `run` applies `ArgHintsMode::Disabled` once per `IDB` before decompiling, to keep pseudocode consistent with pre-9.4 output.
 
-**`haruspex::decompile_to_file(idb, func, filepath)`** — public API for external crates that already hold an open `idb` handle; decompiles one function and writes it to the given path.
+**`haruspex::run(filepath)`** — opens a binary with IDA, auto-analyzes it, disables Hex-Rays argument name hints, iterates all functions, skips thunks, and calls `decompile_to_file` for each one. This is what `main.rs` calls.
+
+**`haruspex::decompile_to_file(idb, func, filepath)`** — public API for external crates that already hold an open `idb` handle; decompiles one function and writes it to the given path. Does not touch Hex-Rays config itself — callers who want a non-default `ArgHintsMode` call `idb.change_hexrays_config` themselves before decompiling.
 
 **`haruspex::prepare_output_dir(dirpath)`** — creates a fresh output directory, removing it first if it exists and is empty; returns an error if it exists and is non-empty.
 
@@ -69,6 +71,6 @@ The crate-level documentation in `src/lib.rs` is assembled in a specific order t
 
 ## Tests
 
-**Unit tests** live in `src/lib.rs` under `#[cfg(test)] mod tests`. They cover `prepare_output_dir` (create, empty-dir recreate, non-empty failure) and `sanitize_filename` (plain names, reserved-char replacement, truncation).
+**Unit tests** live in `src/lib.rs` under `#[cfg(test)] mod tests`. They cover `prepare_output_dir` (create, empty-dir recreate, non-empty failure), `sanitize_filename` (plain names, reserved-char replacement, truncation), and `ArgHintsMode::directive()` (each variant maps to the expected `ARG_HINTS_MODE = N` string).
 
-**Integration tests** live in `tests/main.rs` with `harness = false` (custom runner). They require IDA Pro to be available and `IDADIR` set. The test binary is `tests/data/ls` (x86-64 ELF). Tests validate function count, output file count, output directory behavior (non-empty dir error, empty-dir success), the `decompile_to_file` API, pseudocode content, a spot-check of a known output file (`sub_4AD0@4AD0.c`) to verify the naming scheme, and error-path behavior (read-only files, path length limits, invalid filenames).
+**Integration tests** live in `tests/main.rs` with `harness = false` (custom runner). They require IDA Pro to be available and `IDADIR` set. The test binary is `tests/data/ls` (x86-64 ELF). Tests validate function count, output file count, output directory behavior (non-empty dir error, empty-dir success), a regression check that argument name hints are disabled by default in `run`'s output (asserts a known `fwrite` call in `main@2630.c` has no inlay hints), the `decompile_to_file` API, pseudocode content, a spot-check of a known output file (`sub_4AD0@4AD0.c`) to verify the naming scheme, and error-path behavior (read-only files, path length limits, invalid filenames).
