@@ -131,6 +131,7 @@ This project's development has been supported by the following organizations:
 ## TODO
 
 - Add global and per-function type extraction (see this [issue](https://github.com/0xdea/haruspex/issues/3)).
+- Add a Semgrep CI regression test to make sure the percentage of parsed lines doesn't decrease.
 - Use the `.cpp` extension instead of `.c` to output pseudocode (see
   this [issue](https://github.com/0xdea/semgrep-rules/issues/12))?
 - Integrate with Semgrep scanning (see <https://github.com/0xdea/semgrep-rules>).
