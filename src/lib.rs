@@ -39,9 +39,10 @@ pub enum HaruspexError {
 /// Argument name hints mode for function calls in pseudocode.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[non_exhaustive]
+#[repr(u8)]
 pub enum ArgHintsMode {
     /// Argument name hints are disabled.
-    Disabled,
+    Disabled = 0,
     /// Argument names are displayed as comments (/*param=*/).
     Comment,
     /// Argument names are displayed as inlay hints (param:).
