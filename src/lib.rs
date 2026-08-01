@@ -77,7 +77,7 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
         "[*] Analyzing binary file `{}`",
         filepath.as_ref().display()
     );
-    let idb = IDB::open(&filepath).with_context(|| {
+    let mut idb = IDB::open(&filepath).with_context(|| {
         format!(
             "Failed to analyze binary file `{}`",
             filepath.as_ref().display()
@@ -96,7 +96,7 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
     anyhow::ensure!(idb.decompiler_available(), "Decompiler is not available");
 
     // Configure the argument hints mode used for all decompiled functions.
-    idb.change_hexrays_config(ArgHintsMode::Disabled.directive())
+    idb.modify_decompiler_config(ArgHintsMode::Disabled.directive())
         .context("Failed to set decompiler's argument hints mode")?;
 
     // Create a new output directory, returning an error if it already exists, and it's not empty.
@@ -178,17 +178,16 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
 /// let input_file = base_dir.join("ls");
 /// let output_file = base_dir.join("ls-main.c");
 ///
-/// let idb = idalib::idb::IDB::open(&input_file)?;
+/// let mut idb = idalib::idb::IDB::open(&input_file)?;
+///
+/// // Disable argument name hints
+/// idb.modify_decompiler_config(haruspex::ArgHintsMode::Disabled.directive())?;
+///
 /// let (_, func) = idb
 ///     .functions()
 ///     .find(|(_, f)| f.name().unwrap() == "main")
 ///     .unwrap();
 ///
-/// // Decompile function with default `ArgHintsMode`.
-/// haruspex::decompile_to_file(&idb, &func, &output_file)?;
-///
-/// // Decompile again with a custom `ArgHintsMode`.
-/// idb.change_hexrays_config(haruspex::ArgHintsMode::Comment.directive())?;
 /// haruspex::decompile_to_file(&idb, &func, &output_file)?;
 /// # std::fs::remove_file(output_file)?;
 /// # Ok::<(), anyhow::Error>(())

@@ -422,7 +422,7 @@ checksum = "15cdd26707701c53297e2fa6afb323d55fbc1d0810c3aec078ae3ef0424c3c15"
 [[package]]
 name = "idalib"
 version = "0.10.0+9.4.260714"
-source = "git+https://github.com/0xdea/idalib?branch=feature%2Fhexrays-improvements#fee2d6f4fbb5620ec2de2d274b48937c5804c2ef"
+source = "git+https://github.com/0xdea/idalib?branch=feature%2Fhexrays-improvements#45686d7fb7a0b7f616fa94284b16236b3afc0ef7"
 dependencies = [
  "anyhow",
  "autocxx-idalib",
@@ -436,7 +436,7 @@ dependencies = [
 [[package]]
 name = "idalib-build"
 version = "0.10.0+9.4.260714"
-source = "git+https://github.com/0xdea/idalib?branch=feature%2Fhexrays-improvements#fee2d6f4fbb5620ec2de2d274b48937c5804c2ef"
+source = "git+https://github.com/0xdea/idalib?branch=feature%2Fhexrays-improvements#45686d7fb7a0b7f616fa94284b16236b3afc0ef7"
 dependencies = [
  "anyhow",
  "idalib-sys",
@@ -445,7 +445,7 @@ dependencies = [
 [[package]]
 name = "idalib-sys"
 version = "0.10.0+9.4.260714"
-source = "git+https://github.com/0xdea/idalib?branch=feature%2Fhexrays-improvements#fee2d6f4fbb5620ec2de2d274b48937c5804c2ef"
+source = "git+https://github.com/0xdea/idalib?branch=feature%2Fhexrays-improvements#45686d7fb7a0b7f616fa94284b16236b3afc0ef7"
 dependencies = [
  "anyhow",
  "autocxx-bindgen-idalib",
