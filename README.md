@@ -27,7 +27,7 @@ or [oneiromancer](https://crates.io/crates/oneiromancer).
 - Pseudocode of each function is stored in a separated file in the output directory for easy inspection.
 - External crates can invoke [`decompile_to_file`] to decompile a function and save its pseudocode to disk.
 
-## Blog posts
+## Articles
 
 - <https://hex-rays.com/blog/streamlining-vulnerability-research-idalib-rust-bindings>
 - <https://hnsecurity.it/blog/streamlining-vulnerability-research-with-ida-pro-and-rust>
