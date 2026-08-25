@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add unit test to verify argument name hints mode directives.
 - Add a regression test to check that argument name hints are not present in the extracted pseudocode.
 - Add an integration test to check naming and decompilation functionalities.
+- Add credits section to `README.md`.
 
 ### Changed
 
@@ -22,7 +23,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enable all clippy restriction lints and fix any resulting issues.
 - Improve doctests that return a `Result`.
 - Use the `--locked` flag for all suitable `cargo` commands.
-- Add credits section to `README.md`.
 - Improve comments.
 - Improve unit test names.
 - Improve CI.
