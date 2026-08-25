@@ -51,14 +51,14 @@ The easiest way to get the latest release is via [crates.io](https://crates.io/c
 3. On Linux/macOS, install as follows:
    ```sh
    export IDADIR=/path/to/ida # if not set, the build script will check common locations
-   cargo install haruspex
+   cargo install haruspex --locked
    ```
    On Windows, instead, use the following commands:
    ```powershell
    $env:LIBCLANG_PATH="\path\to\clang+llvm\bin"
    $env:PATH="\path\to\ida;$env:PATH"
    $env:IDADIR="\path\to\ida" # if not set, the build script will check common locations
-   cargo install haruspex
+   cargo install haruspex --locked
    ```
 
 ## Compiling
@@ -72,7 +72,7 @@ Alternatively, you can build from [source](https://github.com/0xdea/haruspex):
    git clone --depth 1 https://github.com/0xdea/haruspex
    cd haruspex
    export IDADIR=/path/to/ida # if not set, the build script will check common locations
-   cargo build --release
+   cargo build --release --locked
    ```
    On Windows, instead, use the following commands:
    ```powershell
@@ -81,7 +81,7 @@ Alternatively, you can build from [source](https://github.com/0xdea/haruspex):
    $env:LIBCLANG_PATH="\path\to\clang+llvm\bin"
    $env:PATH="\path\to\ida;$env:PATH"
    $env:IDADIR="\path\to\ida" # if not set, the build script will check common locations
-   cargo build --release
+   cargo build --release --locked
    ```
 
 ## Usage

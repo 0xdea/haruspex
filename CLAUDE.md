@@ -20,21 +20,21 @@ The build script (`build.rs`) checks common default locations as a fallback, but
 
 ```bash
 # Build
-cargo build            # debug (debug info stripped for faster startup)
-cargo build --release  # optimized, LTO, stripped
+cargo build --locked            # debug (debug info stripped for faster startup)
+cargo build --release --locked  # optimized, LTO, stripped
 
 # Test (integration tests, custom harness, tests against ./tests/data/ls)
-cargo test
-cargo test --test tests -- --nocapture   # verbose
+cargo test --locked
+cargo test --test tests --locked -- --nocapture   # verbose
 
 # Lint
 cargo fmt --all --check
-cargo clippy --all-targets -- -D warnings
+cargo clippy --all-targets --locked -- -D warnings
 cargo semver-checks
 cargo audit           # checks dependencies against the RustSec advisory database
 
 # Docs
-cargo doc
+cargo doc --locked
 ```
 
 ## Architecture
