@@ -195,7 +195,7 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
 ///
 pub fn decompile_to_file(
     idb: &IDB,
-    func: &Function,
+    func: &Function<'_>,
     filepath: impl AsRef<Path>,
 ) -> Result<(), HaruspexError> {
     // Decompile function.
@@ -241,7 +241,7 @@ pub fn prepare_output_dir(dirpath: impl AsRef<Path>) -> anyhow::Result<()> {
 
 /// Builds the output file path for `func` inside `dirpath`.
 #[must_use]
-pub fn output_path_for_function(func: &Function, dirpath: impl AsRef<Path>) -> PathBuf {
+pub fn output_path_for_function(func: &Function<'_>, dirpath: impl AsRef<Path>) -> PathBuf {
     let func_name = func.name().unwrap_or_else(|| "[no name]".into());
     dirpath
         .as_ref()
