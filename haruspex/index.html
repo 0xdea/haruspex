@@ -1,8 +1,9 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="haruspex"><title>haruspex - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-b7b9f40b.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="haruspex" data-themes="" data-resource-suffix="" data-rustdoc-version="1.95.0 (59807616e 2026-04-14)" data-channel="1.95.0" data-search-js="search-63369b7b.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-170eb4bf.js" ><script src="../static.files/storage-41dd4d93.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-5013f961.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-f7c3ffd8.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Crate haruspex</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><a class="logo-container" href="../haruspex/index.html"><img src="https://raw.githubusercontent.com/0xdea/haruspex/master/.img/logo.png" alt="logo"></a><h2><a href="../haruspex/index.html">haruspex</a><span class="version">0.9.3</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#haruspex" title="haruspex">haruspex</a><ul><li><a href="#features" title="Features">Features</a></li><li><a href="#blog-posts" title="Blog posts">Blog posts</a></li><li><a href="#see-also" title="See also">See also</a></li><li><a href="#installing" title="Installing">Installing</a></li><li><a href="#compiling" title="Compiling">Compiling</a></li><li><a href="#usage" title="Usage">Usage</a></li><li><a href="#compatibility" title="Compatibility">Compatibility</a></li><li><a href="#changelog" title="Changelog">Changelog</a></li><li><a href="#todo" title="TODO">TODO</a></li></ul></li></ul><h3><a href="#enums">Crate Items</a></h3><ul class="block"><li><a href="#enums" title="Enums">Enums</a></li><li><a href="#functions" title="Functions">Functions</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1>Crate <span>haruspex</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/haruspex/lib.rs.html#1-329">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="haruspex"><a class="doc-anchor" href="#haruspex">§</a>haruspex</h2>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Vulnerability research assistant that extracts pseudocode from IDA Hex-Rays decompiler."><title>haruspex - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-1ed95124.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="haruspex" data-themes="" data-resource-suffix="" data-rustdoc-version="1.98.1 (48a229cea 2026-09-01)" data-channel="1.98.1" data-search-js="search-9944d736.js" data-stringdex-js="stringdex-2da4960a.js" data-settings-js="settings-170eb4bf.js" ><script src="../static.files/storage-41dd4d93.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-417ebf0a.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-f7c3ffd8.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Crate haruspex</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><a class="logo-container" href="../haruspex/index.html"><img src="https://raw.githubusercontent.com/0xdea/haruspex/master/.img/logo.png" alt="logo"></a><h2><a href="../haruspex/index.html">haruspex</a><span class="version">0.10.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#haruspex" title="haruspex">haruspex</a><ul><li><a href="#features" title="Features">Features</a></li><li><a href="#articles" title="Articles">Articles</a></li><li><a href="#see-also" title="See also">See also</a></li><li><a href="#installing" title="Installing">Installing</a></li><li><a href="#compiling" title="Compiling">Compiling</a></li><li><a href="#usage" title="Usage">Usage</a></li><li><a href="#compatibility" title="Compatibility">Compatibility</a></li><li><a href="#credits" title="Credits">Credits</a></li><li><a href="#changelog" title="Changelog">Changelog</a></li><li><a href="#todo" title="TODO">TODO</a></li></ul></li></ul><h3><a href="#enums">Crate Items</a></h3><ul class="block"><li><a href="#enums" title="Enums">Enums</a></li><li><a href="#functions" title="Functions">Functions</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1>Crate <span>haruspex</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/haruspex/lib.rs.html#1-402">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Vulnerability research assistant that extracts pseudocode from IDA Hex-Rays decompiler.</p>
+<h2 id="haruspex"><a class="doc-anchor" href="#haruspex">§</a>haruspex</h2>
 <p><a href="https://github.com/0xdea/haruspex"><img src="https://img.shields.io/github/stars/0xdea/haruspex.svg?style=flat&amp;color=yellow" alt="" /></a>
 <a href="https://crates.io/crates/haruspex"><img src="https://img.shields.io/crates/v/haruspex?style=flat&amp;color=green" alt="" /></a>
 <a href="https://crates.io/crates/haruspex"><img src="https://img.shields.io/crates/d/haruspex?style=flat&amp;color=red" alt="" /></a>
-<a href="https://hex-rays.com/ida-pro"><img src="https://img.shields.io/badge/ida-9.3-violet" alt="" /></a>
+<a href="https://hex-rays.com/ida-pro"><img src="https://img.shields.io/badge/ida-9.4-violet" alt="" /></a>
 <a href="https://twitter.com/0xdea"><img src="https://img.shields.io/badge/twitter-%400xdea-blue.svg" alt="" /></a>
 <a href="https://infosec.exchange/@raptor"><img src="https://img.shields.io/badge/mastodon-%40raptor-purple.svg" alt="" /></a>
 <a href="https://github.com/0xdea/haruspex/actions/workflows/build.yml"><img src="https://github.com/0xdea/haruspex/actions/workflows/build.yml/badge.svg" alt="build" /></a>
@@ -11,19 +12,19 @@
 <p>“Hacking is the discipline of questioning all your assumptions all of the time.”</p>
 <p>– Dave Aitel</p>
 </blockquote>
-<p>Haruspex is a blazing fast IDA Pro headless plugin that extracts pseudocode generated by IDA Pro’s
+<p>Haruspex is a blazing fast IDA headless plugin that extracts pseudocode generated by IDA’s
 decompiler in a format that should be suitable to be imported into an IDE, or parsed by static
 analysis tools such as <a href="https://semgrep.dev/">Semgrep</a>, <a href="https://github.com/weggli-rs/weggli">weggli</a>,
 or <a href="https://crates.io/crates/oneiromancer">oneiromancer</a>.</p>
 <p><img src="https://raw.githubusercontent.com/0xdea/haruspex/master/.img/screen01.png" alt="" /></p>
 <h3 id="features"><a class="doc-anchor" href="#features">§</a>Features</h3>
 <ul>
-<li>Blazing fast, headless user experience courtesy of IDA Pro 9.x and Binarly’s idalib Rust bindings.</li>
-<li>Support for binary targets for any architecture implemented by IDA Pro’s Hex-Rays decompiler.</li>
+<li>Blazing fast, headless user experience courtesy of IDA 9.x and idalib-rs Rust bindings.</li>
+<li>Support for binary targets for any architecture implemented by IDA’s Hex-Rays decompiler.</li>
 <li>Pseudocode of each function is stored in a separated file in the output directory for easy inspection.</li>
 <li>External crates can invoke <a href="fn.decompile_to_file.html" title="fn haruspex::decompile_to_file"><code>decompile_to_file</code></a> to decompile a function and save its pseudocode to disk.</li>
 </ul>
-<h3 id="blog-posts"><a class="doc-anchor" href="#blog-posts">§</a>Blog posts</h3>
+<h3 id="articles"><a class="doc-anchor" href="#articles">§</a>Articles</h3>
 <ul>
 <li><a href="https://hex-rays.com/blog/streamlining-vulnerability-research-idalib-rust-bindings">https://hex-rays.com/blog/streamlining-vulnerability-research-idalib-rust-bindings</a></li>
 <li><a href="https://hnsecurity.it/blog/streamlining-vulnerability-research-with-ida-pro-and-rust">https://hnsecurity.it/blog/streamlining-vulnerability-research-with-ida-pro-and-rust</a></li>
@@ -41,54 +42,61 @@ or <a href="https://crates.io/crates/oneiromancer">oneiromancer</a>.</p>
 <h3 id="installing"><a class="doc-anchor" href="#installing">§</a>Installing</h3>
 <p>The easiest way to get the latest release is via <a href="https://crates.io/crates/haruspex">crates.io</a>:</p>
 <ol>
-<li>Download, install, and configure IDA Pro (see <a href="https://hex-rays.com/ida-pro">https://hex-rays.com/ida-pro</a>).</li>
+<li>Download, install, and configure IDA (see <a href="https://hex-rays.com/ida-pro">https://hex-rays.com/ida-pro</a>).</li>
 <li>Install LLVM/Clang (see <a href="https://rust-lang.github.io/rust-bindgen/requirements.html">https://rust-lang.github.io/rust-bindgen/requirements.html</a>).</li>
 <li>On Linux/macOS, install as follows:<div class="example-wrap"><pre class="language-sh"><code>export IDADIR=/path/to/ida # if not set, the build script will check common locations
-cargo install haruspex</code></pre></div>On Windows, instead, use the following commands:<div class="example-wrap"><pre class="language-powershell"><code>$env:LIBCLANG_PATH=&quot;\path\to\clang+llvm\bin&quot;
+cargo install haruspex --locked</code></pre></div>On Windows, instead, use the following commands:<div class="example-wrap"><pre class="language-powershell"><code>$env:LIBCLANG_PATH=&quot;\path\to\clang+llvm\bin&quot;
 $env:PATH=&quot;\path\to\ida;$env:PATH&quot;
 $env:IDADIR=&quot;\path\to\ida&quot; # if not set, the build script will check common locations
-cargo install haruspex</code></pre></div></li>
+cargo install haruspex --locked</code></pre></div></li>
 </ol>
 <h3 id="compiling"><a class="doc-anchor" href="#compiling">§</a>Compiling</h3>
 <p>Alternatively, you can build from <a href="https://github.com/0xdea/haruspex">source</a>:</p>
 <ol>
-<li>Download, install, and configure IDA Pro (see <a href="https://hex-rays.com/ida-pro">https://hex-rays.com/ida-pro</a>).</li>
+<li>Download, install, and configure IDA (see <a href="https://hex-rays.com/ida-pro">https://hex-rays.com/ida-pro</a>).</li>
 <li>Install LLVM/Clang (see <a href="https://rust-lang.github.io/rust-bindgen/requirements.html">https://rust-lang.github.io/rust-bindgen/requirements.html</a>).</li>
 <li>On Linux/macOS, compile as follows:<div class="example-wrap"><pre class="language-sh"><code>git clone --depth 1 https://github.com/0xdea/haruspex
 cd haruspex
 export IDADIR=/path/to/ida # if not set, the build script will check common locations
-cargo build --release</code></pre></div>On Windows, instead, use the following commands:<div class="example-wrap"><pre class="language-powershell"><code>git clone --depth 1 https://github.com/0xdea/haruspex
+cargo build --release --locked</code></pre></div>On Windows, instead, use the following commands:<div class="example-wrap"><pre class="language-powershell"><code>git clone --depth 1 https://github.com/0xdea/haruspex
 cd haruspex
 $env:LIBCLANG_PATH=&quot;\path\to\clang+llvm\bin&quot;
 $env:PATH=&quot;\path\to\ida;$env:PATH&quot;
 $env:IDADIR=&quot;\path\to\ida&quot; # if not set, the build script will check common locations
-cargo build --release</code></pre></div></li>
+cargo build --release --locked</code></pre></div></li>
 </ol>
 <h3 id="usage"><a class="doc-anchor" href="#usage">§</a>Usage</h3>
 <ol>
-<li>Make sure IDA Pro is properly configured with a valid license.</li>
-<li>Make sure the <code>IDADIR</code> environment variable is set if your IDA Pro installation is in a non-standard location.</li>
+<li>Make sure IDA is properly configured with a valid license.</li>
+<li>Make sure the <code>IDADIR</code> environment variable is set if your IDA installation is in a non-standard location.</li>
 <li>Run as follows:<div class="example-wrap"><pre class="language-sh"><code>haruspex &lt;binary_file&gt;</code></pre></div></li>
 <li>Find the extracted pseudocode of each decompiled function in the <code>binary_file.dec</code> directory:<div class="example-wrap"><pre class="language-sh"><code>vim &lt;binary_file&gt;.dec
 code &lt;binary_file&gt;.dec</code></pre></div></li>
 </ol>
 <h3 id="compatibility"><a class="doc-anchor" href="#compatibility">§</a>Compatibility</h3>
-<p>Only the latest IDA Pro release is officially supported, but older versions may work as well. The following table
-summarizes the latest compatible release for each IDA Pro version:</p>
-<div><table><thead><tr><th>IDA Pro version</th><th>Latest compatible release</th></tr></thead><tbody>
+<p>Only the latest IDA release is officially supported, but older versions may work as well. The following table
+summarizes the latest compatible release for each IDA version:</p>
+<div><table><thead><tr><th>IDA version</th><th>Latest compatible release</th></tr></thead><tbody>
 <tr><td>v9.0.240925</td><td>v0.2.4</td></tr>
 <tr><td>v9.0.241217</td><td>v0.3.5</td></tr>
 <tr><td>v9.1.250226</td><td>v0.6.2</td></tr>
 <tr><td>v9.2.250908</td><td>v0.7.5</td></tr>
 <tr><td>v9.3.260213</td><td>v0.8.1</td></tr>
 <tr><td>v9.3.260327</td><td>v0.9.0</td></tr>
-<tr><td>v9.3.260421</td><td>current release</td></tr>
+<tr><td>v9.3.260421</td><td>v0.9.3</td></tr>
+<tr><td>v9.4.260714</td><td>current release</td></tr>
 </tbody></table>
 </div>
 <blockquote>
 <p>[!NOTE]
-Check the <a href="https://github.com/idalib-rs/idalib">idalib</a> documentation for additional information.</p>
+Check the <a href="https://github.com/idalib-rs/idalib">idalib-rs</a> documentation for additional information.</p>
 </blockquote>
+<h3 id="credits"><a class="doc-anchor" href="#credits">§</a>Credits</h3>
+<p>This project’s development has been supported by the following organizations:</p>
+<ul>
+<li><a href="https://hnsecurity.it">HN Security</a></li>
+<li><a href="https://hex-rays.com">Hex-Rays</a> via their <a href="https://hex-rays.com/contributor-program">Contributor Program</a></li>
+</ul>
 <h3 id="changelog"><a class="doc-anchor" href="#changelog">§</a>Changelog</h3>
 <ul>
 <li><a href="https://github.com/0xdea/haruspex/blob/master/CHANGELOG.md">CHANGELOG.md</a></li>
@@ -96,6 +104,7 @@ Check the <a href="https://github.com/idalib-rs/idalib">idalib</a> documentation
 <h3 id="todo"><a class="doc-anchor" href="#todo">§</a>TODO</h3>
 <ul>
 <li>Add global and per-function type extraction (see this <a href="https://github.com/0xdea/haruspex/issues/3">issue</a>).</li>
+<li>Add a Semgrep CI regression test to make sure the percentage of parsed lines doesn’t decrease.</li>
 <li>Use the <code>.cpp</code> extension instead of <code>.c</code> to output pseudocode (see
 this <a href="https://github.com/0xdea/semgrep-rules/issues/12">issue</a>)?</li>
 <li>Integrate with Semgrep scanning (see <a href="https://github.com/0xdea/semgrep-rules">https://github.com/0xdea/semgrep-rules</a>).</li>
@@ -104,4 +113,4 @@ this <a href="https://github.com/0xdea/semgrep-rules/issues/12">issue</a>)?</li>
 and <a href="https://github.com/patois/abyss">abyss</a>.</li>
 <li>Implement parallel analysis (see <a href="https://github.com/fugue-re/fugue-mptp">https://github.com/fugue-re/fugue-mptp</a>).</li>
 </ul>
-</div></details><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.HaruspexError.html" title="enum haruspex::HaruspexError">Haruspex<wbr>Error</a></dt><dd>Haruspex error type</dd></dl><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><dl class="item-table"><dt><a class="fn" href="fn.decompile_to_file.html" title="fn haruspex::decompile_to_file">decompile_<wbr>to_<wbr>file</a></dt><dd>Decompile <a href="../idalib/func/struct.Function.html" title="struct idalib::func::Function"><code>Function</code></a> <code>func</code> in <a href="../idalib/idb/struct.IDB.html" title="struct idalib::idb::IDB"><code>IDB</code></a> <code>idb</code> and save its pseudocode to the output file at <code>filepath</code>.</dd><dt><a class="fn" href="fn.output_path_for_function.html" title="fn haruspex::output_path_for_function">output_<wbr>path_<wbr>for_<wbr>function</a></dt><dd>Build the output file path for <code>func</code> inside <code>dirpath</code></dd><dt><a class="fn" href="fn.prepare_output_dir.html" title="fn haruspex::prepare_output_dir">prepare_<wbr>output_<wbr>dir</a></dt><dd>Create a fresh output directory at <code>dirpath</code>, removing it first if it exists and is empty</dd><dt><a class="fn" href="fn.run.html" title="fn haruspex::run">run</a></dt><dd>Extract pseudocode of functions in the binary file at <code>filepath</code> and save it in <code>filepath.dec</code>.</dd><dt><a class="fn" href="fn.sanitize_filename.html" title="fn haruspex::sanitize_filename">sanitize_<wbr>filename</a></dt><dd>Replace reserved characters in <code>filename</code> with underscores and truncate to <code>MAX_FILENAME_LEN</code></dd></dl></section></div></main></body></html>
+</div></details><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.ArgHintsMode.html" title="enum haruspex::ArgHintsMode">ArgHints<wbr>Mode</a></dt><dd>Argument name hints mode for function calls in pseudocode.</dd><dt><a class="enum" href="enum.HaruspexError.html" title="enum haruspex::HaruspexError">Haruspex<wbr>Error</a></dt><dd>Haruspex error type.</dd></dl><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><dl class="item-table"><dt><a class="fn" href="fn.decompile_to_file.html" title="fn haruspex::decompile_to_file">decompile_<wbr>to_<wbr>file</a></dt><dd>Decompiles <a href="../idalib/func/struct.Function.html" title="struct idalib::func::Function"><code>Function</code></a> <code>func</code> in <a href="../idalib/idb/struct.IDB.html" title="struct idalib::idb::IDB"><code>IDB</code></a> <code>idb</code> and saves its pseudocode to the output file at <code>filepath</code>.</dd><dt><a class="fn" href="fn.output_path_for_function.html" title="fn haruspex::output_path_for_function">output_<wbr>path_<wbr>for_<wbr>function</a></dt><dd>Builds the output file path for <code>func</code> inside <code>dirpath</code>.</dd><dt><a class="fn" href="fn.prepare_output_dir.html" title="fn haruspex::prepare_output_dir">prepare_<wbr>output_<wbr>dir</a></dt><dd>Creates a fresh output directory at <code>dirpath</code>, removing it first if it exists and is empty.</dd><dt><a class="fn" href="fn.run.html" title="fn haruspex::run">run</a></dt><dd>Extracts pseudocode of functions in the binary file at <code>filepath</code> and saves it in <code>filepath.dec</code>.</dd><dt><a class="fn" href="fn.sanitize_filename.html" title="fn haruspex::sanitize_filename">sanitize_<wbr>filename</a></dt><dd>Replaces reserved characters in <code>filename</code> with underscores and truncates to <code>MAX_FILENAME_LEN</code>.</dd></dl></section></div></main></body></html>
