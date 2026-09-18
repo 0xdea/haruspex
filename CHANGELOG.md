@@ -28,6 +28,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improve CI.
 - Update documentation.
 
+### Fixed
+
+- Allow linker messages to prevent Windows build from failing.
+
 ## [0.9.3] - 2026-06-01
 
 ### Added
