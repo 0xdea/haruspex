@@ -29,10 +29,10 @@ thiserror = "2.0"
 [build-dependencies]
 idalib-build = "0.10"
 
-[patch.crates-io]
-idalib = { git = "https://github.com/0xdea/idalib", branch = "feature/hexrays-improvements" }
-idalib-build = { git = "https://github.com/0xdea/idalib", branch = "feature/hexrays-improvements" }
-idalib-sys = { git = "https://github.com/0xdea/idalib", branch = "feature/hexrays-improvements" }
+# [patch.crates-io]
+# idalib = { git = "https://github.com/0xdea/idalib", branch = "feature/hexrays-improvements" }
+# idalib-build = { git = "https://github.com/0xdea/idalib", branch = "feature/hexrays-improvements" }
+# idalib-sys = { git = "https://github.com/0xdea/idalib", branch = "feature/hexrays-improvements" }
 
 [[test]]
 name = "tests"

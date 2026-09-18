@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Update idalib to v0.10.0 to support IDA 9.4.
+- Update idalib to v0.10.1 to support IDA 9.4.
 - Update other dependencies.
 - Use `AsRef<Path>` bounds for all public functions that take a `Path` argument.
 - Enable all clippy restriction lints and fix any resulting issues.
