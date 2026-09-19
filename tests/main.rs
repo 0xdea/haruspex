@@ -22,6 +22,8 @@ fn main() -> anyhow::Result<()> {
     const FILENAME: &str = "./tests/data/ls";
     // Expected number of decompiled functions.
     const N_DECOMP: usize = 79;
+    // Expected number of header files.
+    const N_HEADERS: usize = 10;
 
     // Remove the IDB file if it exists.
     let idb_path = Path::new(FILENAME).with_extension("i64");
@@ -43,12 +45,35 @@ fn main() -> anyhow::Result<()> {
     assert_eq!(n_decomp, N_DECOMP, "wrong number of decompiled functions");
     println!("Ok.");
 
-    // Check the number of created files in the output directory.
-    print!("[*] Checking number of files in output directory... ");
+    // Check the number of created .c files in the output directory.
+    print!("[*] Checking number of .c files in output directory... ");
+    let n_src_files = dirpath
+        .read_dir()?
+        .filter(|entry| {
+            entry
+                .as_ref()
+                .is_ok_and(|e| e.path().extension() == Some("c".as_ref()))
+        })
+        .count();
     assert_eq!(
-        dirpath.read_dir()?.count(),
-        n_decomp,
-        "wrong number of files in output directory"
+        n_src_files, n_decomp,
+        "wrong number of .c files in output directory"
+    );
+    println!("Ok.");
+
+    // Check the number of created .h files in the output directory.
+    print!("[*] Checking number of .h files in output directory... ");
+    let n_hdr_files = dirpath
+        .read_dir()?
+        .filter(|entry| {
+            entry
+                .as_ref()
+                .is_ok_and(|e| e.path().extension() == Some("h".as_ref()))
+        })
+        .count();
+    assert_eq!(
+        n_hdr_files, N_HEADERS,
+        "wrong number of .h files in output directory"
     );
     println!("Ok.");
 

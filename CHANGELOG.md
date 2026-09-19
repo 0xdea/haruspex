@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add global and per-function type definition extraction as [requested](https://github.com/0xdea/haruspex/issues/3).
 - Display elapsed time in the `run` function.
 
 ### Changed

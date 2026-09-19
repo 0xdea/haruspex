@@ -35,6 +35,9 @@ pub enum HaruspexError {
     /// Failure in writing to the output file.
     #[error(transparent)]
     FileWriteFailed(#[from] io::Error),
+    /// No type definitions were generated.
+    #[error("no type definitions generated")]
+    TypesEmpty,
 }
 
 /// Argument name hints mode for function calls in pseudocode.
@@ -108,6 +111,22 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
 
     let mut decompiled_count = 0;
 
+    // Extract all type definitions.
+    let all_types_path = dirpath.join("all_types.h");
+    eprintln!();
+    eprintln!("[*] Dumping all types to `{}`", all_types_path.display());
+    match dump_all_types_to_file(&idb, all_types_path) {
+        Ok(()) => eprintln!("[+] Done"),
+
+        // Signal a failure due to empty type definitions or IDA errors.
+        Err(HaruspexError::TypesEmpty | HaruspexError::DecompileFailed(_)) => {
+            eprintln!("[!] Failed");
+        }
+
+        // Return any other error.
+        Err(e) => return Err(e.into()),
+    }
+
     // Extract pseudocode of functions.
     eprintln!();
     eprintln!("[*] Extracting pseudocode of functions...");
@@ -120,7 +139,7 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
 
         // Decompile function and write pseudocode to the output file.
         let func_name = f.name().unwrap_or_else(|| "[no name]".into());
-        let output_path = output_path_for_function(&f, &dirpath);
+        let mut output_path = output_path_for_function(&f, &dirpath);
 
         #[expect(
             clippy::arithmetic_side_effects,
@@ -142,6 +161,19 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
 
             // Ignore other IDA errors.
             Err(HaruspexError::DecompileFailed(_)) => (),
+
+            // Return any other error.
+            Err(e) => return Err(e.into()),
+        }
+
+        // Dump function type definitions to a separate header file.
+        output_path.set_extension("h");
+        match dump_function_types_to_file(&idb, &f, &output_path) {
+            // Print the output path in case of success.
+            Ok(()) => println!("{func_name} -> `{}`", output_path.display()),
+
+            // Ignore empty type definitions and IDA errors.
+            Err(HaruspexError::TypesEmpty | HaruspexError::DecompileFailed(_)) => (),
 
             // Return any other error.
             Err(e) => return Err(e.into()),
@@ -210,6 +242,54 @@ pub fn decompile_to_file(
     // Note: for easier testing, we could use a generic function together with `std::io::Cursor`.
     let mut writer = BufWriter::new(File::create(&filepath)?);
     writer.write_all(source.as_bytes())?;
+    writer.flush()?;
+
+    Ok(())
+}
+
+/// Dumps all type definitions in [`IDB`] `idb` to the output file at `filepath`.
+///
+/// # Errors
+///
+/// Returns the appropriate [`HaruspexError`] in case something goes wrong with type dumping or file I/O.
+pub fn dump_all_types_to_file(idb: &IDB, filepath: impl AsRef<Path>) -> Result<(), HaruspexError> {
+    let all_types = idb.format_decls()?;
+
+    if all_types.is_empty() {
+        return Err(HaruspexError::TypesEmpty);
+    }
+
+    // Write type definitions to output file.
+    // Note: for easier testing, we could use a generic function together with `std::io::Cursor`.
+    let mut writer = BufWriter::new(File::create(&filepath)?);
+    writer.write_all(all_types.as_bytes())?;
+    writer.flush()?;
+
+    Ok(())
+}
+
+/// Dumps the type definitions of [`Function`] `func` in [`IDB`] `idb` to the output file at `filepath`.
+///
+/// # Errors
+///
+/// Returns the appropriate [`HaruspexError`] in case something goes wrong with type dumping or file I/O.
+pub fn dump_function_types_to_file(
+    idb: &IDB,
+    func: &Function<'_>,
+    filepath: impl AsRef<Path>,
+) -> Result<(), HaruspexError> {
+    // Decompile function.
+    let decomp = idb.decompile(func)?;
+    let types = idb.format_cfunc_decls(&decomp)?;
+
+    if types.is_empty() {
+        return Err(HaruspexError::TypesEmpty);
+    }
+
+    // Write type definitions to output file.
+    // Note: for easier testing, we could use a generic function together with `std::io::Cursor`.
+    let mut writer = BufWriter::new(File::create(&filepath)?);
+    writer.write_all(types.as_bytes())?;
     writer.flush()?;
 
     Ok(())
