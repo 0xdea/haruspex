@@ -169,10 +169,17 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
         // Dump function type definitions to a separate header file.
         output_path.set_extension("h");
         match dump_function_types_to_file(&idb, &f, &output_path) {
-            // Print the output path in case of success.
+            // Print the output path in case of successful type extraction.
             Ok(()) => println!("{func_name} -> `{}`", output_path.display()),
 
-            // Ignore empty type definitions and IDA errors.
+            // Return an error if Hex-Rays decompiler license is not available.
+            Err(HaruspexError::DecompileFailed(IDAError::HexRays(e)))
+                if e.code() == HexRaysErrorCode::License =>
+            {
+                return Err(e.into());
+            }
+
+            // Ignore empty type definitions and other IDA errors.
             Err(HaruspexError::TypesEmpty | HaruspexError::DecompileFailed(_)) => (),
 
             // Return any other error.

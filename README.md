@@ -25,6 +25,7 @@ or [oneiromancer](https://crates.io/crates/oneiromancer).
 - Blazing fast, headless user experience courtesy of IDA 9.x and idalib-rs Rust bindings.
 - Support for binary targets for any architecture implemented by IDA's Hex-Rays decompiler.
 - Pseudocode of each function is stored in a separated file in the output directory for easy inspection.
+- Global and per-function type definitions are extracted to header files alongside the pseudocode.
 - External crates can invoke [`decompile_to_file`] to decompile a function and save its pseudocode to disk.
 
 ## Articles
@@ -92,7 +93,7 @@ Alternatively, you can build from [source](https://github.com/0xdea/haruspex):
    ```sh
    haruspex <binary_file>
    ```
-4. Find the extracted pseudocode of each decompiled function in the `binary_file.dec` directory:
+4. Find the extracted pseudocode and type definitions in the `binary_file.dec` directory:
    ```sh
    vim <binary_file>.dec
    code <binary_file>.dec
@@ -130,7 +131,6 @@ This project's development has been supported by the following organizations:
 
 ## TODO
 
-- Add global and per-function type extraction (see this [issue](https://github.com/0xdea/haruspex/issues/3)).
 - Add a Semgrep CI regression test to make sure the percentage of parsed lines doesn't decrease.
 - Use the `.cpp` extension instead of `.c` to output pseudocode (see
   this [issue](https://github.com/0xdea/semgrep-rules/issues/12))?
