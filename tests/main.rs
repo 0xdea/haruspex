@@ -135,7 +135,10 @@ fn main() -> anyhow::Result<()> {
         .find(|f| f.1.name().expect("invalid function name") == "main")
         .expect("failed to find function `main`");
     let output_file = dirpath.join("main.c");
-    haruspex::decompile_to_file(&idb, &func, &output_file)?;
+    match haruspex::decompile_to_file(&idb, &func, &output_file) {
+        Ok(()) | Err(HaruspexError::TypesEmpty) => {}
+        Err(e) => return Err(e.into()),
+    }
     assert!(
         output_file.metadata()?.len() > 0,
         "output file `{}` is empty",

@@ -39,23 +39,25 @@ cargo doc --locked
 
 ## Architecture
 
-Single-crate, eleven public surfaces in `src/lib.rs`:
+Single-crate, twelve public surfaces in `src/lib.rs`:
 
-**`haruspex::HaruspexError`** — public error enum returned by `decompile_to_file`, `dump_pseudocode_to_file`, `dump_all_types_to_file`, `dump_function_types_to_file`, and `dump_cfunc_types_to_file`; variants are `DecompileFailed` (wraps `IDAError`), `FileWriteFailed` (wraps `io::Error`), and `TypesEmpty` (no type definitions were generated).
+**`haruspex::HaruspexError`** — public error enum returned by `decompile_to_file`, `dump_func_pseudocode_to_file`, `dump_cfunc_pseudocode_to_file`, `dump_all_types_to_file`, `dump_func_types_to_file`, and `dump_cfunc_types_to_file`; variants are `DecompileFailed` (wraps `IDAError`), `FileWriteFailed` (wraps `io::Error`), and `TypesEmpty` (no type definitions were generated).
 
 **`haruspex::ArgHintsMode`** — typed wrapper around Hex-Rays' `ARG_HINTS_MODE` config directive (`Disabled`/`Comment`/`Inlay`, matching Hex-Rays' own `HAHM_*` constants); `directive()` returns the `&'static str` to pass to `idb.modify_decompiler_config` (requires a mutable `IDB` handle). IDA 9.4 enabled inlay argument-name hints by default in decompiler output, so `run` applies `ArgHintsMode::Disabled` once per `IDB` before decompiling, to keep pseudocode consistent with pre-9.4 output.
 
-**`haruspex::run(filepath)`** — opens a binary with IDA, auto-analyzes it, disables Hex-Rays argument name hints, dumps all type definitions to `all_types.h` via `dump_all_types_to_file`, then iterates all functions, skips thunks, and for each one decompiles it once and calls `dump_pseudocode_to_file` and `dump_cfunc_types_to_file` on the resulting `CFunction` — avoiding the double `idb.decompile` call that using `decompile_to_file` + `dump_function_types_to_file` together would incur. This is what `main.rs` calls. A Hex-Rays license failure is treated as fatal in both the pseudocode and type-dump steps; other decompile failures and empty type definitions are ignored per function. Progress/status messages (`[*]`/`[+]`/`[-]`) go to stderr; stdout only receives one `name -> path` line per function per output file, keeping stdout scriptable. The final stderr summary reports elapsed wall-clock time.
+**`haruspex::run(filepath)`** — opens a binary with IDA, auto-analyzes it, disables Hex-Rays argument name hints, dumps all type definitions to `all_types.h` via `dump_all_types_to_file`, then iterates all functions, skips thunks, and calls `decompile_to_file` for each one. This is what `main.rs` calls. A Hex-Rays license failure is treated as fatal; other decompile failures are ignored per function. Progress/status messages (`[*]`/`[+]`/`[-]`) go to stderr; stdout receives a `name -> path` line for the pseudocode file, plus a second one for the `.h` file when type definitions were actually dumped (`decompile_to_file` returning `HaruspexError::TypesEmpty` tells `run` to skip that second line while still counting the function as decompiled), keeping stdout scriptable. The final stderr summary reports elapsed wall-clock time.
 
-**`haruspex::decompile_to_file(idb, func, filepath)`** — public API for external crates that already hold an open `idb` handle; decompiles one function and delegates to `dump_pseudocode_to_file`. Does not touch Hex-Rays config itself — callers who want a non-default `ArgHintsMode` call `idb.modify_decompiler_config` themselves before decompiling.
+**`haruspex::decompile_to_file(idb, func, filepath)`** — decompiles one function only once, writes its pseudocode to `filepath` via `dump_cfunc_pseudocode_to_file`, then best-effort dumps its type definitions to a sibling `.h` file via `dump_cfunc_types_to_file`, reusing the same decompilation result for both — this is what avoids the double `idb.decompile` call that calling `dump_func_pseudocode_to_file` + `dump_func_types_to_file` separately would incur. If there are no type definitions to dump, the pseudocode file is still written but the call returns `HaruspexError::TypesEmpty`, so callers (namely `run`) know the `.h` file wasn't produced. Other type-dump failures are swallowed unless caused by an unavailable Hex-Rays license, which is treated as fatal. Does not touch Hex-Rays config itself — callers who want a non-default `ArgHintsMode` call `idb.modify_decompiler_config` themselves before decompiling.
 
-**`haruspex::dump_pseudocode_to_file(cfunc, filepath)`** — lower-level counterpart of `decompile_to_file` that takes an already-decompiled `CFunction` instead of a `Function`, so callers that also need `dump_cfunc_types_to_file` for the same function can decompile once and reuse the result.
+**`haruspex::dump_func_pseudocode_to_file(idb, func, filepath)`** — lower-level counterpart of `decompile_to_file` that only decompiles and writes pseudocode, without touching type definitions; mirrors `dump_func_types_to_file`.
+
+**`haruspex::dump_cfunc_pseudocode_to_file(cfunc, filepath)`** — takes an already-decompiled `CFunction` instead of a `Function`, so callers that also need `dump_cfunc_types_to_file` for the same function can decompile once and reuse the result.
 
 **`haruspex::dump_all_types_to_file(idb, filepath)`** — writes all type definitions in the database (via `idb.format_decls`) to the given path; returns `HaruspexError::TypesEmpty` if there are none.
 
-**`haruspex::dump_function_types_to_file(idb, func, filepath)`** — decompiles one function and delegates to `dump_cfunc_types_to_file`; returns `HaruspexError::TypesEmpty` if there are none.
+**`haruspex::dump_func_types_to_file(idb, func, filepath)`** — decompiles one function and delegates to `dump_cfunc_types_to_file`; returns `HaruspexError::TypesEmpty` if there are none.
 
-**`haruspex::dump_cfunc_types_to_file(idb, cfunc, filepath)`** — lower-level counterpart of `dump_function_types_to_file` that takes an already-decompiled `CFunction` instead of a `Function`, mirroring `dump_pseudocode_to_file`; returns `HaruspexError::TypesEmpty` if there are none.
+**`haruspex::dump_cfunc_types_to_file(idb, cfunc, filepath)`** — lower-level counterpart of `dump_func_types_to_file` that takes an already-decompiled `CFunction` instead of a `Function`, mirroring `dump_cfunc_pseudocode_to_file`; returns `HaruspexError::TypesEmpty` if there are none.
 
 **`haruspex::prepare_output_dir(dirpath)`** — creates a fresh output directory, removing it first if it exists and is empty; returns an error if it exists and is non-empty.
 

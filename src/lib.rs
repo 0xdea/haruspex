@@ -68,7 +68,8 @@ impl ArgHintsMode {
     }
 }
 
-/// Extracts pseudocode of functions in the binary file at `filepath` and saves it in `filepath.dec`.
+/// Extracts pseudocode and type definitions of functions in the binary file at `filepath` and saves
+/// them in `filepath.dec`, alongside a dump of all type definitions in `all_types.h`.
 ///
 /// Returns how many functions were decompiled.
 ///
@@ -78,7 +79,6 @@ impl ArgHintsMode {
 pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
     let start = Instant::now();
 
-    // Open the target binary and run auto-analysis.
     eprintln!(
         "[*] Analyzing binary file `{}`",
         filepath.as_ref().display()
@@ -92,16 +92,14 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
     eprintln!("[+] Successfully analyzed binary file");
     eprintln!();
 
-    // Print binary file information.
     eprintln!("[-] Processor: {}", idb.processor().long_name());
     eprintln!("[-] Compiler: {:?}", idb.meta().cc_id());
     eprintln!("[-] File type: {:?}", idb.meta().filetype());
     eprintln!();
 
-    // Ensure Hex-Rays decompiler is available.
     anyhow::ensure!(idb.decompiler_available(), "Decompiler is not available");
 
-    // Configure the argument hints mode used for all decompiled functions.
+    // Disable argument name hints.
     idb.modify_decompiler_config(ArgHintsMode::Disabled.directive())
         .context("Failed to set decompiler's argument hints mode")?;
 
@@ -127,63 +125,51 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
         Err(e) => return Err(e.into()),
     }
 
-    // Extract pseudocode of functions.
     eprintln!();
-    eprintln!("[*] Extracting pseudocode of functions...");
+    eprintln!("[*] Extracting pseudocode and type definitions of functions...");
     eprintln!();
     for (_id, f) in idb.functions() {
-        // Skip the function if it has the `thunk` attribute.
         if f.flags().contains(FunctionFlags::THUNK) {
             continue;
         }
 
-        // Decompile the function once, reusing the result for both pseudocode and type definitions.
+        // Decompile the function and write its pseudocode and type definitions to the output files.
         let func_name = f.name().unwrap_or_else(|| "[no name]".into());
-        let mut output_path = output_path_for_function(&f, &dirpath);
+        let output_path = output_path_for_function(&f, &dirpath);
 
         #[expect(
             clippy::arithmetic_side_effects,
             reason = "`usize` can hardly overflow here"
         )]
-        match idb.decompile(&f) {
-            Ok(decomp) => {
-                // Write pseudocode to the output file.
-                match dump_pseudocode_to_file(&decomp, &output_path) {
-                    Ok(()) => {
-                        println!("{func_name} -> `{}`", output_path.display());
-                        decompiled_count += 1;
-                    }
-                    Err(e) => return Err(e.into()),
-                }
+        match decompile_to_file(&idb, &f, &output_path) {
+            // Function decompilation and type dumping succeeded.
+            Ok(()) => {
+                println!("{func_name} -> `{}`", output_path.display());
+                println!(
+                    "{func_name} -> `{}`",
+                    output_path.with_extension("h").display()
+                );
+                decompiled_count += 1;
+            }
 
-                // Dump function type definitions to a separate header file.
-                output_path.set_extension("h");
-                match dump_cfunc_types_to_file(&idb, &decomp, &output_path) {
-                    // Print the output path in case of successful type extraction.
-                    Ok(()) => println!("{func_name} -> `{}`", output_path.display()),
-
-                    // Return an error if Hex-Rays decompiler license is not available.
-                    Err(HaruspexError::DecompileFailed(IDAError::HexRays(e)))
-                        if e.code() == HexRaysErrorCode::License =>
-                    {
-                        return Err(e.into());
-                    }
-
-                    // Ignore empty type definitions and other IDA errors.
-                    Err(HaruspexError::TypesEmpty | HaruspexError::DecompileFailed(_)) => (),
-
-                    // Return any other error.
-                    Err(e) => return Err(e.into()),
-                }
+            // Pseudocode was written, but there were no type definitions to dump.
+            Err(HaruspexError::TypesEmpty) => {
+                println!("{func_name} -> `{}`", output_path.display());
+                decompiled_count += 1;
             }
 
             // Return an error if Hex-Rays decompiler license is not available.
-            Err(IDAError::HexRays(e)) if e.code() == HexRaysErrorCode::License => {
+            Err(HaruspexError::DecompileFailed(IDAError::HexRays(e)))
+                if e.code() == HexRaysErrorCode::License =>
+            {
                 return Err(e.into());
             }
 
-            // Ignore other decompilation errors; no pseudocode or types for this function.
-            Err(_) => (),
+            // Ignore other IDA errors.
+            Err(HaruspexError::DecompileFailed(_)) => (),
+
+            // Return any other error.
+            Err(e) => return Err(e.into()),
         }
     }
 
@@ -207,11 +193,21 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
     Ok(decompiled_count)
 }
 
-/// Decompiles [`Function`] `func` in [`IDB`] `idb` and saves its pseudocode to the output file at `filepath`.
+/// Decompiles [`Function`] `func` in [`IDB`] `idb` and saves its pseudocode to the output file at
+/// `filepath`, and its type definitions to a sibling file with a `.h` extension.
+///
+/// The function is decompiled only once, and the result is reused for both outputs. Dumping type
+/// definitions is best-effort: non-license Hex-Rays errors are ignored. If there are no type
+/// definitions to dump, the pseudocode file is still written, but this returns
+/// [`HaruspexError::TypesEmpty`] so callers know the `.h` file was not produced. Use
+/// [`dump_func_pseudocode_to_file`] instead if you only want the pseudocode, without dumping type
+/// definitions at all.
 ///
 /// # Errors
 ///
-/// Returns the appropriate [`HaruspexError`] in case something goes wrong with decompiling or file I/O.
+/// Returns [`HaruspexError::DecompileFailed`] if decompilation fails, [`HaruspexError::FileWriteFailed`]
+/// if file I/O fails, or [`HaruspexError::TypesEmpty`] if the pseudocode was written but there were
+/// no type definitions.
 ///
 /// # Examples
 ///
@@ -231,8 +227,13 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
 ///     .find(|(_, f)| f.name().unwrap() == "main")
 ///     .unwrap();
 ///
-/// haruspex::decompile_to_file(&idb, &func, &output_file)?;
-/// # std::fs::remove_file(output_file)?;
+/// // `TypesEmpty` is not a fatal error: it just means there were no type definitions to dump.
+/// match haruspex::decompile_to_file(&idb, &func, &output_file) {
+///     Ok(()) | Err(haruspex::HaruspexError::TypesEmpty) => {}
+///     Err(e) => return Err(e.into()),
+/// }
+/// # _ = std::fs::remove_file(&output_file);
+/// # _ = std::fs::remove_file(&output_file.with_extension("h"));
 /// # Ok::<(), anyhow::Error>(())
 /// ```
 ///
@@ -241,19 +242,63 @@ pub fn decompile_to_file(
     func: &Function<'_>,
     filepath: impl AsRef<Path>,
 ) -> Result<(), HaruspexError> {
+    // Decompile the function once and write its pseudocode.
     let decomp = idb.decompile(func)?;
-    dump_pseudocode_to_file(&decomp, filepath)
+    dump_cfunc_pseudocode_to_file(&decomp, &filepath)?;
+
+    // Best-effort: also dump the function's type definitions, reusing the same decompilation
+    // result instead of decompiling the function a second time.
+    let mut types_path = filepath.as_ref().to_path_buf();
+    types_path.set_extension("h");
+    match dump_cfunc_types_to_file(idb, &decomp, types_path) {
+        // Return an error if Hex-Rays decompiler license is not available.
+        Err(HaruspexError::DecompileFailed(IDAError::HexRays(e)))
+            if e.code() == HexRaysErrorCode::License =>
+        {
+            Err(HaruspexError::DecompileFailed(IDAError::HexRays(e)))
+        }
+
+        // Report back that no type definitions were generated, so callers know the `.h`
+        // file was not written even though the pseudocode was.
+        err @ Err(HaruspexError::TypesEmpty) => err,
+
+        // Ignore other IDA errors.
+        Ok(()) | Err(HaruspexError::DecompileFailed(_)) => Ok(()),
+
+        // Propagate any other error (e.g. file I/O failure).
+        Err(e) => Err(e),
+    }
+}
+
+/// Decompiles [`Function`] `func` in [`IDB`] `idb` and writes only its pseudocode to the output file
+/// at `filepath`, without dumping type definitions.
+///
+/// Lower-level counterpart of [`decompile_to_file`] that skips the type-definition dump; mirrors
+/// [`dump_func_types_to_file`].
+///
+/// # Errors
+///
+/// Returns [`HaruspexError::DecompileFailed`] if decompilation fails or [`HaruspexError::FileWriteFailed`]
+/// if file I/O fails.
+pub fn dump_func_pseudocode_to_file(
+    idb: &IDB,
+    func: &Function<'_>,
+    filepath: impl AsRef<Path>,
+) -> Result<(), HaruspexError> {
+    let decomp = idb.decompile(func)?;
+    dump_cfunc_pseudocode_to_file(&decomp, filepath)
 }
 
 /// Writes the pseudocode of the already-decompiled [`CFunction`] `cfunc` to the output file at `filepath`.
 ///
-/// Callers that already hold a `cfunc` (e.g., because they also need [`dump_cfunc_types_to_file`] for the
-/// same function) can use this to avoid decompiling the function twice; otherwise use [`decompile_to_file`].
+/// Callers that already hold a `cfunc` (e.g. because they also need [`dump_cfunc_types_to_file`] for the
+/// same function) can use this to avoid decompiling the function twice; otherwise use
+/// [`dump_func_pseudocode_to_file`].
 ///
 /// # Errors
 ///
-/// Returns [`HaruspexError::FileWriteFailed`] in case something goes wrong with file I/O.
-pub fn dump_pseudocode_to_file(
+/// Returns [`HaruspexError::FileWriteFailed`] if file I/O fails.
+pub fn dump_cfunc_pseudocode_to_file(
     cfunc: &CFunction<'_>,
     filepath: impl AsRef<Path>,
 ) -> Result<(), HaruspexError> {
@@ -264,7 +309,9 @@ pub fn dump_pseudocode_to_file(
 ///
 /// # Errors
 ///
-/// Returns the appropriate [`HaruspexError`] in case something goes wrong with type dumping or file I/O.
+/// Returns [`HaruspexError::DecompileFailed`] if formatting the type declarations fails,
+/// [`HaruspexError::TypesEmpty`] if there are no type definitions to dump, or
+/// [`HaruspexError::FileWriteFailed`] if file I/O fails.
 pub fn dump_all_types_to_file(idb: &IDB, filepath: impl AsRef<Path>) -> Result<(), HaruspexError> {
     let all_types = idb.format_decls()?;
 
@@ -279,7 +326,8 @@ pub fn dump_all_types_to_file(idb: &IDB, filepath: impl AsRef<Path>) -> Result<(
 ///
 /// # Errors
 ///
-/// Returns the appropriate [`HaruspexError`] in case something goes wrong with type dumping or file I/O.
+/// Returns [`HaruspexError::DecompileFailed`] if decompilation fails, [`HaruspexError::TypesEmpty`]
+/// if there are no type definitions to dump, or [`HaruspexError::FileWriteFailed`] if file I/O fails.
 pub fn dump_func_types_to_file(
     idb: &IDB,
     func: &Function<'_>,
@@ -292,13 +340,15 @@ pub fn dump_func_types_to_file(
 /// Dumps the type definitions of the already-decompiled [`CFunction`] `cfunc` in [`IDB`] `idb`
 /// to the output file at `filepath`.
 ///
-/// Callers that already hold a `cfunc` (e.g. because they also need [`dump_pseudocode_to_file`] for the
-/// same function) can use this to avoid decompiling the function twice; otherwise use
+/// Callers that already hold a `cfunc` (e.g. because they also need [`dump_cfunc_pseudocode_to_file`]
+/// for the same function) can use this to avoid decompiling the function twice; otherwise use
 /// [`dump_func_types_to_file`].
 ///
 /// # Errors
 ///
-/// Returns the appropriate [`HaruspexError`] in case something goes wrong with type dumping or file I/O.
+/// Returns [`HaruspexError::DecompileFailed`] if formatting the type declarations fails,
+/// [`HaruspexError::TypesEmpty`] if there are no type definitions to dump, or
+/// [`HaruspexError::FileWriteFailed`] if file I/O fails.
 pub fn dump_cfunc_types_to_file(
     idb: &IDB,
     cfunc: &CFunction<'_>,
@@ -311,16 +361,6 @@ pub fn dump_cfunc_types_to_file(
     }
 
     write_output(&types, filepath)
-}
-
-/// Writes `content` to the output file at `filepath`.
-// Note: for easier testing, we could use a generic function together with `std::io::Cursor`.
-fn write_output(content: &str, filepath: impl AsRef<Path>) -> Result<(), HaruspexError> {
-    let mut writer = BufWriter::new(File::create(&filepath)?);
-    writer.write_all(content.as_bytes())?;
-    writer.flush()?;
-
-    Ok(())
 }
 
 /// Creates a fresh output directory at `dirpath`, removing it first if it exists and is empty.
@@ -373,6 +413,16 @@ pub fn sanitize_filename(filename: &str) -> String {
         .chars()
         .take(MAX_FILENAME_LEN)
         .collect()
+}
+
+/// Writes `content` to the output file at `filepath`.
+// Note: for easier testing, we could use a generic function together with `std::io::Cursor`.
+fn write_output(content: &str, filepath: impl AsRef<Path>) -> Result<(), HaruspexError> {
+    let mut writer = BufWriter::new(File::create(&filepath)?);
+    writer.write_all(content.as_bytes())?;
+    writer.flush()?;
+
+    Ok(())
 }
 
 #[cfg(test)]
