@@ -76,7 +76,7 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
     let start = Instant::now();
 
     // Open the target binary and run auto-analysis.
-    println!(
+    eprintln!(
         "[*] Analyzing binary file `{}`",
         filepath.as_ref().display()
     );
@@ -86,14 +86,14 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
             filepath.as_ref().display()
         )
     })?;
-    println!("[+] Successfully analyzed binary file");
-    println!();
+    eprintln!("[+] Successfully analyzed binary file");
+    eprintln!();
 
     // Print binary file information.
-    println!("[-] Processor: {}", idb.processor().long_name());
-    println!("[-] Compiler: {:?}", idb.meta().cc_id());
-    println!("[-] File type: {:?}", idb.meta().filetype());
-    println!();
+    eprintln!("[-] Processor: {}", idb.processor().long_name());
+    eprintln!("[-] Compiler: {:?}", idb.meta().cc_id());
+    eprintln!("[-] File type: {:?}", idb.meta().filetype());
+    eprintln!();
 
     // Ensure Hex-Rays decompiler is available.
     anyhow::ensure!(idb.decompiler_available(), "Decompiler is not available");
@@ -109,9 +109,9 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
     let mut decompiled_count = 0;
 
     // Extract pseudocode of functions.
-    println!();
-    println!("[*] Extracting pseudocode of functions...");
-    println!();
+    eprintln!();
+    eprintln!("[*] Extracting pseudocode of functions...");
+    eprintln!();
     for (_id, f) in idb.functions() {
         // Skip the function if it has the `thunk` attribute.
         if f.flags().contains(FunctionFlags::THUNK) {
@@ -155,12 +155,12 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
         anyhow::bail!("No functions were decompiled, check your input file");
     }
 
-    println!();
-    println!(
+    eprintln!();
+    eprintln!(
         "[+] Decompiled {decompiled_count} functions into `{}`",
         dirpath.display()
     );
-    println!(
+    eprintln!(
         "[+] Done processing binary file `{}` in {:.1} seconds",
         filepath.as_ref().display(),
         start.elapsed().as_secs_f64()
@@ -221,7 +221,7 @@ pub fn decompile_to_file(
 ///
 /// Returns [`anyhow::Error`] if the directory already exists and is not empty, or if any filesystem operation fails.
 pub fn prepare_output_dir(dirpath: impl AsRef<Path>) -> anyhow::Result<()> {
-    println!(
+    eprintln!(
         "[*] Preparing output directory `{}`",
         dirpath.as_ref().display()
     );
@@ -239,7 +239,7 @@ pub fn prepare_output_dir(dirpath: impl AsRef<Path>) -> anyhow::Result<()> {
             dirpath.as_ref().display()
         )
     })?;
-    println!("[+] Output directory is ready");
+    eprintln!("[+] Output directory is ready");
     Ok(())
 }
 
