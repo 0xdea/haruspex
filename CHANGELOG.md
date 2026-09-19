@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Display elapsed time in the `run` function.
+
 ### Changed
 
 - Use `CARGO_BIN_NAME` instead of `CARGO_PKG_NAME` for the program name.
