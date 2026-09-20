@@ -40,13 +40,13 @@ fn main() -> anyhow::Result<()> {
 
     // Run haruspex and check the number of decompiled functions.
     let n_decomp = haruspex::run(Path::new(FILENAME))?;
-    println!();
-    print!("[*] Checking number of decompiled functions... ");
+    eprintln!();
+    eprint!("[*] Checking number of decompiled functions... ");
     assert_eq!(n_decomp, N_DECOMP, "wrong number of decompiled functions");
-    println!("Ok.");
+    eprintln!("Ok.");
 
     // Check the number of created .c files in the output directory.
-    print!("[*] Checking number of .c files in output directory... ");
+    eprint!("[*] Checking number of .c files in output directory... ");
     let n_src_files = dirpath
         .read_dir()?
         .filter(|entry| {
@@ -59,10 +59,10 @@ fn main() -> anyhow::Result<()> {
         n_src_files, n_decomp,
         "wrong number of .c files in output directory"
     );
-    println!("Ok.");
+    eprintln!("Ok.");
 
     // Check the number of created .h files in the output directory.
-    print!("[*] Checking number of .h files in output directory... ");
+    eprint!("[*] Checking number of .h files in output directory... ");
     let n_hdr_files = dirpath
         .read_dir()?
         .filter(|entry| {
@@ -75,32 +75,32 @@ fn main() -> anyhow::Result<()> {
         n_hdr_files, N_HEADERS,
         "wrong number of .h files in output directory"
     );
-    println!("Ok.");
+    eprintln!("Ok.");
 
     // Check `run` fails when the output directory is not empty.
-    println!();
+    eprintln!();
     let result = haruspex::run(filepath);
-    print!("[*] Checking `run` fails when output directory is not empty... ");
+    eprint!("[*] Checking `run` fails when output directory is not empty... ");
     assert!(
         result.is_err(),
         "run succeeded unexpectedly with a non-empty output directory"
     );
-    println!("Ok.");
+    eprintln!("Ok.");
 
     // Check `run` succeeds when the output directory exists but is empty.
     fs::remove_dir_all(&dirpath)?;
     fs::create_dir_all(&dirpath)?;
-    println!();
+    eprintln!();
     let n_decomp = haruspex::run(Path::new(FILENAME))?;
-    print!("[*] Checking `run` succeeds when output directory is empty... ");
+    eprint!("[*] Checking `run` succeeds when output directory is empty... ");
     assert_eq!(
         n_decomp, N_DECOMP,
         "wrong number of decompiled functions on second run"
     );
-    println!("Ok.");
+    eprintln!("Ok.");
 
     // Check `run` disables the new Hex-Rays argument name hints by default.
-    print!("[*] Checking argument name hints are disabled by default... ");
+    eprint!("[*] Checking argument name hints are disabled by default... ");
     let main_file = dirpath.join("main@2630.c");
     let main_content = fs::read_to_string(&main_file)?;
     assert!(
@@ -110,10 +110,10 @@ fn main() -> anyhow::Result<()> {
         "output file `{}` contains argument name hints, expected them to be disabled",
         main_file.display()
     );
-    println!("Ok.");
+    eprintln!("Ok.");
 
     // Spot-check a known output file: verify the naming scheme and that decompilation produced output.
-    print!("[*] Checking known output file exists and is non-empty... ");
+    eprint!("[*] Checking known output file exists and is non-empty... ");
     let known_file = dirpath.join("sub_4AD0@4AD0.c");
     assert!(
         known_file.is_file(),
@@ -125,10 +125,10 @@ fn main() -> anyhow::Result<()> {
         "output file is empty: {}",
         known_file.display()
     );
-    println!("Ok.");
+    eprintln!("Ok.");
 
     // Check `decompile_to_file` works as expected.
-    print!("[*] Checking `decompile_to_file` works as expected... ");
+    eprint!("[*] Checking `decompile_to_file` works as expected... ");
     let idb = IDB::open(filepath)?;
     let (_, func) = idb
         .functions()
@@ -144,20 +144,20 @@ fn main() -> anyhow::Result<()> {
         "output file `{}` is empty",
         output_file.display()
     );
-    println!("Ok.");
+    eprintln!("Ok.");
 
     // Check pseudocode content is valid C.
-    print!("[*] Checking pseudocode content is valid C... ");
+    eprint!("[*] Checking pseudocode content is valid C... ");
     let content = fs::read_to_string(&output_file)?;
     assert!(
         content.contains("main"),
         "output file `{}` does not contain expected pseudocode",
         output_file.display()
     );
-    println!("Ok.");
+    eprintln!("Ok.");
 
     // Check `decompile_to_file` handles filesystem errors.
-    print!("[*] Checking `decompile_to_file` handles filesystem errors... ");
+    eprint!("[*] Checking `decompile_to_file` handles filesystem errors... ");
     let mut perms = output_file.metadata()?.permissions();
     perms.set_readonly(true);
     fs::set_permissions(&output_file, perms)?;
@@ -172,10 +172,10 @@ fn main() -> anyhow::Result<()> {
         "output file `{}` is empty",
         output_file.display()
     );
-    println!("Ok.");
+    eprintln!("Ok.");
 
     // Check `decompile_to_file` handles file length limitations.
-    print!("[*] Checking `decompile_to_file` handles file length limitations... ");
+    eprint!("[*] Checking `decompile_to_file` handles file length limitations... ");
     let output_file = dirpath.join("A".repeat(2048));
     let result = haruspex::decompile_to_file(&idb, &func, &output_file);
     assert!(result.is_err(), "file write succeeded unexpectedly");
@@ -183,10 +183,10 @@ fn main() -> anyhow::Result<()> {
         matches!(result, Err(HaruspexError::FileWriteFailed(_))),
         "wrong error type returned: {result:?}"
     );
-    println!("Ok.");
+    eprintln!("Ok.");
 
     // Check `decompile_to_file` handles file charset limitations.
-    print!("[*] Checking `decompile_to_file` handles file charset limitations... ");
+    eprint!("[*] Checking `decompile_to_file` handles file charset limitations... ");
     #[cfg(unix)]
     let output_file = dirpath.join("invalid/filename");
     #[cfg(windows)]
@@ -197,13 +197,13 @@ fn main() -> anyhow::Result<()> {
         matches!(result, Err(HaruspexError::FileWriteFailed(_))),
         "wrong error type returned: {result:?}"
     );
-    println!("Ok.");
+    eprintln!("Ok.");
 
     // Remove the output directory at the end.
     if dirpath.exists() {
         fs::remove_dir_all(&dirpath)?;
     }
 
-    println!();
+    eprintln!();
     Ok(())
 }
