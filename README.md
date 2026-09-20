@@ -26,8 +26,7 @@ or [oneiromancer](https://crates.io/crates/oneiromancer).
 - Support for binary targets for any architecture implemented by IDA's Hex-Rays decompiler.
 - Pseudocode of each function is stored in a separated file in the output directory for easy inspection.
 - Global and per-function type definitions are extracted to header files alongside the pseudocode.
-- External crates can invoke [`decompile_to_file`] to decompile a function and save its pseudocode and type
-  definitions to disk.
+- External crates can invoke [`decompile_to_file`] to decompile a function and save its pseudocode and type definitions to disk.
 
 ## Articles
 
