@@ -103,7 +103,7 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
     idb.modify_decompiler_config(ArgHintsMode::Disabled.directive())
         .context("Failed to set decompiler's argument hints mode")?;
 
-    // Create a new output directory, returning an error if it already exists, and it's not empty.
+    // Create a new output directory, returning an error if it already exists and it's not empty.
     let dirpath = filepath.as_ref().with_extension("dec");
     prepare_output_dir(&dirpath)?;
 
@@ -114,6 +114,7 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
     eprintln!();
     eprintln!("[*] Dumping all types to `{}`", all_types_path.display());
     match dump_all_types_to_file(&idb, all_types_path) {
+        // Types were successfully written to the output file.
         Ok(()) => eprintln!("[+] Done"),
 
         // Signal a failure due to empty type definitions or IDA errors.
@@ -142,7 +143,7 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
             reason = "`usize` can hardly overflow here"
         )]
         match decompile_to_file(&idb, &f, &output_path) {
-            // Function decompilation and type dumping succeeded.
+            // Pseudocode and type definitions were successfully written to the output files.
             Ok(()) => {
                 println!("{func_name} -> `{}`", output_path.display());
                 println!(
@@ -158,7 +159,7 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
                 decompiled_count += 1;
             }
 
-            // Return an error if Hex-Rays decompiler license is not available.
+            // The Hex-Rays decompiler license is not available.
             Err(HaruspexError::DecompileFailed(IDAError::HexRays(e)))
                 if e.code() == HexRaysErrorCode::License =>
             {
@@ -168,12 +169,11 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
             // Ignore other IDA errors.
             Err(HaruspexError::DecompileFailed(_)) => (),
 
-            // Return any other error.
+            // Propagate any other error.
             Err(e) => return Err(e.into()),
         }
     }
 
-    // Remove the output directory and return an error in case no functions were decompiled.
     if decompiled_count == 0 {
         fs::remove_dir(&dirpath)
             .with_context(|| format!("Failed to remove directory `{}`", dirpath.display()))?;
@@ -219,7 +219,7 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
 ///
 /// let mut idb = idalib::idb::IDB::open(&input_file)?;
 ///
-/// // Disable argument name hints
+/// // Disable argument name hints.
 /// idb.modify_decompiler_config(haruspex::ArgHintsMode::Disabled.directive())?;
 ///
 /// let (_, func) = idb
@@ -246,12 +246,11 @@ pub fn decompile_to_file(
     let decomp = idb.decompile(func)?;
     dump_cfunc_pseudocode_to_file(&decomp, &filepath)?;
 
-    // Best-effort: also dump the function's type definitions, reusing the same decompilation
-    // result instead of decompiling the function a second time.
+    // Best-effort: also dump the function's type definitions, reusing the same decompilation.
     let mut types_path = filepath.as_ref().to_path_buf();
     types_path.set_extension("h");
     match dump_cfunc_types_to_file(idb, &decomp, types_path) {
-        // Return an error if Hex-Rays decompiler license is not available.
+        // The Hex-Rays decompiler license is not available.
         Err(HaruspexError::DecompileFailed(IDAError::HexRays(e)))
             if e.code() == HexRaysErrorCode::License =>
         {
@@ -265,7 +264,7 @@ pub fn decompile_to_file(
         // Ignore other IDA errors.
         Ok(()) | Err(HaruspexError::DecompileFailed(_)) => Ok(()),
 
-        // Propagate any other error (e.g. file I/O failure).
+        // Propagate any other error.
         Err(e) => Err(e),
     }
 }
@@ -314,11 +313,9 @@ pub fn dump_cfunc_pseudocode_to_file(
 /// [`HaruspexError::FileWriteFailed`] if file I/O fails.
 pub fn dump_all_types_to_file(idb: &IDB, filepath: impl AsRef<Path>) -> Result<(), HaruspexError> {
     let all_types = idb.format_decls()?;
-
     if all_types.is_empty() {
         return Err(HaruspexError::TypesEmpty);
     }
-
     write_output(&all_types, filepath)
 }
 
@@ -355,11 +352,9 @@ pub fn dump_cfunc_types_to_file(
     filepath: impl AsRef<Path>,
 ) -> Result<(), HaruspexError> {
     let types = idb.format_cfunc_decls(cfunc)?;
-
     if types.is_empty() {
         return Err(HaruspexError::TypesEmpty);
     }
-
     write_output(&types, filepath)
 }
 
