@@ -107,8 +107,6 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
     let dirpath = filepath.as_ref().with_extension("dec");
     prepare_output_dir(&dirpath)?;
 
-    let mut decompiled_count = 0;
-
     // Extract all type definitions.
     let all_types_path = dirpath.join("all_types.h");
     eprintln!();
@@ -122,10 +120,11 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
             eprintln!("[!] Failed");
         }
 
-        // Return any other error.
+        // Propagate any other error.
         Err(e) => return Err(e.into()),
     }
 
+    let mut decompiled_count = 0;
     eprintln!();
     eprintln!("[*] Extracting pseudocode and type definitions of functions...");
     eprintln!();
@@ -134,7 +133,6 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
             continue;
         }
 
-        // Decompile the function and write its pseudocode and type definitions to the output files.
         let func_name = f.name().unwrap_or_else(|| "[no name]".into());
         let output_path = output_path_for_function(&f, &dirpath);
 
@@ -197,11 +195,10 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
 /// `filepath`, and its type definitions to a sibling file with a `.h` extension.
 ///
 /// The function is decompiled only once, and the result is reused for both outputs. Dumping type
-/// definitions is best-effort: non-license Hex-Rays errors are ignored. If there are no type
-/// definitions to dump, the pseudocode file is still written, but this returns
-/// [`HaruspexError::TypesEmpty`] so callers know the `.h` file was not produced. Use
-/// [`dump_func_pseudocode_to_file`] instead if you only want the pseudocode, without dumping type
-/// definitions at all.
+/// definitions is best-effort. If there are no type definitions to dump, the pseudocode file is
+/// still written, but this returns [`HaruspexError::TypesEmpty`] so callers know the `.h` file was
+/// not produced. Use[`dump_func_pseudocode_to_file`] instead if you only want the pseudocode,
+/// without dumping type definitions at all.
 ///
 /// # Errors
 ///
@@ -247,9 +244,7 @@ pub fn decompile_to_file(
     dump_cfunc_pseudocode_to_file(&decomp, &filepath)?;
 
     // Best-effort: also dump the function's type definitions, reusing the same decompilation.
-    let mut types_path = filepath.as_ref().to_path_buf();
-    types_path.set_extension("h");
-    match dump_cfunc_types_to_file(idb, &decomp, types_path) {
+    match dump_cfunc_types_to_file(idb, &decomp, filepath.as_ref().with_extension("h")) {
         // The Hex-Rays decompiler license is not available.
         Err(HaruspexError::DecompileFailed(IDAError::HexRays(e)))
             if e.code() == HexRaysErrorCode::License =>
@@ -290,7 +285,7 @@ pub fn dump_func_pseudocode_to_file(
 
 /// Writes the pseudocode of the already-decompiled [`CFunction`] `cfunc` to the output file at `filepath`.
 ///
-/// Callers that already hold a `cfunc` (e.g. because they also need [`dump_cfunc_types_to_file`] for the
+/// Callers that already hold a `cfunc` (e.g., because they also need [`dump_cfunc_types_to_file`] for the
 /// same function) can use this to avoid decompiling the function twice; otherwise use
 /// [`dump_func_pseudocode_to_file`].
 ///
@@ -308,7 +303,7 @@ pub fn dump_cfunc_pseudocode_to_file(
 ///
 /// # Errors
 ///
-/// Returns [`HaruspexError::DecompileFailed`] if formatting the type declarations fails,
+/// Returns [`HaruspexError::DecompileFailed`] if getting the type declarations fails,
 /// [`HaruspexError::TypesEmpty`] if there are no type definitions to dump, or
 /// [`HaruspexError::FileWriteFailed`] if file I/O fails.
 pub fn dump_all_types_to_file(idb: &IDB, filepath: impl AsRef<Path>) -> Result<(), HaruspexError> {
@@ -337,13 +332,13 @@ pub fn dump_func_types_to_file(
 /// Dumps the type definitions of the already-decompiled [`CFunction`] `cfunc` in [`IDB`] `idb`
 /// to the output file at `filepath`.
 ///
-/// Callers that already hold a `cfunc` (e.g. because they also need [`dump_cfunc_pseudocode_to_file`]
+/// Callers that already hold a `cfunc` (e.g., because they also need [`dump_cfunc_pseudocode_to_file`]
 /// for the same function) can use this to avoid decompiling the function twice; otherwise use
 /// [`dump_func_types_to_file`].
 ///
 /// # Errors
 ///
-/// Returns [`HaruspexError::DecompileFailed`] if formatting the type declarations fails,
+/// Returns [`HaruspexError::DecompileFailed`] if getting the type declarations fails,
 /// [`HaruspexError::TypesEmpty`] if there are no type definitions to dump, or
 /// [`HaruspexError::FileWriteFailed`] if file I/O fails.
 pub fn dump_cfunc_types_to_file(
@@ -416,7 +411,6 @@ fn write_output(content: &str, filepath: impl AsRef<Path>) -> Result<(), Haruspe
     let mut writer = BufWriter::new(File::create(&filepath)?);
     writer.write_all(content.as_bytes())?;
     writer.flush()?;
-
     Ok(())
 }
 
