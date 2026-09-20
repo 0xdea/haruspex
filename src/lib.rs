@@ -479,6 +479,42 @@ mod tests {
     }
 
     #[test]
+    fn write_output_writes_content_to_file() -> anyhow::Result<()> {
+        let dir = test_dir("write_output_ok");
+        if dir.exists() {
+            fs::remove_dir_all(&dir)?;
+        }
+        fs::create_dir_all(&dir)?;
+
+        let file = dir.join("output.txt");
+        write_output("hello, world", &file)?;
+        assert_eq!(
+            fs::read_to_string(&file)?,
+            "hello, world",
+            "file content should match what was written"
+        );
+
+        fs::remove_dir_all(&dir)?;
+        Ok(())
+    }
+
+    #[test]
+    fn write_output_fails_on_unwritable_path() -> anyhow::Result<()> {
+        let dir = test_dir("write_output_missing_parent");
+        if dir.exists() {
+            fs::remove_dir_all(&dir)?;
+        }
+
+        // `dir` itself does not exist, so writing to a file inside it must fail.
+        let result = write_output("hello, world", dir.join("output.txt"));
+        assert!(
+            matches!(result, Err(HaruspexError::FileWriteFailed(_))),
+            "wrong error type returned: {result:?}"
+        );
+        Ok(())
+    }
+
+    #[test]
     fn sanitize_filename_preserves_plain_names() {
         assert_eq!(
             sanitize_filename("hello_world"),

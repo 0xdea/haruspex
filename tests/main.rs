@@ -17,6 +17,10 @@ use idalib::idb::IDB;
     clippy::too_many_lines,
     reason = "test code is more readable when not split into multiple functions"
 )]
+#[expect(
+    clippy::cognitive_complexity,
+    reason = "test code is more readable when not split into multiple functions"
+)]
 fn main() -> anyhow::Result<()> {
     // Target binary path.
     const FILENAME: &str = "./tests/data/ls";
@@ -135,14 +139,52 @@ fn main() -> anyhow::Result<()> {
         .find(|f| f.1.name().expect("invalid function name") == "main")
         .expect("failed to find function `main`");
     let output_file = dirpath.join("main.c");
-    match haruspex::decompile_to_file(&idb, &func, &output_file) {
-        Ok(()) | Err(HaruspexError::TypesEmpty) => {}
-        Err(e) => return Err(e.into()),
-    }
+    let result = haruspex::decompile_to_file(&idb, &func, &output_file);
+    assert!(
+        matches!(result, Err(HaruspexError::TypesEmpty)),
+        "expected `main` to have no type definitions to dump, got: {result:?}"
+    );
     assert!(
         output_file.metadata()?.len() > 0,
         "output file `{}` is empty",
         output_file.display()
+    );
+    let main_types_file = output_file.with_extension("h");
+    assert!(
+        !main_types_file.exists(),
+        "expected no type definitions file for `main`, found: {}",
+        main_types_file.display()
+    );
+    eprintln!("Ok.");
+
+    // Check `decompile_to_file` produces both a pseudocode and a type definitions file when the
+    // function actually has type definitions to dump.
+    eprint!("[*] Checking `decompile_to_file` produces a type definitions file when available... ");
+    let (_, has_types_func) = idb
+        .functions()
+        .find(|f| f.1.name().expect("invalid function name") == "sub_2C30")
+        .expect("failed to find function `sub_2C30`");
+    let has_types_output = dirpath.join("sub_2C30.c");
+    let result = haruspex::decompile_to_file(&idb, &has_types_func, &has_types_output);
+    assert!(
+        matches!(result, Ok(())),
+        "expected `sub_2C30` to have type definitions to dump, got: {result:?}"
+    );
+    assert!(
+        has_types_output.metadata()?.len() > 0,
+        "output file `{}` is empty",
+        has_types_output.display()
+    );
+    let has_types_header = has_types_output.with_extension("h");
+    assert!(
+        has_types_header.is_file(),
+        "expected type definitions file missing: {}",
+        has_types_header.display()
+    );
+    assert!(
+        has_types_header.metadata()?.len() > 0,
+        "type definitions file `{}` is empty",
+        has_types_header.display()
     );
     eprintln!("Ok.");
 
@@ -153,6 +195,63 @@ fn main() -> anyhow::Result<()> {
         content.contains("main"),
         "output file `{}` does not contain expected pseudocode",
         output_file.display()
+    );
+    eprintln!("Ok.");
+
+    // Check `dump_func_pseudocode_to_file` works as expected.
+    eprint!("[*] Checking `dump_func_pseudocode_to_file` works as expected... ");
+    let func_pseudocode_file = dirpath.join("main-func-pseudocode.c");
+    haruspex::dump_func_pseudocode_to_file(&idb, &func, &func_pseudocode_file)?;
+    assert!(
+        func_pseudocode_file.metadata()?.len() > 0,
+        "output file `{}` is empty",
+        func_pseudocode_file.display()
+    );
+    eprintln!("Ok.");
+
+    // Check `dump_cfunc_pseudocode_to_file` works as expected.
+    eprint!("[*] Checking `dump_cfunc_pseudocode_to_file` works as expected... ");
+    let decomp = idb.decompile(&func)?;
+    let cfunc_pseudocode_file = dirpath.join("main-cfunc-pseudocode.c");
+    haruspex::dump_cfunc_pseudocode_to_file(&decomp, &cfunc_pseudocode_file)?;
+    assert!(
+        cfunc_pseudocode_file.metadata()?.len() > 0,
+        "output file `{}` is empty",
+        cfunc_pseudocode_file.display()
+    );
+    eprintln!("Ok.");
+
+    // Check `dump_all_types_to_file` works as expected.
+    eprint!("[*] Checking `dump_all_types_to_file` works as expected... ");
+    let all_types_file = dirpath.join("all_types-standalone.h");
+    haruspex::dump_all_types_to_file(&idb, &all_types_file)?;
+    assert!(
+        all_types_file.metadata()?.len() > 0,
+        "output file `{}` is empty",
+        all_types_file.display()
+    );
+    eprintln!("Ok.");
+
+    // Check `dump_func_types_to_file` works as expected.
+    eprint!("[*] Checking `dump_func_types_to_file` works as expected... ");
+    let func_types_file = dirpath.join("sub_2C30-func-types.h");
+    haruspex::dump_func_types_to_file(&idb, &has_types_func, &func_types_file)?;
+    assert!(
+        func_types_file.metadata()?.len() > 0,
+        "output file `{}` is empty",
+        func_types_file.display()
+    );
+    eprintln!("Ok.");
+
+    // Check `dump_cfunc_types_to_file` works as expected.
+    eprint!("[*] Checking `dump_cfunc_types_to_file` works as expected... ");
+    let has_types_decomp = idb.decompile(&has_types_func)?;
+    let cfunc_types_file = dirpath.join("sub_2C30-cfunc-types.h");
+    haruspex::dump_cfunc_types_to_file(&idb, &has_types_decomp, &cfunc_types_file)?;
+    assert!(
+        cfunc_types_file.metadata()?.len() > 0,
+        "output file `{}` is empty",
+        cfunc_types_file.display()
     );
     eprintln!("Ok.");
 
