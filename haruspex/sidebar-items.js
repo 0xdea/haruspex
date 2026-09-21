@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["ArgHintsMode","HaruspexError"],"fn":["decompile_to_file","output_path_for_function","prepare_output_dir","run","sanitize_filename"]};
+window.SIDEBAR_ITEMS = {"enum":["ArgHintsMode","HaruspexError"],"fn":["decompile_to_file","dump_all_types_to_file","dump_cfunc_pseudocode_to_file","dump_cfunc_types_to_file","dump_func_pseudocode_to_file","dump_func_types_to_file","output_path_for_function","prepare_output_dir","run","sanitize_filename"]};
