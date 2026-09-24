@@ -121,7 +121,7 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
         }
 
         // Propagate any other error.
-        Err(e) => return Err(e.into()),
+        Err(err) => return Err(err.into()),
     }
 
     let mut decompiled_count = 0;
@@ -158,17 +158,17 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
             }
 
             // The Hex-Rays decompiler license is not available.
-            Err(HaruspexError::DecompileFailed(IDAError::HexRays(e)))
-                if e.code() == HexRaysErrorCode::License =>
+            Err(HaruspexError::DecompileFailed(IDAError::HexRays(err)))
+                if err.code() == HexRaysErrorCode::License =>
             {
-                return Err(e.into());
+                return Err(err.into());
             }
 
             // Ignore other IDA errors.
             Err(HaruspexError::DecompileFailed(_)) => (),
 
             // Propagate any other error.
-            Err(e) => return Err(e.into()),
+            Err(err) => return Err(err.into()),
         }
     }
 
@@ -246,10 +246,10 @@ pub fn decompile_to_file(
     // Best-effort: also dump the function's type definitions, reusing the same decompilation.
     match dump_cfunc_types_to_file(idb, &decomp, filepath.as_ref().with_extension("h")) {
         // The Hex-Rays decompiler license is not available.
-        Err(HaruspexError::DecompileFailed(IDAError::HexRays(e)))
-            if e.code() == HexRaysErrorCode::License =>
+        Err(HaruspexError::DecompileFailed(IDAError::HexRays(err)))
+            if err.code() == HexRaysErrorCode::License =>
         {
-            Err(HaruspexError::DecompileFailed(IDAError::HexRays(e)))
+            Err(HaruspexError::DecompileFailed(IDAError::HexRays(err)))
         }
 
         // Report back that no type definitions were generated, so callers know the `.h`
@@ -260,7 +260,7 @@ pub fn decompile_to_file(
         Ok(()) | Err(HaruspexError::DecompileFailed(_)) => Ok(()),
 
         // Propagate any other error.
-        Err(e) => Err(e),
+        Err(err) => Err(err),
     }
 }
 
