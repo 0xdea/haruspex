@@ -10,6 +10,10 @@ use idalib::idb::IDB;
 #[expect(clippy::expect_used, reason = "tests can use `expect`")]
 #[expect(clippy::panic_in_result_fn, reason = "panics are allowed in test code")]
 #[expect(
+    clippy::shadow_reuse,
+    reason = "shadowing is convenient and idiomatic here"
+)]
+#[expect(
     clippy::shadow_unrelated,
     reason = "shadowing can be convenient in test code"
 )]
@@ -56,7 +60,7 @@ fn main() -> anyhow::Result<()> {
         .filter(|entry| {
             entry
                 .as_ref()
-                .is_ok_and(|e| e.path().extension() == Some("c".as_ref()))
+                .is_ok_and(|entry| entry.path().extension() == Some("c".as_ref()))
         })
         .count();
     assert_eq!(
@@ -72,7 +76,7 @@ fn main() -> anyhow::Result<()> {
         .filter(|entry| {
             entry
                 .as_ref()
-                .is_ok_and(|e| e.path().extension() == Some("h".as_ref()))
+                .is_ok_and(|entry| entry.path().extension() == Some("h".as_ref()))
         })
         .count();
     assert_eq!(
@@ -136,7 +140,7 @@ fn main() -> anyhow::Result<()> {
     let idb = IDB::open(filepath)?;
     let (_, func) = idb
         .functions()
-        .find(|f| f.1.name().expect("invalid function name") == "main")
+        .find(|func| func.1.name().expect("invalid function name") == "main")
         .expect("failed to find function `main`");
     let output_file = dirpath.join("main.c");
     let result = haruspex::decompile_to_file(&idb, &func, &output_file);
@@ -162,7 +166,7 @@ fn main() -> anyhow::Result<()> {
     eprint!("[*] Checking `decompile_to_file` produces a type definitions file when available... ");
     let (_, has_types_func) = idb
         .functions()
-        .find(|f| f.1.name().expect("invalid function name") == "sub_2C30")
+        .find(|func| func.1.name().expect("invalid function name") == "sub_2C30")
         .expect("failed to find function `sub_2C30`");
     let has_types_output = dirpath.join("sub_2C30.c");
     let result = haruspex::decompile_to_file(&idb, &has_types_func, &has_types_output);

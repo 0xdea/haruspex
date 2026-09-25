@@ -128,19 +128,19 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
     eprintln!();
     eprintln!("[*] Extracting pseudocode and type definitions of functions...");
     eprintln!();
-    for (_id, f) in idb.functions() {
-        if f.flags().contains(FunctionFlags::THUNK) {
+    for (_id, func) in idb.functions() {
+        if func.flags().contains(FunctionFlags::THUNK) {
             continue;
         }
 
-        let func_name = f.name().unwrap_or_else(|| "[no name]".into());
-        let output_path = output_path_for_function(&f, &dirpath);
+        let func_name = func.name().unwrap_or_else(|| "[no name]".into());
+        let output_path = output_path_for_function(&func, &dirpath);
 
         #[expect(
             clippy::arithmetic_side_effects,
             reason = "`usize` can hardly overflow here"
         )]
-        match decompile_to_file(&idb, &f, &output_path) {
+        match decompile_to_file(&idb, &func, &output_path) {
             // Pseudocode and type definitions were successfully written to the output files.
             Ok(()) => {
                 println!("{func_name} -> `{}`", output_path.display());
