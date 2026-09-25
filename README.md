@@ -135,6 +135,7 @@ This project's development has been supported by the following organizations:
 - Add a Semgrep CI regression test to make sure the percentage of parsed lines doesn't decrease.
 - Use the `.cpp` extension instead of `.c` to output pseudocode (see
   this [issue](https://github.com/0xdea/semgrep-rules/issues/12))?
+- Implement serialized output to facilitate automated parsing and analysis.
 - Integrate with Semgrep scanning (see <https://github.com/0xdea/semgrep-rules>).
 - Integrate with weggli scanning (see <https://github.com/0xdea/weggli-patterns>).
 - Improve decompiler output in the style of [HexRaysPyTools](https://github.com/igogo-x86/HexRaysPyTools)
