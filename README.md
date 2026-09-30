@@ -93,7 +93,7 @@ Alternatively, you can build from [source](https://github.com/0xdea/haruspex):
    ```sh
    haruspex <binary_file>
    ```
-4. Find the extracted pseudocode and type definitions in the `binary_file.dec` directory:
+4. Find the extracted pseudocode and type definitions in the `<binary_file>.dec` directory:
    ```sh
    vim <binary_file>.dec
    code <binary_file>.dec
