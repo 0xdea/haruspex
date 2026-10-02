@@ -7,10 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add the `no_functions` test binary and an integration test for binaries without functions.
+
 ### Changed
 
 - Improve code style.
 - Update documentation.
+- Remove an unreachable license check from `decompile_to_file`.
+
+### Fixed
+
+- Remove the output directory when `run` fails, including when no functions were decompiled.
+- Call `idalib::force_batch_mode` in the integration test harness.
 
 ## [0.10.1] - 2026-09-21
 

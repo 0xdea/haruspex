@@ -107,11 +107,53 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
     let dirpath = filepath.as_ref().with_extension("dec");
     prepare_output_dir(&dirpath)?;
 
+    // Remove the output directory, which is empty or only partially populated,
+    // if anything goes wrong, including when no functions were decompiled.
+    let decompiled_count = extract_pseudocode(&idb, &dirpath)
+        .and_then(|count| {
+            anyhow::ensure!(
+                count > 0,
+                "No functions were decompiled, check your input file"
+            );
+            Ok(count)
+        })
+        .inspect_err(|_| {
+            if let Err(cleanup_err) = fs::remove_dir_all(&dirpath) {
+                eprintln!(
+                    "[!] Failed to remove directory `{}`: {cleanup_err}",
+                    dirpath.display()
+                );
+            }
+        })?;
+
+    eprintln!();
+    eprintln!(
+        "[+] Decompiled {decompiled_count} functions into `{}`",
+        dirpath.display()
+    );
+    eprintln!(
+        "[+] Done processing binary file `{}` in {:.1} seconds",
+        filepath.as_ref().display(),
+        start.elapsed().as_secs_f64()
+    );
+    Ok(decompiled_count)
+}
+
+/// Dumps all type definitions in [`IDB`] `idb` to `all_types.h`, then
+/// pseudocode and type definitions of each non-thunk function into `dirpath`.
+///
+/// Returns how many functions were decompiled, which may be zero.
+///
+/// # Errors
+///
+/// Returns [`anyhow::Error`] if the output files cannot be created, or if the
+/// Hex-Rays decompiler license is not available for the target binary.
+fn extract_pseudocode(idb: &IDB, dirpath: &Path) -> anyhow::Result<usize> {
     // Extract all type definitions.
     let all_types_path = dirpath.join("all_types.h");
     eprintln!();
     eprintln!("[*] Dumping all types to `{}`", all_types_path.display());
-    match dump_all_types_to_file(&idb, all_types_path) {
+    match dump_all_types_to_file(idb, all_types_path) {
         // Types were successfully written to the output file.
         Ok(()) => eprintln!("[+] Done"),
 
@@ -134,13 +176,13 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
         }
 
         let func_name = func.name().unwrap_or_else(|| "[no name]".into());
-        let output_path = output_path_for_function(&func, &dirpath);
+        let output_path = output_path_for_function(&func, dirpath);
 
         #[expect(
             clippy::arithmetic_side_effects,
             reason = "`usize` can hardly overflow here"
         )]
-        match decompile_to_file(&idb, &func, &output_path) {
+        match decompile_to_file(idb, &func, &output_path) {
             // Pseudocode and type definitions were successfully written to the output files.
             Ok(()) => {
                 println!("{func_name} -> `{}`", output_path.display());
@@ -172,22 +214,6 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
         }
     }
 
-    if decompiled_count == 0 {
-        fs::remove_dir(&dirpath)
-            .with_context(|| format!("Failed to remove directory `{}`", dirpath.display()))?;
-        anyhow::bail!("No functions were decompiled, check your input file");
-    }
-
-    eprintln!();
-    eprintln!(
-        "[+] Decompiled {decompiled_count} functions into `{}`",
-        dirpath.display()
-    );
-    eprintln!(
-        "[+] Done processing binary file `{}` in {:.1} seconds",
-        filepath.as_ref().display(),
-        start.elapsed().as_secs_f64()
-    );
     Ok(decompiled_count)
 }
 
@@ -245,18 +271,13 @@ pub fn decompile_to_file(
 
     // Best-effort: also dump the function's type definitions, reusing the same decompilation.
     match dump_cfunc_types_to_file(idb, &decomp, filepath.as_ref().with_extension("h")) {
-        // The Hex-Rays decompiler license is not available.
-        Err(HaruspexError::DecompileFailed(IDAError::HexRays(err)))
-            if err.code() == HexRaysErrorCode::License =>
-        {
-            Err(HaruspexError::DecompileFailed(IDAError::HexRays(err)))
-        }
-
         // Report back that no type definitions were generated, so callers know the `.h`
         // file was not written even though the pseudocode was.
         err @ Err(HaruspexError::TypesEmpty) => err,
 
-        // Ignore other IDA errors.
+        // Ignore IDA errors: the license was already checked by `idb.decompile`
+        // above, and idalib maps `format_cfunc_decls` failures to `IDAError::Ffi`,
+        // so they only affect this function's type definitions.
         Ok(()) | Err(HaruspexError::DecompileFailed(_)) => Ok(()),
 
         // Propagate any other error.

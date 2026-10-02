@@ -1,14 +1,19 @@
 //! tests/main.rs.
 
+#![expect(clippy::panic_in_result_fn, reason = "panics are allowed in test code")]
+
 use std::fs;
 use std::path::Path;
 
+use anyhow::Context as _;
 use haruspex::HaruspexError;
 use idalib::idb::IDB;
 
+/// Extensions of the files that make up an IDB, packed (`i64`) or unpacked.
+const IDB_EXTENSIONS: [&str; 6] = ["i64", "id0", "id1", "id2", "nam", "til"];
+
 /// Custom harness for integration tests.
 #[expect(clippy::expect_used, reason = "tests can use `expect`")]
-#[expect(clippy::panic_in_result_fn, reason = "panics are allowed in test code")]
 #[expect(
     clippy::shadow_reuse,
     reason = "shadowing is convenient and idiomatic here"
@@ -32,6 +37,9 @@ fn main() -> anyhow::Result<()> {
     const N_DECOMP: usize = 79;
     // Expected number of header files.
     const N_HEADERS: usize = 10;
+
+    // Force IDA to stay quiet.
+    idalib::force_batch_mode();
 
     // Remove the IDB file if it exists.
     let idb_path = Path::new(FILENAME).with_extension("i64");
@@ -302,11 +310,68 @@ fn main() -> anyhow::Result<()> {
     );
     eprintln!("Ok.");
 
+    // Close the IDB before another one is opened, after dropping the objects
+    // derived from it, whose destructors call into IDA.
+    drop(has_types_decomp);
+    drop(decomp);
+    drop(has_types_func);
+    drop(func);
+    drop(idb);
+
     // Remove the output directory at the end.
     if dirpath.exists() {
         fs::remove_dir_all(&dirpath)?;
     }
 
+    test_binary_without_functions()?;
+
     eprintln!();
+    Ok(())
+}
+
+/// Runs haruspex against a binary with type definitions but no functions, and
+/// checks that it fails and removes its output directory, which by then
+/// contains `all_types.h`.
+fn test_binary_without_functions() -> anyhow::Result<()> {
+    // Target binary path.
+    const FILENAME: &str = "./tests/data/no_functions";
+
+    let filepath = Path::new(FILENAME);
+    let dirpath = filepath.with_extension("dec");
+    reset_output(filepath, &dirpath)?;
+
+    eprintln!();
+    let result = haruspex::run(filepath);
+    eprint!("[*] Checking `run` fails on a binary without functions... ");
+    let err = result.err().context("run succeeded unexpectedly")?;
+    assert!(
+        format!("{err:#}").contains("functions were decompiled"),
+        "wrong error returned: {err:#}"
+    );
+    eprintln!("Ok.");
+
+    eprint!("[*] Checking `run` removes the output directory on failure... ");
+    assert!(
+        !dirpath.exists(),
+        "output directory `{}` was not removed",
+        dirpath.display()
+    );
+    eprintln!("Ok.");
+
+    reset_output(filepath, &dirpath)
+}
+
+/// Removes the output directory at `dirpath` and every IDB file of the binary
+/// at `filepath`, packed or unpacked, if they exist.
+fn reset_output(filepath: &Path, dirpath: &Path) -> anyhow::Result<()> {
+    for ext in IDB_EXTENSIONS {
+        let idb_path = filepath.with_extension(ext);
+        if idb_path.is_file() {
+            fs::remove_file(idb_path)?;
+        }
+    }
+    if dirpath.exists() {
+        fs::remove_dir_all(dirpath)?;
+    }
     Ok(())
 }
