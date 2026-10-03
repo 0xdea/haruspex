@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improve code style.
 - Update documentation.
 - Remove an unreachable license check from `decompile_to_file`.
+- Lowercase error messages.
 
 ### Fixed
 

@@ -79,7 +79,7 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
 
     eprintln!("[*] Analyzing binary file `{}`", filepath.display());
     let mut idb = IDB::open(filepath)
-        .with_context(|| format!("Failed to analyze binary file `{}`", filepath.display()))?;
+        .with_context(|| format!("failed to analyze binary file `{}`", filepath.display()))?;
     eprintln!("[+] Successfully analyzed binary file");
     eprintln!();
 
@@ -88,11 +88,11 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
     eprintln!("[-] File type: {:?}", idb.meta().filetype());
     eprintln!();
 
-    anyhow::ensure!(idb.decompiler_available(), "Decompiler is not available");
+    anyhow::ensure!(idb.decompiler_available(), "decompiler is not available");
 
     // Disable argument name hints.
     idb.modify_decompiler_config(ArgHintsMode::Disabled.directive())
-        .context("Failed to set decompiler's argument hints mode")?;
+        .context("failed to set decompiler's argument hints mode")?;
 
     // Create a new output directory, returning an error if it already exists and it's not empty.
     let dirpath = filepath.with_extension("dec");
@@ -104,7 +104,7 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
         .and_then(|count| {
             anyhow::ensure!(
                 count > 0,
-                "No functions were decompiled, check your input file"
+                "no functions were decompiled, check your input file"
             );
             Ok(count)
         })
@@ -374,10 +374,10 @@ pub fn prepare_output_dir(dirpath: impl AsRef<Path>) -> anyhow::Result<()> {
     eprintln!("[*] Preparing output directory `{}`", dirpath.display());
     if dirpath.exists() {
         fs::remove_dir(dirpath)
-            .with_context(|| format!("Output directory `{}` already exists", dirpath.display()))?;
+            .with_context(|| format!("output directory `{}` already exists", dirpath.display()))?;
     }
     fs::create_dir_all(dirpath)
-        .with_context(|| format!("Failed to create directory `{}`", dirpath.display()))?;
+        .with_context(|| format!("failed to create directory `{}`", dirpath.display()))?;
     eprintln!("[+] Output directory is ready");
     Ok(())
 }
