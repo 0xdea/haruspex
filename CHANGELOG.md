@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Lowercase error messages.
 - Document how the output directory is named after the input file.
 - Document that `sanitize_filename` truncates names by chars, not bytes.
+- Split the integration test harness into independent scenarios and checks.
 
 ### Fixed
 
