@@ -53,8 +53,8 @@ pub enum ArgHintsMode {
 impl ArgHintsMode {
     /// Returns the Hex-Rays config directive that applies this hints mode.
     ///
-    /// The numeric values match Hex-Rays' own `HAHM_DISABLED`/`HAHM_COMMENT`/`HAHM_INLAY`
-    /// constants defined in `hexrays.hpp`.
+    /// The numeric values match Hex-Rays' own `HAHM_DISABLED`, `HAHM_COMMENT`,
+    /// and `HAHM_INLAY` constants defined in `hexrays.hpp`.
     #[must_use]
     pub const fn directive(self) -> &'static str {
         match self {
@@ -65,14 +65,25 @@ impl ArgHintsMode {
     }
 }
 
-/// Extracts pseudocode and type definitions of functions in the binary file at `filepath` and saves
-/// them in `filepath.dec`, alongside a dump of all type definitions in `all_types.h`.
+/// Extracts pseudocode and type definitions of functions in the binary file at
+/// `filepath`, and saves them in an output directory next to it, alongside a
+/// dump of all type definitions in `all_types.h`.
+///
+/// The output directory is named after `filepath` with its extension, if any,
+/// replaced by `.dec`: `foo.exe` produces `foo.dec`, and so does `foo`.
+/// Binaries that differ only in their extension therefore share the same
+/// output directory, which must either not exist or be empty. If anything goes
+/// wrong after it is created, including when no functions were decompiled, it
+/// is removed.
 ///
 /// Returns how many functions were decompiled.
 ///
 /// # Errors
 ///
-/// Returns [`anyhow::Error`] in case something goes wrong with analyzing the binary file or decompiling functions.
+/// Returns [`anyhow::Error`] if the binary file cannot be analyzed, if the
+/// decompiler or its license is not available, if the output directory already
+/// exists and is not empty, if the output files cannot be created, or if no
+/// functions were decompiled.
 pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
     let start = Instant::now();
     let filepath = filepath.as_ref();
@@ -94,7 +105,8 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
     idb.modify_decompiler_config(ArgHintsMode::Disabled.directive())
         .context("failed to set decompiler's argument hints mode")?;
 
-    // Create a new output directory, returning an error if it already exists and it's not empty.
+    // Create a new output directory, returning an error if it already exists
+    // and it's not empty.
     let dirpath = filepath.with_extension("dec");
     prepare_output_dir(&dirpath)?;
 
@@ -170,7 +182,7 @@ fn extract_pseudocode(idb: &IDB, dirpath: &Path) -> anyhow::Result<usize> {
         let output_path = output_path_for_function(&func, dirpath);
 
         match decompile_to_file(idb, &func, &output_path) {
-            // Pseudocode and type definitions were successfully written to the output files.
+            // Pseudocode and type definitions were written to the output files.
             Ok(()) => {
                 println!("{func_name} -> `{}`", output_path.display());
                 println!(
@@ -204,19 +216,22 @@ fn extract_pseudocode(idb: &IDB, dirpath: &Path) -> anyhow::Result<usize> {
     Ok(decompiled_count)
 }
 
-/// Decompiles [`Function`] `func` in [`IDB`] `idb` and saves its pseudocode to the output file at
-/// `filepath`, and its type definitions to a sibling file with a `.h` extension.
+/// Decompiles [`Function`] `func` in [`IDB`] `idb` and saves its pseudocode to
+/// the output file at `filepath`, and its type definitions to a sibling file
+/// with a `.h` extension.
 ///
-/// The function is decompiled only once, and the result is reused for both outputs. Dumping type
-/// definitions is best-effort. If there are no type definitions to dump, the pseudocode file is
-/// still written, but this returns [`HaruspexError::TypesEmpty`] so callers know the `.h` file was
-/// not produced. Use[`dump_func_pseudocode_to_file`] instead if you only want the pseudocode,
-/// without dumping type definitions at all.
+/// The function is decompiled only once, and the result is reused for both
+/// outputs. Dumping type definitions is best-effort. If there are no type
+/// definitions to dump, the pseudocode file is still written, but this returns
+/// [`HaruspexError::TypesEmpty`] so callers know the `.h` file was not
+/// produced. Use [`dump_func_pseudocode_to_file`] instead if you only want the
+/// pseudocode, without dumping type definitions at all.
 ///
 /// # Errors
 ///
-/// Returns [`HaruspexError::DecompileFailed`] if decompilation fails, [`HaruspexError::FileWriteFailed`]
-/// if file I/O fails, or [`HaruspexError::TypesEmpty`] if the pseudocode was written but there were
+/// Returns [`HaruspexError::DecompileFailed`] if decompilation fails,
+/// [`HaruspexError::FileWriteFailed`] if file I/O fails, or
+/// [`HaruspexError::TypesEmpty`] if the pseudocode was written but there were
 /// no type definitions.
 ///
 /// # Examples
@@ -237,7 +252,8 @@ fn extract_pseudocode(idb: &IDB, dirpath: &Path) -> anyhow::Result<usize> {
 ///     .find(|(_, f)| f.name().unwrap() == "main")
 ///     .unwrap();
 ///
-/// // `TypesEmpty` is not a fatal error: it just means there were no type definitions to dump.
+/// // `TypesEmpty` is not a fatal error: it just means there were no type
+/// // definitions to dump.
 /// match haruspex::decompile_to_file(&idb, &func, &output_file) {
 ///     Ok(()) | Err(haruspex::HaruspexError::TypesEmpty) => {}
 ///     Err(e) => return Err(e.into()),
@@ -258,7 +274,8 @@ pub fn decompile_to_file(
     let decomp = idb.decompile(func)?;
     dump_cfunc_pseudocode_to_file(&decomp, filepath)?;
 
-    // Best-effort: also dump the function's type definitions, reusing the same decompilation.
+    // Best-effort: also dump the function's type definitions, reusing the same
+    // decompilation.
     match dump_cfunc_types_to_file(idb, &decomp, filepath.with_extension("h")) {
         // Report back that no type definitions were generated, so callers know the `.h`
         // file was not written even though the pseudocode was.
@@ -274,16 +291,17 @@ pub fn decompile_to_file(
     }
 }
 
-/// Decompiles [`Function`] `func` in [`IDB`] `idb` and writes only its pseudocode to the output file
-/// at `filepath`, without dumping type definitions.
+/// Decompiles [`Function`] `func` in [`IDB`] `idb` and writes only its
+/// pseudocode to the output file at `filepath`, without dumping type
+/// definitions.
 ///
-/// Lower-level counterpart of [`decompile_to_file`] that skips the type-definition dump; mirrors
-/// [`dump_func_types_to_file`].
+/// Lower-level counterpart of [`decompile_to_file`] that skips the
+/// type-definition dump; mirrors [`dump_func_types_to_file`].
 ///
 /// # Errors
 ///
-/// Returns [`HaruspexError::DecompileFailed`] if decompilation fails or [`HaruspexError::FileWriteFailed`]
-/// if file I/O fails.
+/// Returns [`HaruspexError::DecompileFailed`] if decompilation fails or
+/// [`HaruspexError::FileWriteFailed`] if file I/O fails.
 pub fn dump_func_pseudocode_to_file(
     idb: &IDB,
     func: &Function<'_>,
@@ -293,10 +311,12 @@ pub fn dump_func_pseudocode_to_file(
     dump_cfunc_pseudocode_to_file(&decomp, filepath)
 }
 
-/// Writes the pseudocode of the already-decompiled [`CFunction`] `cfunc` to the output file at `filepath`.
+/// Writes the pseudocode of the already-decompiled [`CFunction`] `cfunc` to the
+/// output file at `filepath`.
 ///
-/// Callers that already hold a `cfunc` (e.g., because they also need [`dump_cfunc_types_to_file`] for the
-/// same function) can use this to avoid decompiling the function twice; otherwise use
+/// Callers that already hold a `cfunc` (e.g., because they also need
+/// [`dump_cfunc_types_to_file`] for the same function) can use this to avoid
+/// decompiling the function twice; otherwise use
 /// [`dump_func_pseudocode_to_file`].
 ///
 /// # Errors
@@ -309,13 +329,14 @@ pub fn dump_cfunc_pseudocode_to_file(
     write_output(&cfunc.pseudocode(), filepath.as_ref())
 }
 
-/// Dumps all type definitions in [`IDB`] `idb` to the output file at `filepath`.
+/// Dumps all type definitions in [`IDB`] `idb` to the output file at
+/// `filepath`.
 ///
 /// # Errors
 ///
-/// Returns [`HaruspexError::DecompileFailed`] if getting the type declarations fails,
-/// [`HaruspexError::TypesEmpty`] if there are no type definitions to dump, or
-/// [`HaruspexError::FileWriteFailed`] if file I/O fails.
+/// Returns [`HaruspexError::DecompileFailed`] if getting the type declarations
+/// fails, [`HaruspexError::TypesEmpty`] if there are no type definitions to
+/// dump, or [`HaruspexError::FileWriteFailed`] if file I/O fails.
 pub fn dump_all_types_to_file(idb: &IDB, filepath: impl AsRef<Path>) -> Result<(), HaruspexError> {
     let all_types = idb.format_decls()?;
     if all_types.is_empty() {
@@ -324,12 +345,14 @@ pub fn dump_all_types_to_file(idb: &IDB, filepath: impl AsRef<Path>) -> Result<(
     write_output(&all_types, filepath.as_ref())
 }
 
-/// Dumps the type definitions of [`Function`] `func` in [`IDB`] `idb` to the output file at `filepath`.
+/// Dumps the type definitions of [`Function`] `func` in [`IDB`] `idb` to the
+/// output file at `filepath`.
 ///
 /// # Errors
 ///
-/// Returns [`HaruspexError::DecompileFailed`] if decompilation fails, [`HaruspexError::TypesEmpty`]
-/// if there are no type definitions to dump, or [`HaruspexError::FileWriteFailed`] if file I/O fails.
+/// Returns [`HaruspexError::DecompileFailed`] if decompilation fails,
+/// [`HaruspexError::TypesEmpty`] if there are no type definitions to dump, or
+/// [`HaruspexError::FileWriteFailed`] if file I/O fails.
 pub fn dump_func_types_to_file(
     idb: &IDB,
     func: &Function<'_>,
@@ -339,18 +362,19 @@ pub fn dump_func_types_to_file(
     dump_cfunc_types_to_file(idb, &decomp, filepath)
 }
 
-/// Dumps the type definitions of the already-decompiled [`CFunction`] `cfunc` in [`IDB`] `idb`
-/// to the output file at `filepath`.
+/// Dumps the type definitions of the already-decompiled [`CFunction`] `cfunc`
+/// in [`IDB`] `idb` to the output file at `filepath`.
 ///
-/// Callers that already hold a `cfunc` (e.g., because they also need [`dump_cfunc_pseudocode_to_file`]
-/// for the same function) can use this to avoid decompiling the function twice; otherwise use
+/// Callers that already hold a `cfunc` (e.g., because they also need
+/// [`dump_cfunc_pseudocode_to_file`] for the same function) can use this to
+/// avoid decompiling the function twice; otherwise use
 /// [`dump_func_types_to_file`].
 ///
 /// # Errors
 ///
-/// Returns [`HaruspexError::DecompileFailed`] if getting the type declarations fails,
-/// [`HaruspexError::TypesEmpty`] if there are no type definitions to dump, or
-/// [`HaruspexError::FileWriteFailed`] if file I/O fails.
+/// Returns [`HaruspexError::DecompileFailed`] if getting the type declarations
+/// fails, [`HaruspexError::TypesEmpty`] if there are no type definitions to
+/// dump, or [`HaruspexError::FileWriteFailed`] if file I/O fails.
 pub fn dump_cfunc_types_to_file(
     idb: &IDB,
     cfunc: &CFunction<'_>,
@@ -363,11 +387,13 @@ pub fn dump_cfunc_types_to_file(
     write_output(&types, filepath.as_ref())
 }
 
-/// Creates a fresh output directory at `dirpath`, removing it first if it exists and is empty.
+/// Creates a fresh output directory at `dirpath`, removing it first if it
+/// exists and is empty.
 ///
 /// # Errors
 ///
-/// Returns [`anyhow::Error`] if the directory already exists and is not empty, or if any filesystem operation fails.
+/// Returns [`anyhow::Error`] if the directory already exists and is not empty,
+/// or if any filesystem operation fails.
 pub fn prepare_output_dir(dirpath: impl AsRef<Path>) -> anyhow::Result<()> {
     let dirpath = dirpath.as_ref();
 
@@ -396,7 +422,14 @@ pub fn output_path_for_function(func: &Function<'_>, dirpath: impl AsRef<Path>) 
         .with_extension("c")
 }
 
-/// Replaces reserved characters in `filename` with underscores and truncates to `MAX_FILENAME_LEN`.
+/// Replaces reserved characters in `filename` with underscores and truncates
+/// it to `MAX_FILENAME_LEN` characters.
+///
+/// The limit counts characters, not bytes: 64 characters of four bytes each
+/// make 256 bytes, over the usual 255-byte limit on filename length, even
+/// before [`output_path_for_function`] appends its `@ADDR.c` suffix. Function
+/// names that long and made only of multi-byte characters are very unlikely,
+/// so this is a known limitation.
 #[must_use]
 pub fn sanitize_filename(filename: &str) -> String {
     filename
@@ -426,7 +459,7 @@ mod tests {
 
     use super::*;
 
-    /// Returns a unique temporary path scoped to the given label and current process.
+    /// Returns a unique temporary path scoped to `label` and the current process.
     fn test_dir(label: &str) -> PathBuf {
         env::temp_dir().join(format!("haruspex_{label}_{}", process::id()))
     }
@@ -585,9 +618,38 @@ mod tests {
     }
 
     #[test]
+    fn sanitize_filename_truncates_by_chars_not_bytes() {
+        // Each crab is four bytes long in UTF-8.
+        let long = "\u{1F980}".repeat(MAX_FILENAME_LEN + 1);
+        let sanitized = sanitize_filename(&long);
+        assert_eq!(
+            sanitized.chars().count(),
+            MAX_FILENAME_LEN,
+            "names should be truncated to `MAX_FILENAME_LEN` chars"
+        );
+        assert_eq!(
+            sanitized.len(),
+            MAX_FILENAME_LEN * 4,
+            "multi-byte chars should be kept whole, exceeding `MAX_FILENAME_LEN` bytes"
+        );
+    }
+
+    #[test]
     fn argument_name_hints_mode_directive_matches_hexrays_config_values() {
-        assert_eq!(ArgHintsMode::Disabled.directive(), "ARG_HINTS_MODE = 0");
-        assert_eq!(ArgHintsMode::Comment.directive(), "ARG_HINTS_MODE = 1");
-        assert_eq!(ArgHintsMode::Inlay.directive(), "ARG_HINTS_MODE = 2");
+        assert_eq!(
+            ArgHintsMode::Disabled.directive(),
+            "ARG_HINTS_MODE = 0",
+            "`Disabled` should map to `HAHM_DISABLED`"
+        );
+        assert_eq!(
+            ArgHintsMode::Comment.directive(),
+            "ARG_HINTS_MODE = 1",
+            "`Comment` should map to `HAHM_COMMENT`"
+        );
+        assert_eq!(
+            ArgHintsMode::Inlay.directive(),
+            "ARG_HINTS_MODE = 2",
+            "`Inlay` should map to `HAHM_INLAY`"
+        );
     }
 }

@@ -93,10 +93,12 @@ Alternatively, you can build from [source](https://github.com/0xdea/haruspex):
    ```sh
    haruspex <binary_file>
    ```
-4. Find the extracted pseudocode and type definitions in the `<binary_file>.dec` directory:
+4. Find the extracted pseudocode and type definitions in the output directory next to `<binary_file>`, named after
+   it with its extension, if any, replaced by `.dec` (e.g., `foo.exe` and `foo` both produce `foo.dec`, so binaries
+   that differ only in their extension share the same output directory):
    ```sh
-   vim <binary_file>.dec
-   code <binary_file>.dec
+   vim foo.dec
+   code foo.dec
    ```
 
 ## Compatibility

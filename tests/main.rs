@@ -128,7 +128,8 @@ fn main() -> anyhow::Result<()> {
     );
     eprintln!("Ok.");
 
-    // Spot-check a known output file: verify the naming scheme and that decompilation produced output.
+    // Spot-check a known output file: verify the naming scheme and that
+    // decompilation produced output.
     eprint!("[*] Checking known output file exists and is non-empty... ");
     let known_file = dirpath.join("sub_4AD0@4AD0.c");
     assert!(
@@ -169,8 +170,8 @@ fn main() -> anyhow::Result<()> {
     );
     eprintln!("Ok.");
 
-    // Check `decompile_to_file` produces both a pseudocode and a type definitions file when the
-    // function actually has type definitions to dump.
+    // Check `decompile_to_file` produces both a pseudocode and a type
+    // definitions file when the function actually has type definitions to dump.
     eprint!("[*] Checking `decompile_to_file` produces a type definitions file when available... ");
     let (_, has_types_func) = idb
         .functions()

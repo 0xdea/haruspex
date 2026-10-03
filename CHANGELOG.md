@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add the `no_functions` test binary and an integration test for binaries without functions.
+- Add a unit test for `sanitize_filename` truncating names by chars, not bytes.
 
 ### Changed
 
@@ -17,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update documentation.
 - Remove an unreachable license check from `decompile_to_file`.
 - Lowercase error messages.
+- Document how the output directory is named after the input file.
+- Document that `sanitize_filename` truncates names by chars, not bytes.
 
 ### Fixed
 
