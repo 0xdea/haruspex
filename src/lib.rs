@@ -3,11 +3,9 @@
 #![cfg_attr(doc, doc = include_str!("../README.md"))]
 #![doc(html_logo_url = "https://raw.githubusercontent.com/0xdea/haruspex/master/.img/logo.png")]
 
-use std::fs;
-use std::fs::File;
-use std::io::{self, BufWriter, Write as _};
 use std::path::{Path, PathBuf};
 use std::time::Instant;
+use std::{fs, io};
 
 use anyhow::Context as _;
 use idalib::IDAError;
@@ -26,7 +24,7 @@ const RESERVED_CHARS: &[char] = &['.', '/', '<', '>', ':', '"', '\\', '|', '?', 
 const MAX_FILENAME_LEN: usize = 64;
 
 /// Haruspex error type.
-#[derive(Error, Debug)]
+#[derive(Debug, Error)]
 #[non_exhaustive]
 pub enum HaruspexError {
     /// Failure in decompiling the function.
@@ -41,12 +39,11 @@ pub enum HaruspexError {
 }
 
 /// Argument name hints mode for function calls in pseudocode.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[non_exhaustive]
-#[repr(u8)]
 pub enum ArgHintsMode {
     /// Argument name hints are disabled.
-    Disabled = 0,
+    Disabled,
     /// Argument names are displayed as comments (/*param=*/).
     Comment,
     /// Argument names are displayed as inlay hints (param:).
@@ -78,17 +75,11 @@ impl ArgHintsMode {
 /// Returns [`anyhow::Error`] in case something goes wrong with analyzing the binary file or decompiling functions.
 pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
     let start = Instant::now();
+    let filepath = filepath.as_ref();
 
-    eprintln!(
-        "[*] Analyzing binary file `{}`",
-        filepath.as_ref().display()
-    );
-    let mut idb = IDB::open(&filepath).with_context(|| {
-        format!(
-            "Failed to analyze binary file `{}`",
-            filepath.as_ref().display()
-        )
-    })?;
+    eprintln!("[*] Analyzing binary file `{}`", filepath.display());
+    let mut idb = IDB::open(filepath)
+        .with_context(|| format!("Failed to analyze binary file `{}`", filepath.display()))?;
     eprintln!("[+] Successfully analyzed binary file");
     eprintln!();
 
@@ -104,7 +95,7 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
         .context("Failed to set decompiler's argument hints mode")?;
 
     // Create a new output directory, returning an error if it already exists and it's not empty.
-    let dirpath = filepath.as_ref().with_extension("dec");
+    let dirpath = filepath.with_extension("dec");
     prepare_output_dir(&dirpath)?;
 
     // Remove the output directory, which is empty or only partially populated,
@@ -133,7 +124,7 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
     );
     eprintln!(
         "[+] Done processing binary file `{}` in {:.1} seconds",
-        filepath.as_ref().display(),
+        filepath.display(),
         start.elapsed().as_secs_f64()
     );
     Ok(decompiled_count)
@@ -166,7 +157,7 @@ fn extract_pseudocode(idb: &IDB, dirpath: &Path) -> anyhow::Result<usize> {
         Err(err) => return Err(err.into()),
     }
 
-    let mut decompiled_count = 0;
+    let mut decompiled_count = 0_usize;
     eprintln!();
     eprintln!("[*] Extracting pseudocode and type definitions of functions...");
     eprintln!();
@@ -178,10 +169,6 @@ fn extract_pseudocode(idb: &IDB, dirpath: &Path) -> anyhow::Result<usize> {
         let func_name = func.name().unwrap_or_else(|| "[no name]".into());
         let output_path = output_path_for_function(&func, dirpath);
 
-        #[expect(
-            clippy::arithmetic_side_effects,
-            reason = "`usize` can hardly overflow here"
-        )]
         match decompile_to_file(idb, &func, &output_path) {
             // Pseudocode and type definitions were successfully written to the output files.
             Ok(()) => {
@@ -190,13 +177,13 @@ fn extract_pseudocode(idb: &IDB, dirpath: &Path) -> anyhow::Result<usize> {
                     "{func_name} -> `{}`",
                     output_path.with_extension("h").display()
                 );
-                decompiled_count += 1;
+                decompiled_count = decompiled_count.saturating_add(1);
             }
 
             // Pseudocode was written, but there were no type definitions to dump.
             Err(HaruspexError::TypesEmpty) => {
                 println!("{func_name} -> `{}`", output_path.display());
-                decompiled_count += 1;
+                decompiled_count = decompiled_count.saturating_add(1);
             }
 
             // The Hex-Rays decompiler license is not available.
@@ -265,12 +252,14 @@ pub fn decompile_to_file(
     func: &Function<'_>,
     filepath: impl AsRef<Path>,
 ) -> Result<(), HaruspexError> {
+    let filepath = filepath.as_ref();
+
     // Decompile the function once and write its pseudocode.
     let decomp = idb.decompile(func)?;
-    dump_cfunc_pseudocode_to_file(&decomp, &filepath)?;
+    dump_cfunc_pseudocode_to_file(&decomp, filepath)?;
 
     // Best-effort: also dump the function's type definitions, reusing the same decompilation.
-    match dump_cfunc_types_to_file(idb, &decomp, filepath.as_ref().with_extension("h")) {
+    match dump_cfunc_types_to_file(idb, &decomp, filepath.with_extension("h")) {
         // Report back that no type definitions were generated, so callers know the `.h`
         // file was not written even though the pseudocode was.
         err @ Err(HaruspexError::TypesEmpty) => err,
@@ -317,7 +306,7 @@ pub fn dump_cfunc_pseudocode_to_file(
     cfunc: &CFunction<'_>,
     filepath: impl AsRef<Path>,
 ) -> Result<(), HaruspexError> {
-    write_output(&cfunc.pseudocode(), filepath)
+    write_output(&cfunc.pseudocode(), filepath.as_ref())
 }
 
 /// Dumps all type definitions in [`IDB`] `idb` to the output file at `filepath`.
@@ -332,7 +321,7 @@ pub fn dump_all_types_to_file(idb: &IDB, filepath: impl AsRef<Path>) -> Result<(
     if all_types.is_empty() {
         return Err(HaruspexError::TypesEmpty);
     }
-    write_output(&all_types, filepath)
+    write_output(&all_types, filepath.as_ref())
 }
 
 /// Dumps the type definitions of [`Function`] `func` in [`IDB`] `idb` to the output file at `filepath`.
@@ -371,7 +360,7 @@ pub fn dump_cfunc_types_to_file(
     if types.is_empty() {
         return Err(HaruspexError::TypesEmpty);
     }
-    write_output(&types, filepath)
+    write_output(&types, filepath.as_ref())
 }
 
 /// Creates a fresh output directory at `dirpath`, removing it first if it exists and is empty.
@@ -380,24 +369,15 @@ pub fn dump_cfunc_types_to_file(
 ///
 /// Returns [`anyhow::Error`] if the directory already exists and is not empty, or if any filesystem operation fails.
 pub fn prepare_output_dir(dirpath: impl AsRef<Path>) -> anyhow::Result<()> {
-    eprintln!(
-        "[*] Preparing output directory `{}`",
-        dirpath.as_ref().display()
-    );
-    if dirpath.as_ref().exists() {
-        fs::remove_dir(&dirpath).with_context(|| {
-            format!(
-                "Output directory `{}` already exists",
-                dirpath.as_ref().display()
-            )
-        })?;
+    let dirpath = dirpath.as_ref();
+
+    eprintln!("[*] Preparing output directory `{}`", dirpath.display());
+    if dirpath.exists() {
+        fs::remove_dir(dirpath)
+            .with_context(|| format!("Output directory `{}` already exists", dirpath.display()))?;
     }
-    fs::create_dir_all(&dirpath).with_context(|| {
-        format!(
-            "Failed to create directory `{}`",
-            dirpath.as_ref().display()
-        )
-    })?;
+    fs::create_dir_all(dirpath)
+        .with_context(|| format!("Failed to create directory `{}`", dirpath.display()))?;
     eprintln!("[+] Output directory is ready");
     Ok(())
 }
@@ -405,9 +385,9 @@ pub fn prepare_output_dir(dirpath: impl AsRef<Path>) -> anyhow::Result<()> {
 /// Builds the output file path for `func` inside `dirpath`.
 #[must_use]
 pub fn output_path_for_function(func: &Function<'_>, dirpath: impl AsRef<Path>) -> PathBuf {
+    let dirpath = dirpath.as_ref();
     let func_name = func.name().unwrap_or_else(|| "[no name]".into());
     dirpath
-        .as_ref()
         .join(format!(
             "{}@{:X}",
             sanitize_filename(&func_name),
@@ -420,18 +400,21 @@ pub fn output_path_for_function(func: &Function<'_>, dirpath: impl AsRef<Path>) 
 #[must_use]
 pub fn sanitize_filename(filename: &str) -> String {
     filename
-        .replace(RESERVED_CHARS, "_")
         .chars()
         .take(MAX_FILENAME_LEN)
+        .map(|ch| {
+            if RESERVED_CHARS.contains(&ch) {
+                '_'
+            } else {
+                ch
+            }
+        })
         .collect()
 }
 
 /// Writes `content` to the output file at `filepath`.
-// Note: for easier testing, we could use a generic function together with `std::io::Cursor`.
-fn write_output(content: &str, filepath: impl AsRef<Path>) -> Result<(), HaruspexError> {
-    let mut writer = BufWriter::new(File::create(&filepath)?);
-    writer.write_all(content.as_bytes())?;
-    writer.flush()?;
+fn write_output(content: &str, filepath: &Path) -> Result<(), HaruspexError> {
+    fs::write(filepath, content)?;
     Ok(())
 }
 
@@ -527,7 +510,7 @@ mod tests {
         }
 
         // `dir` itself does not exist, so writing to a file inside it must fail.
-        let result = write_output("hello, world", dir.join("output.txt"));
+        let result = write_output("hello, world", &dir.join("output.txt"));
         assert!(
             matches!(result, Err(HaruspexError::FileWriteFailed(_))),
             "wrong error type returned: {result:?}"
