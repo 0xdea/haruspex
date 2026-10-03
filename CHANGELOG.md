@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `function_name`, which returns a function's name or `[no name]` if it has none.
 - Add `DumpedFunction::copy_to`, which copies a function's output files elsewhere without decompiling it again.
 - Add `printable_name`, which escapes control chars in a name before printing it.
+- Add integration tests for the CLI output, missing binaries, and invalid arguments, and check that no IDB file is left
+  behind.
 - Declare the minimum supported Rust version (1.91) in `Cargo.toml`.
 
 ### Changed

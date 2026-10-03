@@ -796,15 +796,10 @@ mod tests {
 
     use super::*;
 
-    /// Returns a unique temporary path scoped to `label` and the current process.
-    fn test_dir(label: &str) -> PathBuf {
-        env::temp_dir().join(format!("haruspex_{label}_{}", process::id()))
-    }
-
     /// Returns a fresh, empty temporary directory scoped to `label` and the
     /// current process.
-    fn fresh_test_dir(label: &str) -> anyhow::Result<PathBuf> {
-        let dir = test_dir(label);
+    fn test_dir(label: &str) -> anyhow::Result<PathBuf> {
+        let dir = env::temp_dir().join(format!("haruspex_{label}_{}", process::id()));
         if dir.exists() {
             fs::remove_dir_all(&dir)?;
         }
@@ -828,7 +823,7 @@ mod tests {
 
     #[test]
     fn copy_to_does_nothing_if_files_are_already_in_place() -> anyhow::Result<()> {
-        let dir = fresh_test_dir("copy_in_place")?;
+        let dir = test_dir("copy_in_place")?;
         let mut dumped = dumped_function(dir.join("func@1000.c"), false)?;
         // The type definitions file doesn't exist, so any attempt to copy the
         // files, even onto themselves, fails.
@@ -853,7 +848,7 @@ mod tests {
 
     #[test]
     fn copy_to_copies_pseudocode_and_types() -> anyhow::Result<()> {
-        let dir = fresh_test_dir("copy_types")?;
+        let dir = test_dir("copy_types")?;
         let dumped = dumped_function(dir.join("func@1000.c"), true)?;
         fs::create_dir_all(dir.join("other"))?;
         let filepath = dir.join("other").join("func@1000.c");
@@ -889,7 +884,7 @@ mod tests {
 
     #[test]
     fn copy_to_without_types_copies_only_pseudocode() -> anyhow::Result<()> {
-        let dir = fresh_test_dir("copy_no_types")?;
+        let dir = test_dir("copy_no_types")?;
         let dumped = dumped_function(dir.join("func@1000.c"), false)?;
         fs::create_dir_all(dir.join("other"))?;
         let filepath = dir.join("other").join("func@1000.c");
@@ -911,7 +906,7 @@ mod tests {
 
     #[test]
     fn copy_to_creates_missing_output_directory() -> anyhow::Result<()> {
-        let dir = fresh_test_dir("copy_missing_dir")?;
+        let dir = test_dir("copy_missing_dir")?;
         let dumped = dumped_function(dir.join("func@1000.c"), false)?;
         let filepath = dir.join("missing").join("func@1000.c");
 
@@ -924,7 +919,7 @@ mod tests {
 
     #[test]
     fn copy_to_fails_on_missing_source() -> anyhow::Result<()> {
-        let dir = fresh_test_dir("copy_missing_source")?;
+        let dir = test_dir("copy_missing_source")?;
         let dumped = dumped_function(dir.join("func@1000.c"), false)?;
         fs::remove_file(&dumped.pseudocode)?;
         let filepath = dir.join("other.c");
@@ -945,25 +940,19 @@ mod tests {
 
     #[test]
     fn prepare_output_dir_creates_missing_dir() -> anyhow::Result<()> {
-        let dir = test_dir("create");
-        if dir.exists() {
-            fs::remove_dir_all(&dir)?;
-        }
+        let root = test_dir("create")?;
+        let dir = root.join("output");
 
         prepare_output_dir(&dir)?;
         assert!(dir.is_dir(), "output directory should have been created");
 
-        fs::remove_dir(&dir)?;
+        fs::remove_dir_all(&root)?;
         Ok(())
     }
 
     #[test]
     fn prepare_output_dir_removes_and_recreates_empty_dir() -> anyhow::Result<()> {
-        let dir = test_dir("empty");
-        if dir.exists() {
-            fs::remove_dir_all(&dir)?;
-        }
-        fs::create_dir_all(&dir)?;
+        let dir = test_dir("empty")?;
 
         prepare_output_dir(&dir)?;
         assert!(
@@ -977,11 +966,7 @@ mod tests {
 
     #[test]
     fn prepare_output_dir_fails_on_nonempty_dir() -> anyhow::Result<()> {
-        let dir = test_dir("nonempty");
-        if dir.exists() {
-            fs::remove_dir_all(&dir)?;
-        }
-        fs::create_dir_all(&dir)?;
+        let dir = test_dir("nonempty")?;
         fs::write(dir.join("sentinel.txt"), b"block")?;
 
         let result = prepare_output_dir(&dir);
@@ -1000,11 +985,7 @@ mod tests {
 
     #[test]
     fn write_output_writes_content_to_file() -> anyhow::Result<()> {
-        let dir = test_dir("write_output_ok");
-        if dir.exists() {
-            fs::remove_dir_all(&dir)?;
-        }
-        fs::create_dir_all(&dir)?;
+        let dir = test_dir("write_output_ok")?;
 
         let file = dir.join("output.txt");
         write_output("hello, world", &file)?;
@@ -1020,18 +1001,17 @@ mod tests {
 
     #[test]
     fn write_output_fails_on_unwritable_path() -> anyhow::Result<()> {
-        let dir = test_dir("write_output_missing_parent");
-        if dir.exists() {
-            fs::remove_dir_all(&dir)?;
-        }
+        let dir = test_dir("write_output_missing_parent")?;
 
-        // `dir` itself does not exist, so writing to a file inside it must fail.
-        let file = dir.join("output.txt");
+        // `missing` does not exist, so writing to a file inside it must fail.
+        let file = dir.join("missing").join("output.txt");
         let result = write_output("hello, world", &file);
         assert!(
             matches!(&result, Err(HaruspexError::FileWrite { path, .. }) if *path == file),
             "wrong error returned: {result:?}"
         );
+
+        fs::remove_dir_all(&dir)?;
         Ok(())
     }
 

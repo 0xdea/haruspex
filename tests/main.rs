@@ -2,8 +2,8 @@
 
 #![expect(clippy::panic_in_result_fn, reason = "panics are allowed in test code")]
 
-use std::fs;
 use std::path::{Path, PathBuf};
+use std::{fs, process};
 
 use anyhow::Context as _;
 use haruspex::{DumpedFunction, HaruspexError};
@@ -18,11 +18,17 @@ const IDB_EXTENSIONS: [&str; 6] = ["i64", "id0", "id1", "id2", "nam", "til"];
 const LS: &str = "./tests/data/ls";
 /// Target binary with type definitions but no functions.
 const NO_FUNCTIONS: &str = "./tests/data/no_functions";
+/// Target binary that doesn't exist.
+const MISSING: &str = "./tests/data/missing";
 
 /// Expected number of decompiled functions in `LS`.
 const N_DECOMP: usize = 79;
-/// Expected number of header files in the output directory of `LS`.
+/// Expected number of header files in the output directory of `LS`, including
+/// `all_types.h`.
 const N_HEADERS: usize = 10;
+/// Expected number of stdout lines that name a `.h` file when running haruspex
+/// against `LS`, i.e., `N_HEADERS` without `all_types.h`.
+const N_TYPES_LINES: usize = 9;
 /// Address of the `free` import in `LS`, which is in the extern segment and
 /// can't be decompiled.
 ///
@@ -38,22 +44,29 @@ fn main() -> anyhow::Result<()> {
     test_existing_output_dir()?;
     test_library_functions()?;
     test_binary_without_functions()?;
+    test_missing_binary()?;
+    test_invalid_arguments()?;
 
     eprintln!();
     Ok(())
 }
 
-/// Runs haruspex against a binary with functions and checks its output.
+/// Runs the haruspex binary against a binary with functions and checks what
+/// it prints and writes.
 fn test_binary_with_functions() -> anyhow::Result<()> {
     let dirpath = reset_output(LS)?;
 
-    let n_decomp = haruspex::run(LS)?;
+    let output = run_binary(&[LS])?;
     eprintln!();
-    check_number_of_decompiled_functions(n_decomp);
-    check_number_of_files(&dirpath, "c", n_decomp)?;
+    check_binary_succeeded(&output);
+    check_number_of_output_lines(&output);
+    check_known_output_line(&output);
+    check_summary(&output);
+    check_number_of_files(&dirpath, "c", N_DECOMP)?;
     check_number_of_files(&dirpath, "h", N_HEADERS)?;
     check_arg_hints_disabled(&dirpath)?;
     check_known_output_file(&dirpath)?;
+    check_no_idb_file(LS);
 
     reset_output(LS)?;
     eprintln!();
@@ -69,12 +82,9 @@ fn test_existing_output_dir() -> anyhow::Result<()> {
     fs::write(&sentinel, "block")?;
 
     let result = haruspex::run(LS);
-    eprint!("[*] Checking `run` fails when output directory is not empty... ");
-    assert!(
-        result.is_err(),
-        "run succeeded unexpectedly with a non-empty output directory"
-    );
-    eprintln!("Ok.");
+    eprintln!();
+    check_existing_output_dir_error(result)?;
+    check_existing_output_dir_preserved(&sentinel)?;
 
     // Leave the output directory in place, but empty.
     fs::remove_file(&sentinel)?;
@@ -86,6 +96,7 @@ fn test_existing_output_dir() -> anyhow::Result<()> {
         "wrong number of decompiled functions on second run"
     );
     eprintln!("Ok.");
+    check_no_idb_file(LS);
 
     reset_output(LS)?;
     eprintln!();
@@ -101,6 +112,7 @@ fn test_library_functions() -> anyhow::Result<()> {
     // The IDB is closed when this returns, before the reset below removes its
     // files.
     check_library_functions(&dirpath)?;
+    check_no_idb_file(LS);
 
     reset_output(LS)?;
     eprintln!();
@@ -164,8 +176,39 @@ fn test_binary_without_functions() -> anyhow::Result<()> {
         dirpath.display()
     );
     eprintln!("Ok.");
+    check_no_idb_file(NO_FUNCTIONS);
 
     reset_output(NO_FUNCTIONS)?;
+    eprintln!();
+    Ok(())
+}
+
+/// Runs haruspex against a binary that doesn't exist and checks that it fails
+/// without creating any output.
+fn test_missing_binary() -> anyhow::Result<()> {
+    let dirpath = reset_output(MISSING)?;
+
+    let result = haruspex::run(MISSING);
+    eprintln!();
+    check_missing_binary_error(result)?;
+    check_no_output_dir_created(&dirpath);
+
+    eprintln!();
+    Ok(())
+}
+
+/// Runs the haruspex binary with invalid arguments and checks that it prints
+/// usage information without analyzing any binary.
+fn test_invalid_arguments() -> anyhow::Result<()> {
+    let dirpath = reset_output(NO_FUNCTIONS)?;
+
+    for args in [&[][..], &[NO_FUNCTIONS, NO_FUNCTIONS], &["-h"], &["--help"]] {
+        eprintln!();
+        let output = run_binary(args)?;
+        check_usage(&output, args);
+    }
+    check_no_idb_file(NO_FUNCTIONS);
+    check_no_output_dir_created(&dirpath);
     Ok(())
 }
 
@@ -198,10 +241,71 @@ fn find_function<'a>(idb: &'a IDB, name: &str) -> anyhow::Result<Function<'a>> {
         .with_context(|| format!("failed to find function `{name}`"))
 }
 
-/// Checks the number of decompiled functions.
-fn check_number_of_decompiled_functions(n_decomp: usize) {
-    eprint!("[*] Checking number of decompiled functions... ");
-    assert_eq!(n_decomp, N_DECOMP, "wrong number of decompiled functions");
+/// Runs the haruspex binary with `args`, forwards its stderr, and returns its
+/// output.
+///
+/// # Errors
+///
+/// Returns an error if the binary cannot be run.
+fn run_binary(args: &[&str]) -> anyhow::Result<process::Output> {
+    let output = process::Command::new(env!("CARGO_BIN_EXE_haruspex"))
+        .args(args)
+        .output()?;
+    eprint!("{}", String::from_utf8_lossy(&output.stderr));
+    Ok(output)
+}
+
+/// Checks that the haruspex binary exited successfully.
+fn check_binary_succeeded(output: &process::Output) {
+    eprint!("[*] Checking binary exits successfully... ");
+    assert!(
+        output.status.success(),
+        "binary failed with {}",
+        output.status
+    );
+    eprintln!("Ok.");
+}
+
+/// Checks that stdout has one line per decompiled function, and that the
+/// expected number of them also name a `.h` file.
+fn check_number_of_output_lines(output: &process::Output) {
+    eprint!("[*] Checking stdout has one line per decompiled function... ");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert_eq!(
+        stdout.lines().count(),
+        N_DECOMP,
+        "wrong number of stdout lines"
+    );
+    assert_eq!(
+        stdout.lines().filter(|line| line.contains("` + `")).count(),
+        N_TYPES_LINES,
+        "wrong number of stdout lines naming a `.h` file"
+    );
+    eprintln!("Ok.");
+}
+
+/// Checks the stdout line of a known function with type definitions, which
+/// pins the output format.
+fn check_known_output_line(output: &process::Output) {
+    eprint!("[*] Checking known stdout line... ");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.lines().any(|line| {
+            line == "sub_2C30 -> `./tests/data/ls.dec/sub_2C30@2C30.c` + `sub_2C30@2C30.h`"
+        }),
+        "known stdout line missing from:\n{stdout}"
+    );
+    eprintln!("Ok.");
+}
+
+/// Checks the final summary on stderr, including the skipped functions.
+fn check_summary(output: &process::Output) {
+    eprint!("[*] Checking summary reports decompiled and skipped functions... ");
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("[+] Decompiled 79 functions (52 skipped) into `./tests/data/ls.dec`"),
+        "summary missing or wrong in stderr"
+    );
     eprintln!("Ok.");
 }
 
@@ -549,4 +653,92 @@ fn check_file_write_error(
         matches!(result, Err(HaruspexError::FileWrite { path, .. }) if path == output_file),
         "wrong result returned: {result:?}"
     );
+}
+
+/// Checks that no IDB file, packed or unpacked, is left next to the binary at
+/// `filename`.
+fn check_no_idb_file(filename: &str) {
+    eprint!("[*] Checking no IDB file is left next to the binary... ");
+    for extension in IDB_EXTENSIONS {
+        let idb_path = Path::new(filename).with_extension(extension);
+        assert!(
+            !idb_path.exists(),
+            "unexpected IDB file left behind: {}",
+            idb_path.display()
+        );
+    }
+    eprintln!("Ok.");
+}
+
+/// Checks that `run` failed because the output directory already exists and
+/// is not empty.
+fn check_existing_output_dir_error(result: anyhow::Result<usize>) -> anyhow::Result<()> {
+    eprint!("[*] Checking `run` fails when output directory is not empty... ");
+    let err = result
+        .err()
+        .context("expected an error for a non-empty output directory")?;
+    assert!(
+        format!("{err:#}").contains("already exists"),
+        "wrong error returned: {err:#}"
+    );
+    eprintln!("Ok.");
+    Ok(())
+}
+
+/// Checks that the file in the existing output directory is still there and
+/// unchanged.
+fn check_existing_output_dir_preserved(existing_file: &Path) -> anyhow::Result<()> {
+    eprint!("[*] Checking existing output directory content is preserved... ");
+    assert_eq!(
+        fs::read_to_string(existing_file)?,
+        "block",
+        "existing file `{}` was modified",
+        existing_file.display()
+    );
+    eprintln!("Ok.");
+    Ok(())
+}
+
+/// Checks that `run` failed because the binary file can't be analyzed.
+fn check_missing_binary_error(result: anyhow::Result<usize>) -> anyhow::Result<()> {
+    eprint!("[*] Checking missing binary returns an error... ");
+    let err = result
+        .err()
+        .context("expected an error for a missing binary")?;
+    assert!(
+        format!("{err:#}").contains("failed to analyze binary file"),
+        "wrong error returned: {err:#}"
+    );
+    eprintln!("Ok.");
+    Ok(())
+}
+
+/// Checks that no output directory was created at `dirpath`.
+fn check_no_output_dir_created(dirpath: &Path) {
+    eprint!("[*] Checking no output directory is created... ");
+    assert!(
+        !dirpath.exists(),
+        "unexpected output directory: {}",
+        dirpath.display()
+    );
+    eprintln!("Ok.");
+}
+
+/// Checks that the haruspex binary failed and printed usage information to
+/// stderr, and nothing to stdout, for the invalid `args`.
+fn check_usage(output: &process::Output, args: &[&str]) {
+    eprint!("[*] Checking usage is printed for arguments {args:?}... ");
+    assert!(
+        !output.status.success(),
+        "invalid arguments {args:?} should fail"
+    );
+    assert!(
+        String::from_utf8_lossy(&output.stderr).contains("Usage:"),
+        "usage information should be printed for arguments {args:?}"
+    );
+    assert!(
+        output.stdout.is_empty(),
+        "nothing should be printed to stdout for arguments {args:?}"
+    );
+    eprintln!("Ok.");
 }
