@@ -637,10 +637,22 @@ pub fn printable_name(name: &str) -> Cow<'_, str> {
     Cow::Owned(escaped)
 }
 
-/// Builds the output file path for `func` inside `dirpath`.
+/// Builds the output file path inside `dirpath` for the function named
+/// `func_name` at `addr`, i.e., `{sanitized func_name}@{addr:X}.c`.
+///
+/// It takes the name rather than the function, so that callers that also
+/// print the name (e.g., with [`printable_name`]) get it only once, with
+/// [`function_name`]. The name is sanitized with [`sanitize_filename`], so it
+/// can come straight from the analyzed binary.
 #[must_use]
-pub fn output_path_for_function(func: &Function<'_>, dirpath: impl AsRef<Path>) -> PathBuf {
-    build_output_path(dirpath.as_ref(), &function_name(func), func.start_address())
+pub fn output_path_for_function(
+    func_name: &str,
+    addr: Address,
+    dirpath: impl AsRef<Path>,
+) -> PathBuf {
+    dirpath
+        .as_ref()
+        .join(format!("{}@{addr:X}.c", sanitize_filename(func_name)))
 }
 
 /// Replaces reserved and control characters in `filename` with underscores and
@@ -706,7 +718,7 @@ fn extract_pseudocode(idb: &IDB, dirpath: &Path) -> Result<FunctionCounts, Harus
 
         // Get the name only once, for both the output path and the output line.
         let func_name = function_name(&func);
-        let output_path = build_output_path(dirpath, &func_name, func.start_address());
+        let output_path = output_path_for_function(&func_name, func.start_address(), dirpath);
 
         // `None` means that the function can't be decompiled, so skip it.
         let Some(dumped) = decompile_to_file(idb, &func, &output_path)? else {
@@ -733,13 +745,6 @@ fn extract_pseudocode(idb: &IDB, dirpath: &Path) -> Result<FunctionCounts, Harus
     }
 
     Ok(counts)
-}
-
-/// Builds the output file path inside `dirpath` for the function named
-/// `func_name` at `addr`, i.e., `{sanitized func_name}@{addr:X}.c`.
-#[must_use]
-fn build_output_path(dirpath: &Path, func_name: &str, addr: Address) -> PathBuf {
-    dirpath.join(format!("{}@{addr:X}.c", sanitize_filename(func_name)))
 }
 
 /// Creates the output directory at `dirpath` and all its missing ancestors.
@@ -1049,6 +1054,15 @@ mod tests {
             sanitize_filename("foo\x1b[31mbar\x7fbaz\u{85}qux"),
             "foo_[31mbar_baz_qux",
             "control chars should be replaced with underscores"
+        );
+    }
+
+    #[test]
+    fn output_path_for_function_joins_sanitized_name_and_uppercase_address() {
+        assert_eq!(
+            output_path_for_function("foo.bar", 0x2c30, "out"),
+            Path::new("out").join("foo_bar@2C30.c"),
+            "wrong output path"
         );
     }
 

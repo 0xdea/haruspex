@@ -33,6 +33,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `FileCopy`, which carry the failing address or path and chain the underlying error.
 - **Breaking:** `prepare_output_dir` returns `HaruspexError` and no longer prints progress messages.
 - **Breaking:** make `ArgHintsMode::directive` private, in favor of `ArgHintsMode::apply`.
+- **Breaking:** `output_path_for_function` takes a function's name and address instead of the function, so that callers
+  that also print the name get it only once.
 - **Breaking:** `sanitize_filename` truncates names to 64 bytes on a char boundary, instead of 64 chars, so that output
   filenames stay within the usual 255-byte limit.
 - **Breaking:** `sanitize_filename` also replaces control chars, which are invalid in Windows filenames.
