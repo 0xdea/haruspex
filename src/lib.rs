@@ -229,6 +229,15 @@ impl ArgHintsMode {
     }
 }
 
+/// Numbers of non-thunk functions processed by [`run`].
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+struct FunctionCounts {
+    /// Functions whose pseudocode was written.
+    decompiled: usize,
+    /// Functions that can't be decompiled, and were skipped.
+    skipped: usize,
+}
+
 /// Extracts pseudocode and type definitions of functions in the binary file at
 /// `filepath`, and saves them in an output directory next to it, alongside a
 /// dump of all type definitions in `all_types.h`.
@@ -276,14 +285,14 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
 
     // Remove the output directory, which is empty or only partially populated,
     // if anything goes wrong, including when no functions were decompiled.
-    let decompiled_count = extract_pseudocode(&idb, &dirpath)
+    let counts = extract_pseudocode(&idb, &dirpath)
         .map_err(anyhow::Error::from)
-        .and_then(|count| {
+        .and_then(|counts| {
             anyhow::ensure!(
-                count > 0,
+                counts.decompiled > 0,
                 "no functions were decompiled, check your input file"
             );
-            Ok(count)
+            Ok(counts)
         })
         .inspect_err(|_| {
             if let Err(cleanup_err) = fs::remove_dir_all(&dirpath) {
@@ -296,7 +305,9 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
 
     eprintln!();
     eprintln!(
-        "[+] Decompiled {decompiled_count} functions into `{}`",
+        "[+] Decompiled {} functions ({} skipped) into `{}`",
+        counts.decompiled,
+        counts.skipped,
         dirpath.display()
     );
     eprintln!(
@@ -304,7 +315,7 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
         filepath.display(),
         start.elapsed().as_secs_f64()
     );
-    Ok(decompiled_count)
+    Ok(counts.decompiled)
 }
 
 /// Decompiles [`Function`] `func` in [`IDB`] `idb`.
@@ -569,14 +580,15 @@ pub fn sanitize_filename(filename: &str) -> String {
 /// Dumps all type definitions in [`IDB`] `idb` to `all_types.h`, then
 /// pseudocode and type definitions of each non-thunk function into `dirpath`.
 ///
-/// Returns how many functions were decompiled, which may be zero.
+/// Returns how many functions were decompiled, which may be zero, and how many
+/// were skipped because they can't be decompiled.
 ///
 /// # Errors
 ///
 /// Returns [`HaruspexError`] if no function can be decompiled (e.g., because
 /// the Hex-Rays decompiler license is not available), or if the output files
 /// or their directories can't be created.
-fn extract_pseudocode(idb: &IDB, dirpath: &Path) -> Result<usize, HaruspexError> {
+fn extract_pseudocode(idb: &IDB, dirpath: &Path) -> Result<FunctionCounts, HaruspexError> {
     // Extract all type definitions.
     let all_types_path = dirpath.join("all_types.h");
     eprintln!();
@@ -595,7 +607,7 @@ fn extract_pseudocode(idb: &IDB, dirpath: &Path) -> Result<usize, HaruspexError>
         Err(err) => return Err(err),
     }
 
-    let mut decompiled_count = 0_usize;
+    let mut counts = FunctionCounts::default();
     eprintln!();
     eprintln!("[*] Extracting pseudocode and type definitions of functions...");
     eprintln!();
@@ -610,17 +622,29 @@ fn extract_pseudocode(idb: &IDB, dirpath: &Path) -> Result<usize, HaruspexError>
 
         // `None` means that the function can't be decompiled, so skip it.
         let Some(dumped) = decompile_to_file(idb, &func, &output_path)? else {
+            counts.skipped = counts.skipped.saturating_add(1);
             continue;
         };
+
+        // Print one line per function, naming the `.h` file next to the `.c`
+        // file when there is one.
         let printable_name = escape_control_chars(&func_name);
-        println!("{printable_name} -> `{}`", dumped.pseudocode.display());
-        if let Some(types) = &dumped.types {
-            println!("{printable_name} -> `{}`", types.display());
+        let pseudocode = dumped.pseudocode.display();
+        match &dumped.types {
+            Some(types) => println!(
+                "{printable_name} -> `{pseudocode}` + `{}`",
+                // A path built by `with_extension` always has a file name.
+                types
+                    .file_name()
+                    .map_or(types.as_path(), Path::new)
+                    .display()
+            ),
+            None => println!("{printable_name} -> `{pseudocode}`"),
         }
-        decompiled_count = decompiled_count.saturating_add(1);
+        counts.decompiled = counts.decompiled.saturating_add(1);
     }
 
-    Ok(decompiled_count)
+    Ok(counts)
 }
 
 /// Returns `name` with its control characters escaped (e.g., `\u{1b}`), so that

@@ -42,6 +42,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Print `[-] No type definitions found` instead of `[!] Failed` for binaries without type definitions, and print the
   cause when formatting them fails.
 - Escape control chars in the function names that `run` prints, since names come from the analyzed binary.
+- Print one stdout line per decompiled function, naming its `.h` file when there is one, and report how many functions
+  were skipped in the final summary.
 
 ### Fixed
 
