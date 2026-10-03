@@ -107,6 +107,17 @@ pub enum HaruspexError {
         #[source]
         source: io::Error,
     },
+    /// An output file can't be copied.
+    #[error("failed to copy `{}` to `{}`", from.display(), to.display())]
+    FileCopy {
+        /// Path of the output file to copy.
+        from: PathBuf,
+        /// Path of the copy.
+        to: PathBuf,
+        /// Underlying I/O error.
+        #[source]
+        source: io::Error,
+    },
 }
 
 impl HaruspexError {
@@ -169,6 +180,16 @@ impl HaruspexError {
             source,
         }
     }
+
+    /// Returns a [`HaruspexError::FileCopy`] error for copying `from` to `to`.
+    #[must_use]
+    fn file_copy(from: &Path, to: &Path, source: io::Error) -> Self {
+        Self::FileCopy {
+            from: from.to_owned(),
+            to: to.to_owned(),
+            source,
+        }
+    }
 }
 
 /// Files written for a decompiled function.
@@ -180,6 +201,49 @@ pub struct DumpedFunction {
     /// Path of the sibling `.h` file with the function's type definitions, or
     /// `None` if there were no type definitions to dump.
     pub types: Option<PathBuf>,
+}
+
+impl DumpedFunction {
+    /// Copies the files written for the function to `filepath` and a sibling
+    /// `.h` file, creating the parent directory of `filepath` if needed, so
+    /// that the function's output can be reused without decompiling it again.
+    ///
+    /// Returns the paths of the copies, or a clone of `self` if the files are
+    /// already at `filepath`, in which case nothing is copied. As with
+    /// [`decompile_to_file`], `filepath` should have a `.c` extension, and an
+    /// existing `.h` file at the destination is left untouched if there are no
+    /// type definitions.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`HaruspexError::OutputDirCreate`] if the parent directory of
+    /// `filepath` can't be created, or [`HaruspexError::FileCopy`] if a file
+    /// can't be copied.
+    pub fn copy_to(&self, filepath: impl AsRef<Path>) -> Result<Self, HaruspexError> {
+        let filepath = filepath.as_ref();
+        if self.pseudocode == filepath {
+            return Ok(self.clone());
+        }
+
+        if let Some(parent) = filepath.parent() {
+            create_output_dir(parent)?;
+        }
+        copy_output(&self.pseudocode, filepath)?;
+
+        let types = self
+            .types
+            .as_ref()
+            .map(|types| {
+                let types_copy = filepath.with_extension("h");
+                copy_output(types, &types_copy).map(|()| types_copy)
+            })
+            .transpose()?;
+
+        Ok(Self {
+            pseudocode: filepath.to_owned(),
+            types,
+        })
+    }
 }
 
 /// Argument name hints mode for function calls in pseudocode.
@@ -549,6 +613,30 @@ pub fn function_name(func: &Function<'_>) -> String {
     func.name().unwrap_or_else(|| "[no name]".to_owned())
 }
 
+/// Returns `name` with its control characters escaped (e.g., `\u{1b}`), so that
+/// printing a name from the analyzed binary (e.g., from [`function_name`])
+/// can't inject terminal escape sequences.
+///
+/// Use it only for display: paths should be built from the original name with
+/// [`sanitize_filename`]. Names without control characters, i.e., virtually
+/// all of them, are returned as is, without allocating.
+#[must_use]
+pub fn printable_name(name: &str) -> Cow<'_, str> {
+    if !name.contains(char::is_control) {
+        return Cow::Borrowed(name);
+    }
+
+    let mut escaped = String::with_capacity(name.len());
+    for ch in name.chars() {
+        if ch.is_control() {
+            escaped.extend(ch.escape_default());
+        } else {
+            escaped.push(ch);
+        }
+    }
+    Cow::Owned(escaped)
+}
+
 /// Builds the output file path for `func` inside `dirpath`.
 #[must_use]
 pub fn output_path_for_function(func: &Function<'_>, dirpath: impl AsRef<Path>) -> PathBuf {
@@ -628,46 +716,23 @@ fn extract_pseudocode(idb: &IDB, dirpath: &Path) -> Result<FunctionCounts, Harus
 
         // Print one line per function, naming the `.h` file next to the `.c`
         // file when there is one.
-        let printable_name = escape_control_chars(&func_name);
+        let shown_name = printable_name(&func_name);
         let pseudocode = dumped.pseudocode.display();
         match &dumped.types {
             Some(types) => println!(
-                "{printable_name} -> `{pseudocode}` + `{}`",
+                "{shown_name} -> `{pseudocode}` + `{}`",
                 // A path built by `with_extension` always has a file name.
                 types
                     .file_name()
                     .map_or(types.as_path(), Path::new)
                     .display()
             ),
-            None => println!("{printable_name} -> `{pseudocode}`"),
+            None => println!("{shown_name} -> `{pseudocode}`"),
         }
         counts.decompiled = counts.decompiled.saturating_add(1);
     }
 
     Ok(counts)
-}
-
-/// Returns `name` with its control characters escaped (e.g., `\u{1b}`), so that
-/// printing a name from the analyzed binary can't inject terminal escape
-/// sequences.
-///
-/// Names without control characters, i.e., virtually all of them, are
-/// returned as is, without allocating.
-#[must_use]
-fn escape_control_chars(name: &str) -> Cow<'_, str> {
-    if !name.contains(char::is_control) {
-        return Cow::Borrowed(name);
-    }
-
-    let mut escaped = String::with_capacity(name.len());
-    for ch in name.chars() {
-        if ch.is_control() {
-            escaped.extend(ch.escape_default());
-        } else {
-            escaped.push(ch);
-        }
-    }
-    Cow::Owned(escaped)
 }
 
 /// Builds the output file path inside `dirpath` for the function named
@@ -713,6 +778,16 @@ fn write_output(content: &str, filepath: &Path) -> Result<(), HaruspexError> {
     fs::write(filepath, content).map_err(|source| HaruspexError::file_write(filepath, source))
 }
 
+/// Copies the output file at `from` to `to`.
+///
+/// # Errors
+///
+/// Returns [`HaruspexError::FileCopy`] if the output file can't be copied.
+fn copy_output(from: &Path, to: &Path) -> Result<(), HaruspexError> {
+    fs::copy(from, to).map_err(|source| HaruspexError::file_copy(from, to, source))?;
+    Ok(())
+}
+
 #[cfg(test)]
 #[expect(clippy::panic_in_result_fn, reason = "panics are allowed in test code")]
 mod tests {
@@ -724,6 +799,148 @@ mod tests {
     /// Returns a unique temporary path scoped to `label` and the current process.
     fn test_dir(label: &str) -> PathBuf {
         env::temp_dir().join(format!("haruspex_{label}_{}", process::id()))
+    }
+
+    /// Returns a fresh, empty temporary directory scoped to `label` and the
+    /// current process.
+    fn fresh_test_dir(label: &str) -> anyhow::Result<PathBuf> {
+        let dir = test_dir(label);
+        if dir.exists() {
+            fs::remove_dir_all(&dir)?;
+        }
+        fs::create_dir_all(&dir)?;
+        Ok(dir)
+    }
+
+    /// Writes a `.c` file (and a sibling `.h` file if `with_types`) at
+    /// `pseudocode`, and returns the matching [`DumpedFunction`].
+    fn dumped_function(pseudocode: PathBuf, with_types: bool) -> anyhow::Result<DumpedFunction> {
+        fs::write(&pseudocode, "pseudocode")?;
+        let types = if with_types {
+            let types = pseudocode.with_extension("h");
+            fs::write(&types, "types")?;
+            Some(types)
+        } else {
+            None
+        };
+        Ok(DumpedFunction { pseudocode, types })
+    }
+
+    #[test]
+    fn copy_to_does_nothing_if_files_are_already_in_place() -> anyhow::Result<()> {
+        let dir = fresh_test_dir("copy_in_place")?;
+        let mut dumped = dumped_function(dir.join("func@1000.c"), false)?;
+        // The type definitions file doesn't exist, so any attempt to copy the
+        // files, even onto themselves, fails.
+        dumped.types = Some(dir.join("missing.h"));
+
+        let copied = dumped.copy_to(&dumped.pseudocode)?;
+        assert_eq!(copied, dumped, "the files should stay where they are");
+        assert_eq!(
+            fs::read_to_string(&dumped.pseudocode)?,
+            "pseudocode",
+            "pseudocode should be left intact"
+        );
+        assert_eq!(
+            dir.read_dir()?.count(),
+            1,
+            "no files should be added or removed"
+        );
+
+        fs::remove_dir_all(&dir)?;
+        Ok(())
+    }
+
+    #[test]
+    fn copy_to_copies_pseudocode_and_types() -> anyhow::Result<()> {
+        let dir = fresh_test_dir("copy_types")?;
+        let dumped = dumped_function(dir.join("func@1000.c"), true)?;
+        fs::create_dir_all(dir.join("other"))?;
+        let filepath = dir.join("other").join("func@1000.c");
+
+        let copied = dumped.copy_to(&filepath)?;
+        assert_eq!(
+            copied,
+            DumpedFunction {
+                pseudocode: filepath.clone(),
+                types: Some(filepath.with_extension("h")),
+            },
+            "the copies should be returned"
+        );
+        assert_eq!(
+            fs::read_to_string(&filepath)?,
+            "pseudocode",
+            "pseudocode should be copied"
+        );
+        assert_eq!(
+            fs::read_to_string(filepath.with_extension("h"))?,
+            "types",
+            "type definitions should be copied"
+        );
+        assert!(
+            dumped.pseudocode.is_file()
+                && dumped.types.as_ref().is_some_and(|types| types.is_file()),
+            "the original files should be kept"
+        );
+
+        fs::remove_dir_all(&dir)?;
+        Ok(())
+    }
+
+    #[test]
+    fn copy_to_without_types_copies_only_pseudocode() -> anyhow::Result<()> {
+        let dir = fresh_test_dir("copy_no_types")?;
+        let dumped = dumped_function(dir.join("func@1000.c"), false)?;
+        fs::create_dir_all(dir.join("other"))?;
+        let filepath = dir.join("other").join("func@1000.c");
+
+        let copied = dumped.copy_to(&filepath)?;
+        assert!(
+            copied.types.is_none(),
+            "no type definitions should be returned"
+        );
+        assert!(filepath.is_file(), "pseudocode should be copied");
+        assert!(
+            !filepath.with_extension("h").exists(),
+            "no type definitions file should be created"
+        );
+
+        fs::remove_dir_all(&dir)?;
+        Ok(())
+    }
+
+    #[test]
+    fn copy_to_creates_missing_output_directory() -> anyhow::Result<()> {
+        let dir = fresh_test_dir("copy_missing_dir")?;
+        let dumped = dumped_function(dir.join("func@1000.c"), false)?;
+        let filepath = dir.join("missing").join("func@1000.c");
+
+        dumped.copy_to(&filepath)?;
+        assert!(filepath.is_file(), "pseudocode should be copied");
+
+        fs::remove_dir_all(&dir)?;
+        Ok(())
+    }
+
+    #[test]
+    fn copy_to_fails_on_missing_source() -> anyhow::Result<()> {
+        let dir = fresh_test_dir("copy_missing_source")?;
+        let dumped = dumped_function(dir.join("func@1000.c"), false)?;
+        fs::remove_file(&dumped.pseudocode)?;
+        let filepath = dir.join("other.c");
+
+        let result = dumped.copy_to(&filepath);
+        assert!(
+            matches!(
+                &result,
+                Err(HaruspexError::FileCopy { from, to, .. })
+                    if *from == dumped.pseudocode && *to == filepath
+            ),
+            "wrong result returned: {result:?}"
+        );
+
+        fs::remove_dir_all(&dir)?;
+        Ok(())
     }
 
     #[test]
@@ -856,19 +1073,19 @@ mod tests {
     }
 
     #[test]
-    fn escape_control_chars_escapes_only_control_chars() {
+    fn printable_name_escapes_only_control_chars() {
         assert_eq!(
-            escape_control_chars("foo\x1b[2Jbar\nbaz\u{85}qux"),
+            printable_name("foo\x1b[2Jbar\nbaz\u{85}qux"),
             "foo\\u{1b}[2Jbar\\nbaz\\u{85}qux",
             "control chars should be escaped, and nothing else"
         );
     }
 
     #[test]
-    fn escape_control_chars_borrows_names_without_control_chars() {
+    fn printable_name_borrows_names_without_control_chars() {
         let name = "std::vector<int>::push_back(\"x\")";
         assert!(
-            matches!(escape_control_chars(name), Cow::Borrowed(borrowed) if borrowed == name),
+            matches!(printable_name(name), Cow::Borrowed(borrowed) if borrowed == name),
             "names without control chars should be returned as is, without allocating"
         );
     }

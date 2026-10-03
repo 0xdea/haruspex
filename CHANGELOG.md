@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `DumpedFunction`, returned by `decompile_to_file` with the paths of the files written.
 - Add `ArgHintsMode::apply` to set the argument name hints mode of an IDB's decompiler.
 - Add `function_name`, which returns a function's name or `[no name]` if it has none.
+- Add `DumpedFunction::copy_to`, which copies a function's output files elsewhere without decompiling it again.
+- Add `printable_name`, which escapes control chars in a name before printing it.
 - Declare the minimum supported Rust version (1.91) in `Cargo.toml`.
 
 ### Changed
@@ -24,9 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `dump_types_to_file`.
 - **Breaking:** `dump_types_to_file` and `dump_all_types_to_file` return `false` instead of an error when there are no
   type definitions to dump.
-- **Breaking:** replace `HaruspexError`'s variants with `Decompile`, `LicenseUnavailable`, `UnsupportedBinary`, `DecompilerUnavailable`,
-  `DecompilerConfig`, `FormatTypes`, `FileWrite`, `OutputDirExists`, and `OutputDirCreate`, which carry the failing
-  address or path and chain the underlying error.
+- **Breaking:** replace `HaruspexError`'s variants with `Decompile`, `LicenseUnavailable`, `UnsupportedBinary`,
+  `DecompilerUnavailable`, `DecompilerConfig`, `FormatTypes`, `FileWrite`, `OutputDirExists`, `OutputDirCreate`, and
+  `FileCopy`, which carry the failing address or path and chain the underlying error.
 - **Breaking:** `prepare_output_dir` returns `HaruspexError` and no longer prints progress messages.
 - **Breaking:** make `ArgHintsMode::directive` private, in favor of `ArgHintsMode::apply`.
 - **Breaking:** `sanitize_filename` truncates names to 64 bytes on a char boundary, instead of 64 chars, so that output
