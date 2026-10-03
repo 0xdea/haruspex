@@ -6,7 +6,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use anyhow::Context as _;
-use haruspex::HaruspexError;
+use haruspex::{DumpedFunction, HaruspexError};
+use idalib::Address;
 use idalib::func::Function;
 use idalib::idb::IDB;
 
@@ -22,6 +23,11 @@ const NO_FUNCTIONS: &str = "./tests/data/no_functions";
 const N_DECOMP: usize = 79;
 /// Expected number of header files in the output directory of `LS`.
 const N_HEADERS: usize = 10;
+/// Address of the `free` import in `LS`, which is in the extern segment and
+/// can't be decompiled.
+///
+/// Its `.plt` stub has the same name, so it's looked up by address.
+const FREE_IMPORT: Address = 0xC1E0;
 
 /// Custom harness for integration tests.
 fn main() -> anyhow::Result<()> {
@@ -109,19 +115,27 @@ fn test_library_functions() -> anyhow::Result<()> {
 fn check_library_functions(dirpath: &Path) -> anyhow::Result<()> {
     let idb = IDB::open(LS)?;
 
-    // `main` has no type definitions to dump, while `sub_2C30` has some.
+    // `main` has no type definitions to dump, `sub_2C30` has some, and the
+    // `free` import can't be decompiled.
     let main_func = find_function(&idb, "main")?;
     let types_func = find_function(&idb, "sub_2C30")?;
+    let free_func = idb
+        .function_at(FREE_IMPORT)
+        .context("failed to find function `free`")?;
     let main_file = dirpath.join("main.c");
 
+    check_function_name(&main_func);
+    check_decompile(&idb, &main_func)?;
+    check_decompile_failure(&idb, &free_func);
     check_decompile_to_file_without_types(&idb, &main_func, &main_file)?;
     check_decompile_to_file_with_types(&idb, &types_func, dirpath)?;
+    check_decompile_to_file_skips_failure(&idb, &free_func, dirpath)?;
+    check_decompile_to_file_creates_parent_dir(&idb, &main_func, dirpath)?;
     check_pseudocode_content(&main_file)?;
-    check_dump_func_pseudocode_to_file(&idb, &main_func, dirpath)?;
-    check_dump_cfunc_pseudocode_to_file(&idb, &main_func, dirpath)?;
+    check_dump_pseudocode_to_file(&idb, &main_func, dirpath)?;
     check_dump_all_types_to_file(&idb, dirpath)?;
-    check_dump_func_types_to_file(&idb, &types_func, dirpath)?;
-    check_dump_cfunc_types_to_file(&idb, &types_func, dirpath)?;
+    check_dump_types_to_file(&idb, &types_func, dirpath)?;
+    check_dump_types_to_file_without_types(&idb, &main_func, dirpath)?;
     check_read_only_file(&idb, &main_func, &main_file)?;
     check_long_filename(&idb, &main_func, dirpath);
     check_invalid_filename(&idb, &main_func, dirpath);
@@ -245,6 +259,42 @@ fn check_known_output_file(dirpath: &Path) -> anyhow::Result<()> {
     Ok(())
 }
 
+/// Checks that `function_name` returns the name of `func`, i.e., `main`.
+fn check_function_name(func: &Function<'_>) {
+    eprint!("[*] Checking `function_name` works as expected... ");
+    assert_eq!(
+        haruspex::function_name(func),
+        "main",
+        "wrong function name returned"
+    );
+    eprintln!("Ok.");
+}
+
+/// Checks that `decompile` decompiles `func`.
+fn check_decompile(idb: &IDB, func: &Function<'_>) -> anyhow::Result<()> {
+    eprint!("[*] Checking `decompile` works as expected... ");
+    let cfunc = haruspex::decompile(idb, func)?;
+    assert!(
+        cfunc.pseudocode().contains("main"),
+        "pseudocode of `main` does not contain its name"
+    );
+    eprintln!("Ok.");
+    Ok(())
+}
+
+/// Checks that `decompile` reports that only `func`, which can't be
+/// decompiled, failed.
+fn check_decompile_failure(idb: &IDB, func: &Function<'_>) {
+    eprint!("[*] Checking `decompile` fails on a function that can't be decompiled... ");
+    let result = haruspex::decompile(idb, func);
+    assert!(
+        matches!(&result, Err(HaruspexError::Decompile { addr, .. }) if *addr == FREE_IMPORT),
+        "wrong result returned: {:?}",
+        result.err()
+    );
+    eprintln!("Ok.");
+}
+
 /// Checks that `decompile_to_file` writes the pseudocode of `func`, which has
 /// no type definitions, to `output_file`, and reports that no `.h` file was
 /// written.
@@ -254,10 +304,15 @@ fn check_decompile_to_file_without_types(
     output_file: &Path,
 ) -> anyhow::Result<()> {
     eprint!("[*] Checking `decompile_to_file` works as expected... ");
-    let result = haruspex::decompile_to_file(idb, func, output_file);
+    let dumped = haruspex::decompile_to_file(idb, func, output_file)?
+        .context("`main` was not decompiled")?;
+    assert_eq!(
+        dumped.pseudocode, output_file,
+        "wrong pseudocode file returned"
+    );
     assert!(
-        matches!(result, Err(HaruspexError::TypesEmpty)),
-        "expected `main` to have no type definitions to dump, got: {result:?}"
+        dumped.types.is_none(),
+        "expected `main` to have no type definitions to dump, got: {dumped:?}"
     );
     assert!(
         output_file.metadata()?.len() > 0,
@@ -283,17 +338,19 @@ fn check_decompile_to_file_with_types(
 ) -> anyhow::Result<()> {
     eprint!("[*] Checking `decompile_to_file` produces a type definitions file when available... ");
     let output_file = dirpath.join("sub_2C30.c");
-    let result = haruspex::decompile_to_file(idb, func, &output_file);
-    assert!(
-        matches!(result, Ok(())),
-        "expected `sub_2C30` to have type definitions to dump, got: {result:?}"
-    );
+    let dumped = haruspex::decompile_to_file(idb, func, &output_file)?
+        .context("`sub_2C30` was not decompiled")?;
     assert!(
         output_file.metadata()?.len() > 0,
         "output file `{}` is empty",
         output_file.display()
     );
     let types_file = output_file.with_extension("h");
+    assert_eq!(
+        dumped.types.as_ref(),
+        Some(&types_file),
+        "expected `sub_2C30` to have type definitions to dump, got: {dumped:?}"
+    );
     assert!(
         types_file.is_file(),
         "expected type definitions file missing: {}",
@@ -303,6 +360,47 @@ fn check_decompile_to_file_with_types(
         types_file.metadata()?.len() > 0,
         "type definitions file `{}` is empty",
         types_file.display()
+    );
+    eprintln!("Ok.");
+    Ok(())
+}
+
+/// Checks that `decompile_to_file` skips `func`, which can't be decompiled,
+/// without writing anything.
+fn check_decompile_to_file_skips_failure(
+    idb: &IDB,
+    func: &Function<'_>,
+    dirpath: &Path,
+) -> anyhow::Result<()> {
+    eprint!("[*] Checking `decompile_to_file` skips a function that can't be decompiled... ");
+    let skipped_dir = dirpath.join("skipped");
+    let dumped = haruspex::decompile_to_file(idb, func, skipped_dir.join("free.c"))?;
+    assert!(
+        dumped.is_none(),
+        "expected `free` to be skipped, got: {dumped:?}"
+    );
+    assert!(
+        !skipped_dir.exists(),
+        "output directory created for a function that can't be decompiled"
+    );
+    eprintln!("Ok.");
+    Ok(())
+}
+
+/// Checks that `decompile_to_file` creates the missing parent directory of
+/// the output file.
+fn check_decompile_to_file_creates_parent_dir(
+    idb: &IDB,
+    func: &Function<'_>,
+    dirpath: &Path,
+) -> anyhow::Result<()> {
+    eprint!("[*] Checking `decompile_to_file` creates a missing parent directory... ");
+    let output_file = dirpath.join("subdir").join("main.c");
+    haruspex::decompile_to_file(idb, func, &output_file)?.context("`main` was not decompiled")?;
+    assert!(
+        output_file.metadata()?.len() > 0,
+        "output file `{}` is empty",
+        output_file.display()
     );
     eprintln!("Ok.");
     Ok(())
@@ -321,35 +419,17 @@ fn check_pseudocode_content(output_file: &Path) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Checks that `dump_func_pseudocode_to_file` writes the pseudocode of `func`.
-fn check_dump_func_pseudocode_to_file(
-    idb: &IDB,
-    func: &Function<'_>,
-    dirpath: &Path,
-) -> anyhow::Result<()> {
-    eprint!("[*] Checking `dump_func_pseudocode_to_file` works as expected... ");
-    let output_file = dirpath.join("main-func-pseudocode.c");
-    haruspex::dump_func_pseudocode_to_file(idb, func, &output_file)?;
-    assert!(
-        output_file.metadata()?.len() > 0,
-        "output file `{}` is empty",
-        output_file.display()
-    );
-    eprintln!("Ok.");
-    Ok(())
-}
-
-/// Checks that `dump_cfunc_pseudocode_to_file` writes the pseudocode of the
+/// Checks that `dump_pseudocode_to_file` writes the pseudocode of the
 /// decompiled `func`.
-fn check_dump_cfunc_pseudocode_to_file(
+fn check_dump_pseudocode_to_file(
     idb: &IDB,
     func: &Function<'_>,
     dirpath: &Path,
 ) -> anyhow::Result<()> {
-    eprint!("[*] Checking `dump_cfunc_pseudocode_to_file` works as expected... ");
-    let decomp = idb.decompile(func)?;
-    let output_file = dirpath.join("main-cfunc-pseudocode.c");
-    haruspex::dump_cfunc_pseudocode_to_file(&decomp, &output_file)?;
+    eprint!("[*] Checking `dump_pseudocode_to_file` works as expected... ");
+    let cfunc = haruspex::decompile(idb, func)?;
+    let output_file = dirpath.join("main-pseudocode.c");
+    haruspex::dump_pseudocode_to_file(&cfunc, &output_file)?;
     assert!(
         output_file.metadata()?.len() > 0,
         "output file `{}` is empty",
@@ -363,7 +443,8 @@ fn check_dump_cfunc_pseudocode_to_file(
 fn check_dump_all_types_to_file(idb: &IDB, dirpath: &Path) -> anyhow::Result<()> {
     eprint!("[*] Checking `dump_all_types_to_file` works as expected... ");
     let output_file = dirpath.join("all_types-standalone.h");
-    haruspex::dump_all_types_to_file(idb, &output_file)?;
+    let written = haruspex::dump_all_types_to_file(idb, &output_file)?;
+    assert!(written, "expected type definitions to dump");
     assert!(
         output_file.metadata()?.len() > 0,
         "output file `{}` is empty",
@@ -373,16 +454,17 @@ fn check_dump_all_types_to_file(idb: &IDB, dirpath: &Path) -> anyhow::Result<()>
     Ok(())
 }
 
-/// Checks that `dump_func_types_to_file` writes the type definitions of
-/// `func`.
-fn check_dump_func_types_to_file(
-    idb: &IDB,
-    func: &Function<'_>,
-    dirpath: &Path,
-) -> anyhow::Result<()> {
-    eprint!("[*] Checking `dump_func_types_to_file` works as expected... ");
-    let output_file = dirpath.join("sub_2C30-func-types.h");
-    haruspex::dump_func_types_to_file(idb, func, &output_file)?;
+/// Checks that `dump_types_to_file` writes the type definitions of the
+/// decompiled `func`, which has some.
+fn check_dump_types_to_file(idb: &IDB, func: &Function<'_>, dirpath: &Path) -> anyhow::Result<()> {
+    eprint!("[*] Checking `dump_types_to_file` works as expected... ");
+    let cfunc = haruspex::decompile(idb, func)?;
+    let output_file = dirpath.join("sub_2C30-types.h");
+    let written = haruspex::dump_types_to_file(idb, &cfunc, &output_file)?;
+    assert!(
+        written,
+        "expected `sub_2C30` to have type definitions to dump"
+    );
     assert!(
         output_file.metadata()?.len() > 0,
         "output file `{}` is empty",
@@ -392,20 +474,24 @@ fn check_dump_func_types_to_file(
     Ok(())
 }
 
-/// Checks that `dump_cfunc_types_to_file` writes the type definitions of the
-/// decompiled `func`.
-fn check_dump_cfunc_types_to_file(
+/// Checks that `dump_types_to_file` writes nothing for the decompiled `func`,
+/// which has no type definitions.
+fn check_dump_types_to_file_without_types(
     idb: &IDB,
     func: &Function<'_>,
     dirpath: &Path,
 ) -> anyhow::Result<()> {
-    eprint!("[*] Checking `dump_cfunc_types_to_file` works as expected... ");
-    let decomp = idb.decompile(func)?;
-    let output_file = dirpath.join("sub_2C30-cfunc-types.h");
-    haruspex::dump_cfunc_types_to_file(idb, &decomp, &output_file)?;
+    eprint!("[*] Checking `dump_types_to_file` writes nothing without type definitions... ");
+    let cfunc = haruspex::decompile(idb, func)?;
+    let output_file = dirpath.join("main-types.h");
+    let written = haruspex::dump_types_to_file(idb, &cfunc, &output_file)?;
     assert!(
-        output_file.metadata()?.len() > 0,
-        "output file `{}` is empty",
+        !written,
+        "expected `main` to have no type definitions to dump"
+    );
+    assert!(
+        !output_file.exists(),
+        "unexpected type definitions file: {}",
         output_file.display()
     );
     eprintln!("Ok.");
@@ -420,11 +506,7 @@ fn check_read_only_file(idb: &IDB, func: &Function<'_>, output_file: &Path) -> a
     perms.set_readonly(true);
     fs::set_permissions(output_file, perms)?;
     let result = haruspex::decompile_to_file(idb, func, output_file);
-    assert!(result.is_err(), "file write succeeded unexpectedly");
-    assert!(
-        matches!(result, Err(HaruspexError::FileWriteFailed(_))),
-        "wrong error type returned: {result:?}"
-    );
+    check_file_write_error(&result, output_file);
     assert!(
         output_file.metadata()?.len() > 0,
         "output file `{}` is empty",
@@ -439,26 +521,32 @@ fn check_long_filename(idb: &IDB, func: &Function<'_>, dirpath: &Path) {
     eprint!("[*] Checking `decompile_to_file` handles file length limitations... ");
     let output_file = dirpath.join("A".repeat(2048));
     let result = haruspex::decompile_to_file(idb, func, &output_file);
-    assert!(result.is_err(), "file write succeeded unexpectedly");
-    assert!(
-        matches!(result, Err(HaruspexError::FileWriteFailed(_))),
-        "wrong error type returned: {result:?}"
-    );
+    check_file_write_error(&result, &output_file);
     eprintln!("Ok.");
 }
 
 /// Checks that `decompile_to_file` fails on a filename with invalid chars.
 fn check_invalid_filename(idb: &IDB, func: &Function<'_>, dirpath: &Path) {
     eprint!("[*] Checking `decompile_to_file` handles file charset limitations... ");
+    // A path separator would only create a subdirectory, so use a NUL byte,
+    // which is never valid in a Unix path.
     #[cfg(unix)]
-    let output_file = dirpath.join("invalid/filename");
+    let output_file = dirpath.join("invalid\0filename");
     #[cfg(windows)]
     let output_file = dirpath.join("invalid<>?*filename");
     let result = haruspex::decompile_to_file(idb, func, &output_file);
-    assert!(result.is_err(), "file write succeeded unexpectedly");
-    assert!(
-        matches!(result, Err(HaruspexError::FileWriteFailed(_))),
-        "wrong error type returned: {result:?}"
-    );
+    check_file_write_error(&result, &output_file);
     eprintln!("Ok.");
+}
+
+/// Asserts that `result` of `decompile_to_file` is a
+/// [`HaruspexError::FileWrite`] error for `output_file`.
+fn check_file_write_error(
+    result: &Result<Option<DumpedFunction>, HaruspexError>,
+    output_file: &Path,
+) {
+    assert!(
+        matches!(result, Err(HaruspexError::FileWrite { path, .. }) if path == output_file),
+        "wrong result returned: {result:?}"
+    );
 }
