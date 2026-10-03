@@ -277,6 +277,7 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
     // Remove the output directory, which is empty or only partially populated,
     // if anything goes wrong, including when no functions were decompiled.
     let decompiled_count = extract_pseudocode(&idb, &dirpath)
+        .map_err(anyhow::Error::from)
         .and_then(|count| {
             anyhow::ensure!(
                 count > 0,
@@ -572,10 +573,10 @@ pub fn sanitize_filename(filename: &str) -> String {
 ///
 /// # Errors
 ///
-/// Returns [`anyhow::Error`] if no function can be decompiled (e.g., because
+/// Returns [`HaruspexError`] if no function can be decompiled (e.g., because
 /// the Hex-Rays decompiler license is not available), or if the output files
 /// or their directories can't be created.
-fn extract_pseudocode(idb: &IDB, dirpath: &Path) -> anyhow::Result<usize> {
+fn extract_pseudocode(idb: &IDB, dirpath: &Path) -> Result<usize, HaruspexError> {
     // Extract all type definitions.
     let all_types_path = dirpath.join("all_types.h");
     eprintln!();
@@ -591,7 +592,7 @@ fn extract_pseudocode(idb: &IDB, dirpath: &Path) -> anyhow::Result<usize> {
         Err(HaruspexError::FormatTypes { source }) => eprintln!("[!] Failed: {source}"),
 
         // Propagate any other error.
-        Err(err) => return Err(err.into()),
+        Err(err) => return Err(err),
     }
 
     let mut decompiled_count = 0_usize;
