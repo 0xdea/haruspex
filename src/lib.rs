@@ -134,11 +134,13 @@ impl DumpedFunction {
             return Ok(());
         }
 
+        // Pseudocode.
         if let Some(parent) = filepath.parent() {
             create_output_dir(parent)?;
         }
         copy_output(&self.pseudocode, filepath)?;
 
+        // Type definitions.
         if let Some(types) = &self.types {
             copy_output(types, &filepath.with_extension("h"))?;
         }
@@ -148,6 +150,7 @@ impl DumpedFunction {
         if let Some(types) = &mut self.types {
             *types = filepath.with_extension("h");
         }
+
         Ok(())
     }
 }
