@@ -117,21 +117,21 @@ impl DumpedFunction {
     /// `.h` file, creating the parent directory of `filepath` if needed, so
     /// that the function's output can be reused without decompiling it again.
     ///
-    /// Returns the paths of the copies, or a clone of `self` if the files are
-    /// already at `filepath`, in which case nothing is copied. As with
-    /// [`decompile_to_file`], `filepath` should have a `.c` extension, and an
-    /// existing `.h` file at the destination is left untouched if there are no
-    /// type definitions.
+    /// Afterwards, `self` points at the copies, so that the next copy is made
+    /// from there. Nothing is copied if the files are already at `filepath`.
+    /// As with [`decompile_to_file`], `filepath` should have a `.c` extension,
+    /// and an existing `.h` file at the destination is left untouched if there
+    /// are no type definitions.
     ///
     /// # Errors
     ///
     /// Returns [`HaruspexError::OutputDirCreate`] if the parent directory of
     /// `filepath` can't be created, or [`HaruspexError::FileCopy`] if a file
-    /// can't be copied.
-    pub fn copy_to(&self, filepath: impl AsRef<Path>) -> Result<Self, HaruspexError> {
+    /// can't be copied. On error, `self` is left unchanged.
+    pub fn copy_to(&mut self, filepath: impl AsRef<Path>) -> Result<(), HaruspexError> {
         let filepath = filepath.as_ref();
         if self.pseudocode == filepath {
-            return Ok(self.clone());
+            return Ok(());
         }
 
         if let Some(parent) = filepath.parent() {
@@ -139,19 +139,16 @@ impl DumpedFunction {
         }
         copy_output(&self.pseudocode, filepath)?;
 
-        let types = self
-            .types
-            .as_ref()
-            .map(|types| {
-                let types_copy = filepath.with_extension("h");
-                copy_output(types, &types_copy).map(|()| types_copy)
-            })
-            .transpose()?;
+        if let Some(types) = &self.types {
+            copy_output(types, &filepath.with_extension("h"))?;
+        }
 
-        Ok(Self {
-            pseudocode: filepath.to_owned(),
-            types,
-        })
+        // Only point at the copies once they all exist.
+        filepath.clone_into(&mut self.pseudocode);
+        if let Some(types) = &mut self.types {
+            *types = filepath.with_extension("h");
+        }
+        Ok(())
     }
 }
 
@@ -729,8 +726,9 @@ mod tests {
         // files, even onto themselves, fails.
         dumped.types = Some(dir.join("missing.h"));
 
-        let copied = dumped.copy_to(&dumped.pseudocode)?;
-        assert_eq!(copied, dumped, "the files should stay where they are");
+        let original = dumped.clone();
+        dumped.copy_to(&original.pseudocode)?;
+        assert_eq!(dumped, original, "the files should stay where they are");
         assert_eq!(
             fs::read_to_string(&dumped.pseudocode)?,
             "pseudocode",
@@ -749,18 +747,19 @@ mod tests {
     #[test]
     fn copy_to_copies_pseudocode_and_types() -> anyhow::Result<()> {
         let dir = test_dir("copy_types")?;
-        let dumped = dumped_function(dir.join("func@1000.c"), true)?;
+        let mut dumped = dumped_function(dir.join("func@1000.c"), true)?;
+        let original = dumped.clone();
         fs::create_dir_all(dir.join("other"))?;
         let filepath = dir.join("other").join("func@1000.c");
 
-        let copied = dumped.copy_to(&filepath)?;
+        dumped.copy_to(&filepath)?;
         assert_eq!(
-            copied,
+            dumped,
             DumpedFunction {
                 pseudocode: filepath.clone(),
                 types: Some(filepath.with_extension("h")),
             },
-            "the copies should be returned"
+            "self should point at the copies"
         );
         assert_eq!(
             fs::read_to_string(&filepath)?,
@@ -773,8 +772,8 @@ mod tests {
             "type definitions should be copied"
         );
         assert!(
-            dumped.pseudocode.is_file()
-                && dumped.types.as_ref().is_some_and(|types| types.is_file()),
+            original.pseudocode.is_file()
+                && original.types.as_ref().is_some_and(|types| types.is_file()),
             "the original files should be kept"
         );
 
@@ -785,13 +784,13 @@ mod tests {
     #[test]
     fn copy_to_without_types_copies_only_pseudocode() -> anyhow::Result<()> {
         let dir = test_dir("copy_no_types")?;
-        let dumped = dumped_function(dir.join("func@1000.c"), false)?;
+        let mut dumped = dumped_function(dir.join("func@1000.c"), false)?;
         fs::create_dir_all(dir.join("other"))?;
         let filepath = dir.join("other").join("func@1000.c");
 
-        let copied = dumped.copy_to(&filepath)?;
+        dumped.copy_to(&filepath)?;
         assert!(
-            copied.types.is_none(),
+            dumped.types.is_none(),
             "no type definitions should be returned"
         );
         assert!(filepath.is_file(), "pseudocode should be copied");
@@ -807,7 +806,7 @@ mod tests {
     #[test]
     fn copy_to_creates_missing_output_directory() -> anyhow::Result<()> {
         let dir = test_dir("copy_missing_dir")?;
-        let dumped = dumped_function(dir.join("func@1000.c"), false)?;
+        let mut dumped = dumped_function(dir.join("func@1000.c"), false)?;
         let filepath = dir.join("missing").join("func@1000.c");
 
         dumped.copy_to(&filepath)?;
@@ -820,8 +819,9 @@ mod tests {
     #[test]
     fn copy_to_fails_on_missing_source() -> anyhow::Result<()> {
         let dir = test_dir("copy_missing_source")?;
-        let dumped = dumped_function(dir.join("func@1000.c"), false)?;
+        let mut dumped = dumped_function(dir.join("func@1000.c"), false)?;
         fs::remove_file(&dumped.pseudocode)?;
+        let original = dumped.clone();
         let filepath = dir.join("other.c");
 
         let result = dumped.copy_to(&filepath);
@@ -829,9 +829,31 @@ mod tests {
             matches!(
                 &result,
                 Err(HaruspexError::FileCopy { from, to, .. })
-                    if *from == dumped.pseudocode && *to == filepath
+                    if *from == original.pseudocode && *to == filepath
             ),
             "wrong result returned: {result:?}"
+        );
+
+        fs::remove_dir_all(&dir)?;
+        Ok(())
+    }
+
+    #[test]
+    fn copy_to_leaves_self_unchanged_if_types_cannot_be_copied() -> anyhow::Result<()> {
+        let dir = test_dir("copy_unchanged_on_error")?;
+        let mut dumped = dumped_function(dir.join("func@1000.c"), false)?;
+        // The pseudocode can be copied, but the type definitions can't.
+        dumped.types = Some(dir.join("missing.h"));
+        let original = dumped.clone();
+
+        let result = dumped.copy_to(dir.join("other.c"));
+        assert!(
+            matches!(&result, Err(HaruspexError::FileCopy { .. })),
+            "wrong result returned: {result:?}"
+        );
+        assert_eq!(
+            dumped, original,
+            "self should still point at the original files"
         );
 
         fs::remove_dir_all(&dir)?;

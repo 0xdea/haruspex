@@ -14,7 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `DumpedFunction`, returned by `decompile_to_file` with the paths of the files written.
 - Add `ArgHintsMode::apply` to set the argument name hints mode of an IDB's decompiler.
 - Add `function_name`, which returns a function's name or `[no name]` if it has none.
-- Add `DumpedFunction::copy_to`, which copies a function's output files elsewhere without decompiling it again.
+- Add `DumpedFunction::copy_to`, which copies a function's output files elsewhere without decompiling it again, and
+  tracks the copies.
 - Add integration tests for the CLI output, missing binaries, and invalid arguments, and check that no IDB file is left
   behind.
 - Declare the minimum supported Rust version (1.91) in `Cargo.toml`.
