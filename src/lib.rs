@@ -27,8 +27,8 @@ const MAX_FILENAME_LEN: usize = 64;
 /// [`HaruspexError::Decompile`] only concerns the function that failed to
 /// decompile, while [`HaruspexError::LicenseUnavailable`] and
 /// [`HaruspexError::DecompilerUnavailable`] mean that no function can be
-/// decompiled. The other variants concern the decompiler configuration, type
-/// definitions, or output files.
+/// decompiled. The other variants concern the decompiler configuration or
+/// output files.
 #[derive(Debug, thiserror::Error)]
 #[non_exhaustive]
 pub enum HaruspexError {
@@ -57,9 +57,6 @@ pub enum HaruspexError {
         #[source]
         source: IDAError,
     },
-    /// Type definitions can't be formatted.
-    #[error("failed to format type definitions")]
-    FormatTypes(#[source] IDAError),
     /// An output file can't be written.
     #[error("failed to write `{}`", path.display())]
     FileWrite {
@@ -409,22 +406,19 @@ pub fn decompile_to_file(
     if let Some(parent) = filepath.parent() {
         create_output_dir(parent)?;
     }
-    dump_pseudocode_to_file(&cfunc, filepath)?;
+    write_output(&cfunc.pseudocode(), filepath)?;
 
     // Best-effort: also dump the function's type definitions, reusing the same
-    // decompilation.
+    // decompilation, if there are any.
     let types_path = filepath.with_extension("h");
-    let types = match dump_types_to_file(idb, &cfunc, &types_path) {
-        Ok(true) => Some(types_path),
+    let types = match idb.format_cfunc_decls(&cfunc) {
+        Ok(types) => write_types(&types, &types_path)?.then_some(types_path),
 
-        // There are no type definitions to dump, or formatting them failed:
-        // the license was already checked by `decompile` above, and idalib
-        // maps `format_cfunc_decls` failures to `IDAError::Ffi`, so they only
-        // affect this function's type definitions.
-        Ok(false) | Err(HaruspexError::FormatTypes(_)) => None,
-
-        // Propagate any other error.
-        Err(err) => return Err(err),
+        // Ignore formatting failures: the license was already checked by
+        // `decompile` above, and idalib maps `format_cfunc_decls` failures to
+        // `IDAError::Ffi`, so they only affect this function's type
+        // definitions.
+        Err(_) => None,
     };
 
     Ok(Some(DumpedFunction {
@@ -518,18 +512,18 @@ fn extract_pseudocode(idb: &IDB, dirpath: &Path) -> Result<FunctionCounts, Harus
     let all_types_path = dirpath.join("all_types.h");
     eprintln!();
     eprintln!("[*] Dumping all types to `{}`", all_types_path.display());
-    match dump_all_types_to_file(idb, &all_types_path) {
-        // Types were successfully written to the output file.
-        Ok(true) => eprintln!("[+] Done"),
-
-        // The binary has no type definitions, which is not an error.
-        Ok(false) => eprintln!("[-] No type definitions found"),
+    match idb.format_decls() {
+        Ok(all_types) => {
+            if write_types(&all_types, &all_types_path)? {
+                eprintln!("[+] Done");
+            } else {
+                // The binary has no type definitions, which is not an error.
+                eprintln!("[-] No type definitions found");
+            }
+        }
 
         // Signal a failure to format type definitions, with its cause.
-        Err(HaruspexError::FormatTypes(source)) => eprintln!("[!] Failed: {source}"),
-
-        // Propagate any other error.
-        Err(err) => return Err(err),
+        Err(err) => eprintln!("[!] Failed: {err}"),
     }
 
     let mut counts = FunctionCounts::default();
@@ -572,54 +566,6 @@ fn extract_pseudocode(idb: &IDB, dirpath: &Path) -> Result<FunctionCounts, Harus
     }
 
     Ok(counts)
-}
-
-/// Writes the pseudocode of the already-decompiled [`CFunction`] `cfunc` to the
-/// output file at `filepath`.
-///
-/// # Errors
-///
-/// Returns [`HaruspexError::FileWrite`] if the output file can't be written.
-fn dump_pseudocode_to_file(cfunc: &CFunction<'_>, filepath: &Path) -> Result<(), HaruspexError> {
-    write_output(&cfunc.pseudocode(), filepath)
-}
-
-/// Dumps the type definitions of the already-decompiled [`CFunction`] `cfunc`
-/// in [`IDB`] `idb` to the output file at `filepath`.
-///
-/// Returns `true` if the output file was written, or `false` if there were no
-/// type definitions to dump, in which case nothing is written.
-///
-/// # Errors
-///
-/// Returns [`HaruspexError::FormatTypes`] if the type definitions can't be
-/// formatted, or [`HaruspexError::FileWrite`] if the output file can't be
-/// written.
-fn dump_types_to_file(
-    idb: &IDB,
-    cfunc: &CFunction<'_>,
-    filepath: &Path,
-) -> Result<bool, HaruspexError> {
-    let types = idb
-        .format_cfunc_decls(cfunc)
-        .map_err(HaruspexError::FormatTypes)?;
-    write_types(&types, filepath)
-}
-
-/// Dumps all type definitions in [`IDB`] `idb` to the output file at
-/// `filepath`.
-///
-/// Returns `true` if the output file was written, or `false` if there were no
-/// type definitions to dump, in which case nothing is written.
-///
-/// # Errors
-///
-/// Returns [`HaruspexError::FormatTypes`] if the type definitions can't be
-/// formatted, or [`HaruspexError::FileWrite`] if the output file can't be
-/// written.
-fn dump_all_types_to_file(idb: &IDB, filepath: &Path) -> Result<bool, HaruspexError> {
-    let all_types = idb.format_decls().map_err(HaruspexError::FormatTypes)?;
-    write_types(&all_types, filepath)
 }
 
 /// Writes the formatted type definitions in `types` to the output file at

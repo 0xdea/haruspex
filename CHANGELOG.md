@@ -25,8 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** `decompile_to_file` returns `Ok(None)` for a function that can't be decompiled, so its errors are never
   about decompiling the function itself; it also creates the parent directory of its output file.
 - **Breaking:** replace `HaruspexError`'s variants with `Decompile`, `LicenseUnavailable`, `DecompilerUnavailable`,
-  `DecompilerConfig`, `FormatTypes`, `FileWrite`, `OutputDirExists`, `OutputDirCreate`, and `FileCopy`, which carry the
-  failing address or path and chain the underlying error.
+  `DecompilerConfig`, `FileWrite`, `OutputDirExists`, `OutputDirCreate`, and `FileCopy`, which carry the failing address
+  or path and chain the underlying error.
 - **Breaking:** `prepare_output_dir` returns `HaruspexError` and no longer prints progress messages.
 - **Breaking:** make `ArgHintsMode::directive` private, in favor of `ArgHintsMode::apply`.
 - **Breaking:** `output_path_for_function` takes a function's name and address instead of the function, so that callers
