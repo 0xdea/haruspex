@@ -574,19 +574,6 @@ fn extract_pseudocode(idb: &IDB, dirpath: &Path) -> Result<FunctionCounts, Harus
     Ok(counts)
 }
 
-/// Creates the output directory at `dirpath` and all its missing ancestors.
-///
-/// # Errors
-///
-/// Returns [`HaruspexError::OutputDirCreate`] if the directory can't be
-/// created.
-fn create_output_dir(dirpath: &Path) -> Result<(), HaruspexError> {
-    fs::create_dir_all(dirpath).map_err(|source| HaruspexError::OutputDirCreate {
-        path: dirpath.to_owned(),
-        source,
-    })
-}
-
 /// Writes the pseudocode of the already-decompiled [`CFunction`] `cfunc` to the
 /// output file at `filepath`.
 ///
@@ -650,6 +637,19 @@ fn write_types(types: &str, filepath: &Path) -> Result<bool, HaruspexError> {
     }
     write_output(types, filepath)?;
     Ok(true)
+}
+
+/// Creates the output directory at `dirpath` and all its missing ancestors.
+///
+/// # Errors
+///
+/// Returns [`HaruspexError::OutputDirCreate`] if the directory can't be
+/// created.
+fn create_output_dir(dirpath: &Path) -> Result<(), HaruspexError> {
+    fs::create_dir_all(dirpath).map_err(|source| HaruspexError::OutputDirCreate {
+        path: dirpath.to_owned(),
+        source,
+    })
 }
 
 /// Writes `content` to the output file at `filepath`.
@@ -854,6 +854,25 @@ mod tests {
     }
 
     #[test]
+    fn argument_name_hints_mode_directive_matches_hexrays_config_values() {
+        assert_eq!(
+            ArgHintsMode::Disabled.directive(),
+            "ARG_HINTS_MODE = 0",
+            "`Disabled` should map to `HAHM_DISABLED`"
+        );
+        assert_eq!(
+            ArgHintsMode::Comment.directive(),
+            "ARG_HINTS_MODE = 1",
+            "`Comment` should map to `HAHM_COMMENT`"
+        );
+        assert_eq!(
+            ArgHintsMode::Inlay.directive(),
+            "ARG_HINTS_MODE = 2",
+            "`Inlay` should map to `HAHM_INLAY`"
+        );
+    }
+
+    #[test]
     fn prepare_output_dir_creates_missing_dir() -> anyhow::Result<()> {
         let root = test_dir("create")?;
         let dir = root.join("output");
@@ -899,35 +918,12 @@ mod tests {
     }
 
     #[test]
-    fn write_output_writes_content_to_file() -> anyhow::Result<()> {
-        let dir = test_dir("write_output_ok")?;
-
-        let file = dir.join("output.txt");
-        write_output("hello, world", &file)?;
+    fn output_path_for_function_joins_sanitized_name_and_uppercase_address() {
         assert_eq!(
-            fs::read_to_string(&file)?,
-            "hello, world",
-            "file content should match what was written"
+            output_path_for_function("foo.bar", 0x2c30, "out"),
+            Path::new("out").join("foo_bar@2C30.c"),
+            "wrong output path"
         );
-
-        fs::remove_dir_all(&dir)?;
-        Ok(())
-    }
-
-    #[test]
-    fn write_output_fails_on_unwritable_path() -> anyhow::Result<()> {
-        let dir = test_dir("write_output_missing_parent")?;
-
-        // `missing` does not exist, so writing to a file inside it must fail.
-        let file = dir.join("missing").join("output.txt");
-        let result = write_output("hello, world", &file);
-        assert!(
-            matches!(&result, Err(HaruspexError::FileWrite { path, .. }) if *path == file),
-            "wrong error returned: {result:?}"
-        );
-
-        fs::remove_dir_all(&dir)?;
-        Ok(())
     }
 
     #[test]
@@ -964,15 +960,6 @@ mod tests {
             sanitize_filename("foo\x1b[31mbar\x7fbaz\u{85}qux"),
             "foo_[31mbar_baz_qux",
             "control chars should be replaced with underscores"
-        );
-    }
-
-    #[test]
-    fn output_path_for_function_joins_sanitized_name_and_uppercase_address() {
-        assert_eq!(
-            output_path_for_function("foo.bar", 0x2c30, "out"),
-            Path::new("out").join("foo_bar@2C30.c"),
-            "wrong output path"
         );
     }
 
@@ -1028,21 +1015,34 @@ mod tests {
     }
 
     #[test]
-    fn argument_name_hints_mode_directive_matches_hexrays_config_values() {
+    fn write_output_writes_content_to_file() -> anyhow::Result<()> {
+        let dir = test_dir("write_output_ok")?;
+
+        let file = dir.join("output.txt");
+        write_output("hello, world", &file)?;
         assert_eq!(
-            ArgHintsMode::Disabled.directive(),
-            "ARG_HINTS_MODE = 0",
-            "`Disabled` should map to `HAHM_DISABLED`"
+            fs::read_to_string(&file)?,
+            "hello, world",
+            "file content should match what was written"
         );
-        assert_eq!(
-            ArgHintsMode::Comment.directive(),
-            "ARG_HINTS_MODE = 1",
-            "`Comment` should map to `HAHM_COMMENT`"
+
+        fs::remove_dir_all(&dir)?;
+        Ok(())
+    }
+
+    #[test]
+    fn write_output_fails_on_unwritable_path() -> anyhow::Result<()> {
+        let dir = test_dir("write_output_missing_parent")?;
+
+        // `missing` does not exist, so writing to a file inside it must fail.
+        let file = dir.join("missing").join("output.txt");
+        let result = write_output("hello, world", &file);
+        assert!(
+            matches!(&result, Err(HaruspexError::FileWrite { path, .. }) if *path == file),
+            "wrong error returned: {result:?}"
         );
-        assert_eq!(
-            ArgHintsMode::Inlay.directive(),
-            "ARG_HINTS_MODE = 2",
-            "`Inlay` should map to `HAHM_INLAY`"
-        );
+
+        fs::remove_dir_all(&dir)?;
+        Ok(())
     }
 }
