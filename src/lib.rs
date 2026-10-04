@@ -45,19 +45,11 @@ pub enum HaruspexError {
     /// The Hex-Rays decompiler license is not available, so no function can be
     /// decompiled.
     #[error("Hex-Rays decompiler license is not available")]
-    LicenseUnavailable {
-        /// Underlying IDA error.
-        #[source]
-        source: IDAError,
-    },
+    LicenseUnavailable(#[source] IDAError),
     /// The decompiler doesn't support the binary's architecture, so no function
     /// can be decompiled.
     #[error("decompiler doesn't support this binary")]
-    UnsupportedBinary {
-        /// Underlying IDA error.
-        #[source]
-        source: IDAError,
-    },
+    UnsupportedBinary(#[source] IDAError),
     /// No decompiler is available for the IDB.
     #[error("decompiler is not available")]
     DecompilerUnavailable,
@@ -72,11 +64,7 @@ pub enum HaruspexError {
     },
     /// Type definitions can't be formatted.
     #[error("failed to format type definitions")]
-    FormatTypes {
-        /// Underlying IDA error.
-        #[source]
-        source: IDAError,
-    },
+    FormatTypes(#[source] IDAError),
     /// An output file can't be written.
     #[error("failed to write `{}`", path.display())]
     FileWrite {
@@ -128,13 +116,13 @@ impl HaruspexError {
     /// Returns a [`HaruspexError::LicenseUnavailable`] error.
     #[must_use]
     const fn license_unavailable(source: IDAError) -> Self {
-        Self::LicenseUnavailable { source }
+        Self::LicenseUnavailable(source)
     }
 
     /// Returns a [`HaruspexError::UnsupportedBinary`] error.
     #[must_use]
     const fn unsupported_binary(source: IDAError) -> Self {
-        Self::UnsupportedBinary { source }
+        Self::UnsupportedBinary(source)
     }
 
     /// Returns a [`HaruspexError::DecompilerConfig`] error for `directive`.
@@ -146,7 +134,7 @@ impl HaruspexError {
     /// Returns a [`HaruspexError::FormatTypes`] error.
     #[must_use]
     const fn format_types(source: IDAError) -> Self {
-        Self::FormatTypes { source }
+        Self::FormatTypes(source)
     }
 
     /// Returns a [`HaruspexError::FileWrite`] error for the output file at
@@ -514,7 +502,7 @@ pub fn decompile_to_file(
         // the license was already checked by `decompile` above, and idalib
         // maps `format_cfunc_decls` failures to `IDAError::Ffi`, so they only
         // affect this function's type definitions.
-        Ok(false) | Err(HaruspexError::FormatTypes { .. }) => None,
+        Ok(false) | Err(HaruspexError::FormatTypes(_)) => None,
 
         // Propagate any other error.
         Err(err) => return Err(err),
@@ -675,7 +663,7 @@ fn extract_pseudocode(idb: &IDB, dirpath: &Path) -> Result<FunctionCounts, Harus
         Ok(false) => eprintln!("[-] No type definitions found"),
 
         // Signal a failure to format type definitions, with its cause.
-        Err(HaruspexError::FormatTypes { source }) => eprintln!("[!] Failed: {source}"),
+        Err(HaruspexError::FormatTypes(source)) => eprintln!("[!] Failed: {source}"),
 
         // Propagate any other error.
         Err(err) => return Err(err),
