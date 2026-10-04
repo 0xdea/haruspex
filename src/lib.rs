@@ -25,8 +25,7 @@ const MAX_FILENAME_LEN: usize = 64;
 /// Haruspex error type.
 ///
 /// [`HaruspexError::Decompile`] only concerns the function that failed to
-/// decompile, while [`HaruspexError::LicenseUnavailable`],
-/// [`HaruspexError::UnsupportedBinary`], and
+/// decompile, while [`HaruspexError::LicenseUnavailable`] and
 /// [`HaruspexError::DecompilerUnavailable`] mean that no function can be
 /// decompiled. The other variants concern the decompiler configuration, type
 /// definitions, or output files.
@@ -46,10 +45,6 @@ pub enum HaruspexError {
     /// decompiled.
     #[error("Hex-Rays decompiler license is not available")]
     LicenseUnavailable(#[source] IDAError),
-    /// The decompiler doesn't support the binary's architecture, so no function
-    /// can be decompiled.
-    #[error("decompiler doesn't support this binary")]
-    UnsupportedBinary(#[source] IDAError),
     /// No decompiler is available for the IDB.
     #[error("decompiler is not available")]
     DecompilerUnavailable,
@@ -117,12 +112,6 @@ impl HaruspexError {
     #[must_use]
     const fn license_unavailable(source: IDAError) -> Self {
         Self::LicenseUnavailable(source)
-    }
-
-    /// Returns a [`HaruspexError::UnsupportedBinary`] error.
-    #[must_use]
-    const fn unsupported_binary(source: IDAError) -> Self {
-        Self::UnsupportedBinary(source)
     }
 
     /// Returns a [`HaruspexError::DecompilerConfig`] error for `directive`.
@@ -377,31 +366,25 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
 /// # Errors
 ///
 /// Returns [`HaruspexError::Decompile`] if `func` can't be decompiled, which
-/// doesn't affect other functions, or [`HaruspexError::LicenseUnavailable`],
-/// [`HaruspexError::UnsupportedBinary`], or
-/// [`HaruspexError::DecompilerUnavailable`] if no function can be decompiled.
-#[expect(
-    clippy::wildcard_enum_match_arm,
-    reason = "any IDA error but a few Hex-Rays ones is specific to `func`"
-)]
+/// doesn't affect other functions, or [`HaruspexError::LicenseUnavailable`]
+/// or [`HaruspexError::DecompilerUnavailable`] if no function can be
+/// decompiled.
 pub fn decompile<'a>(idb: &'a IDB, func: &Function<'a>) -> Result<CFunction<'a>, HaruspexError> {
     if !idb.decompiler_available() {
         return Err(HaruspexError::DecompilerUnavailable);
     }
 
-    idb.decompile(func).map_err(|source| match &source {
-        IDAError::HexRays(err) if err.code() == HexRaysErrorCode::License => {
+    idb.decompile(func).map_err(|source| {
+        if matches!(&source, IDAError::HexRays(err) if err.code() == HexRaysErrorCode::License) {
             HaruspexError::license_unavailable(source)
+        } else {
+            // Any other failure is specific to `func`. That includes `Only32`
+            // and `Only64`, since a database can mix code of different bitness
+            // (e.g., 32-bit segments in a 64-bit firmware image), and `BadArch`,
+            // since an unsupported architecture already makes the
+            // `decompiler_available` check above fail.
+            HaruspexError::decompile(func.start_address(), source)
         }
-
-        // `Only32`/`Only64` stay specific to `func`: a database can mix code of
-        // different bitness (e.g., 32-bit segments in a 64-bit firmware image),
-        // so only some of its functions may fail with them.
-        IDAError::HexRays(err) if err.code() == HexRaysErrorCode::BadArch => {
-            HaruspexError::unsupported_binary(source)
-        }
-
-        _ => HaruspexError::decompile(func.start_address(), source),
     })
 }
 
@@ -428,9 +411,8 @@ pub fn decompile<'a>(idb: &'a IDB, func: &Function<'a>) -> Result<CFunction<'a>,
 /// # Errors
 ///
 /// Errors are never about decompiling `func` itself. Returns
-/// [`HaruspexError::LicenseUnavailable`], [`HaruspexError::UnsupportedBinary`],
-/// or [`HaruspexError::DecompilerUnavailable`] if no function can be
-/// decompiled.
+/// [`HaruspexError::LicenseUnavailable`] or
+/// [`HaruspexError::DecompilerUnavailable`] if no function can be decompiled.
 /// Otherwise, returns [`HaruspexError::OutputDirCreate`] if the parent
 /// directory of `filepath` can't be created, or [`HaruspexError::FileWrite`]
 /// if an output file can't be written: these concern the output path, and

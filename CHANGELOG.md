@@ -27,9 +27,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `dump_types_to_file`.
 - **Breaking:** `dump_types_to_file` and `dump_all_types_to_file` return `false` instead of an error when there are no
   type definitions to dump.
-- **Breaking:** replace `HaruspexError`'s variants with `Decompile`, `LicenseUnavailable`, `UnsupportedBinary`,
-  `DecompilerUnavailable`, `DecompilerConfig`, `FormatTypes`, `FileWrite`, `OutputDirExists`, `OutputDirCreate`, and
-  `FileCopy`, which carry the failing address or path and chain the underlying error.
+- **Breaking:** replace `HaruspexError`'s variants with `Decompile`, `LicenseUnavailable`, `DecompilerUnavailable`,
+  `DecompilerConfig`, `FormatTypes`, `FileWrite`, `OutputDirExists`, `OutputDirCreate`, and `FileCopy`, which carry the
+  failing address or path and chain the underlying error.
 - **Breaking:** `prepare_output_dir` returns `HaruspexError` and no longer prints progress messages.
 - **Breaking:** make `ArgHintsMode::directive` private, in favor of `ArgHintsMode::apply`.
 - **Breaking:** `output_path_for_function` takes a function's name and address instead of the function, so that callers
