@@ -101,72 +101,6 @@ pub enum HaruspexError {
     },
 }
 
-impl HaruspexError {
-    /// Returns a [`HaruspexError::Decompile`] error for the function at `addr`.
-    #[must_use]
-    const fn decompile(addr: Address, source: IDAError) -> Self {
-        Self::Decompile { addr, source }
-    }
-
-    /// Returns a [`HaruspexError::LicenseUnavailable`] error.
-    #[must_use]
-    const fn license_unavailable(source: IDAError) -> Self {
-        Self::LicenseUnavailable(source)
-    }
-
-    /// Returns a [`HaruspexError::DecompilerConfig`] error for `directive`.
-    #[must_use]
-    const fn decompiler_config(directive: &'static str, source: IDAError) -> Self {
-        Self::DecompilerConfig { directive, source }
-    }
-
-    /// Returns a [`HaruspexError::FormatTypes`] error.
-    #[must_use]
-    const fn format_types(source: IDAError) -> Self {
-        Self::FormatTypes(source)
-    }
-
-    /// Returns a [`HaruspexError::FileWrite`] error for the output file at
-    /// `path`.
-    #[must_use]
-    fn file_write(path: &Path, source: io::Error) -> Self {
-        Self::FileWrite {
-            path: path.to_owned(),
-            source,
-        }
-    }
-
-    /// Returns a [`HaruspexError::OutputDirExists`] error for the output
-    /// directory at `path`.
-    #[must_use]
-    fn output_dir_exists(path: &Path, source: io::Error) -> Self {
-        Self::OutputDirExists {
-            path: path.to_owned(),
-            source,
-        }
-    }
-
-    /// Returns a [`HaruspexError::OutputDirCreate`] error for the output
-    /// directory at `path`.
-    #[must_use]
-    fn output_dir_create(path: &Path, source: io::Error) -> Self {
-        Self::OutputDirCreate {
-            path: path.to_owned(),
-            source,
-        }
-    }
-
-    /// Returns a [`HaruspexError::FileCopy`] error for copying `from` to `to`.
-    #[must_use]
-    fn file_copy(from: &Path, to: &Path, source: io::Error) -> Self {
-        Self::FileCopy {
-            from: from.to_owned(),
-            to: to.to_owned(),
-            source,
-        }
-    }
-}
-
 /// Files written for a decompiled function.
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[non_exhaustive]
@@ -251,7 +185,7 @@ impl ArgHintsMode {
 
         let directive = self.directive();
         idb.modify_decompiler_config(directive)
-            .map_err(|source| HaruspexError::decompiler_config(directive, source))
+            .map_err(|source| HaruspexError::DecompilerConfig { directive, source })
     }
 
     /// Returns the Hex-Rays config directive that applies this hints mode.
@@ -376,14 +310,17 @@ pub fn decompile<'a>(idb: &'a IDB, func: &Function<'a>) -> Result<CFunction<'a>,
 
     idb.decompile(func).map_err(|source| {
         if matches!(&source, IDAError::HexRays(err) if err.code() == HexRaysErrorCode::License) {
-            HaruspexError::license_unavailable(source)
+            HaruspexError::LicenseUnavailable(source)
         } else {
             // Any other failure is specific to `func`. That includes `Only32`
             // and `Only64`, since a database can mix code of different bitness
             // (e.g., 32-bit segments in a 64-bit firmware image), and `BadArch`,
             // since an unsupported architecture already makes the
             // `decompiler_available` check above fail.
-            HaruspexError::decompile(func.start_address(), source)
+            HaruspexError::Decompile {
+                addr: func.start_address(),
+                source,
+            }
         }
     })
 }
@@ -531,7 +468,7 @@ pub fn dump_types_to_file(
 ) -> Result<bool, HaruspexError> {
     let types = idb
         .format_cfunc_decls(cfunc)
-        .map_err(HaruspexError::format_types)?;
+        .map_err(HaruspexError::FormatTypes)?;
     write_types(&types, filepath.as_ref())
 }
 
@@ -550,7 +487,7 @@ pub fn dump_all_types_to_file(
     idb: &IDB,
     filepath: impl AsRef<Path>,
 ) -> Result<bool, HaruspexError> {
-    let all_types = idb.format_decls().map_err(HaruspexError::format_types)?;
+    let all_types = idb.format_decls().map_err(HaruspexError::FormatTypes)?;
     write_types(&all_types, filepath.as_ref())
 }
 
@@ -566,8 +503,10 @@ pub fn prepare_output_dir(dirpath: impl AsRef<Path>) -> Result<(), HaruspexError
     let dirpath = dirpath.as_ref();
 
     if dirpath.exists() {
-        fs::remove_dir(dirpath)
-            .map_err(|source| HaruspexError::output_dir_exists(dirpath, source))?;
+        fs::remove_dir(dirpath).map_err(|source| HaruspexError::OutputDirExists {
+            path: dirpath.to_owned(),
+            source,
+        })?;
     }
     create_output_dir(dirpath)
 }
@@ -700,7 +639,10 @@ fn extract_pseudocode(idb: &IDB, dirpath: &Path) -> Result<FunctionCounts, Harus
 /// Returns [`HaruspexError::OutputDirCreate`] if the directory can't be
 /// created.
 fn create_output_dir(dirpath: &Path) -> Result<(), HaruspexError> {
-    fs::create_dir_all(dirpath).map_err(|source| HaruspexError::output_dir_create(dirpath, source))
+    fs::create_dir_all(dirpath).map_err(|source| HaruspexError::OutputDirCreate {
+        path: dirpath.to_owned(),
+        source,
+    })
 }
 
 /// Writes the formatted type definitions in `types` to the output file at
@@ -726,7 +668,10 @@ fn write_types(types: &str, filepath: &Path) -> Result<bool, HaruspexError> {
 ///
 /// Returns [`HaruspexError::FileWrite`] if the output file can't be written.
 fn write_output(content: &str, filepath: &Path) -> Result<(), HaruspexError> {
-    fs::write(filepath, content).map_err(|source| HaruspexError::file_write(filepath, source))
+    fs::write(filepath, content).map_err(|source| HaruspexError::FileWrite {
+        path: filepath.to_owned(),
+        source,
+    })
 }
 
 /// Copies the output file at `from` to `to`.
@@ -735,7 +680,11 @@ fn write_output(content: &str, filepath: &Path) -> Result<(), HaruspexError> {
 ///
 /// Returns [`HaruspexError::FileCopy`] if the output file can't be copied.
 fn copy_output(from: &Path, to: &Path) -> Result<(), HaruspexError> {
-    fs::copy(from, to).map_err(|source| HaruspexError::file_copy(from, to, source))?;
+    fs::copy(from, to).map_err(|source| HaruspexError::FileCopy {
+        from: from.to_owned(),
+        to: to.to_owned(),
+        source,
+    })?;
     Ok(())
 }
 
