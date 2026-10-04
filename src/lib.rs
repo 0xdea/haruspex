@@ -158,9 +158,9 @@ impl DumpedFunction {
 pub enum ArgHintsMode {
     /// Argument name hints are disabled.
     Disabled,
-    /// Argument names are displayed as comments (/*param=*/).
+    /// Argument names are displayed as comments (`/*param=*/`).
     Comment,
-    /// Argument names are displayed as inlay hints (param:).
+    /// Argument names are displayed as inlay hints (`param: `).
     Inlay,
 }
 
