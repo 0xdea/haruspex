@@ -3,7 +3,6 @@
 #![cfg_attr(doc, doc = include_str!("../README.md"))]
 #![doc(html_logo_url = "https://raw.githubusercontent.com/0xdea/haruspex/master/.img/logo.png")]
 
-use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 use std::{fs, io};
@@ -613,35 +612,11 @@ pub fn function_name(func: &Function<'_>) -> String {
     func.name().unwrap_or_else(|| "[no name]".to_owned())
 }
 
-/// Returns `name` with its control characters escaped (e.g., `\u{1b}`), so that
-/// printing a name from the analyzed binary (e.g., from [`function_name`])
-/// can't inject terminal escape sequences.
-///
-/// Use it only for display: paths should be built from the original name with
-/// [`sanitize_filename`]. Names without control characters, i.e., virtually
-/// all of them, are returned as is, without allocating.
-#[must_use]
-pub fn printable_name(name: &str) -> Cow<'_, str> {
-    if !name.contains(char::is_control) {
-        return Cow::Borrowed(name);
-    }
-
-    let mut escaped = String::with_capacity(name.len());
-    for ch in name.chars() {
-        if ch.is_control() {
-            escaped.extend(ch.escape_default());
-        } else {
-            escaped.push(ch);
-        }
-    }
-    Cow::Owned(escaped)
-}
-
 /// Builds the output file path inside `dirpath` for the function named
 /// `func_name` at `addr`, i.e., `{sanitized func_name}@{addr:X}.c`.
 ///
 /// It takes the name rather than the function, so that callers that also
-/// print the name (e.g., with [`printable_name`]) get it only once, with
+/// print the name (escaped with [`str::escape_debug`]) get it only once, with
 /// [`function_name`]. The name is sanitized with [`sanitize_filename`], so it
 /// can come straight from the analyzed binary.
 #[must_use]
@@ -727,8 +702,10 @@ fn extract_pseudocode(idb: &IDB, dirpath: &Path) -> Result<FunctionCounts, Harus
         };
 
         // Print one line per function, naming the `.h` file next to the `.c`
-        // file when there is one.
-        let shown_name = printable_name(&func_name);
+        // file when there is one. The name comes from the analyzed binary, so
+        // escape it to keep terminal escape sequences and other non-printable
+        // chars (e.g., bidi overrides) out of the output.
+        let shown_name = func_name.escape_debug();
         let pseudocode = dumped.pseudocode.display();
         match &dumped.types {
             Some(types) => println!(
@@ -1063,24 +1040,6 @@ mod tests {
             output_path_for_function("foo.bar", 0x2c30, "out"),
             Path::new("out").join("foo_bar@2C30.c"),
             "wrong output path"
-        );
-    }
-
-    #[test]
-    fn printable_name_escapes_only_control_chars() {
-        assert_eq!(
-            printable_name("foo\x1b[2Jbar\nbaz\u{85}qux"),
-            "foo\\u{1b}[2Jbar\\nbaz\\u{85}qux",
-            "control chars should be escaped, and nothing else"
-        );
-    }
-
-    #[test]
-    fn printable_name_borrows_names_without_control_chars() {
-        let name = "std::vector<int>::push_back(\"x\")";
-        assert!(
-            matches!(printable_name(name), Cow::Borrowed(borrowed) if borrowed == name),
-            "names without control chars should be returned as is, without allocating"
         );
     }
 
