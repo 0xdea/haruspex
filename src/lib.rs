@@ -12,7 +12,6 @@ use idalib::decompiler::{CFunction, HexRaysErrorCode};
 use idalib::func::{Function, FunctionFlags};
 use idalib::idb::IDB;
 use idalib::{Address, IDAError};
-use thiserror::Error;
 
 /// Reserved characters in filenames.
 #[cfg(unix)]
@@ -31,7 +30,7 @@ const MAX_FILENAME_LEN: usize = 64;
 /// [`HaruspexError::DecompilerUnavailable`] mean that no function can be
 /// decompiled. The other variants concern the decompiler configuration, type
 /// definitions, or output files.
-#[derive(Debug, Error)]
+#[derive(Debug, thiserror::Error)]
 #[non_exhaustive]
 pub enum HaruspexError {
     /// The function can't be decompiled, but other functions may still be.
