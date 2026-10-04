@@ -433,64 +433,6 @@ pub fn decompile_to_file(
     }))
 }
 
-/// Writes the pseudocode of the already-decompiled [`CFunction`] `cfunc` to the
-/// output file at `filepath`.
-///
-/// Together with [`dump_types_to_file`], this lets callers that already hold a
-/// `cfunc` (e.g., from [`decompile`]) write both outputs without decompiling
-/// the function again.
-///
-/// # Errors
-///
-/// Returns [`HaruspexError::FileWrite`] if the output file can't be written.
-pub fn dump_pseudocode_to_file(
-    cfunc: &CFunction<'_>,
-    filepath: impl AsRef<Path>,
-) -> Result<(), HaruspexError> {
-    write_output(&cfunc.pseudocode(), filepath.as_ref())
-}
-
-/// Dumps the type definitions of the already-decompiled [`CFunction`] `cfunc`
-/// in [`IDB`] `idb` to the output file at `filepath`.
-///
-/// Returns `true` if the output file was written, or `false` if there were no
-/// type definitions to dump, in which case nothing is written.
-///
-/// # Errors
-///
-/// Returns [`HaruspexError::FormatTypes`] if the type definitions can't be
-/// formatted, or [`HaruspexError::FileWrite`] if the output file can't be
-/// written.
-pub fn dump_types_to_file(
-    idb: &IDB,
-    cfunc: &CFunction<'_>,
-    filepath: impl AsRef<Path>,
-) -> Result<bool, HaruspexError> {
-    let types = idb
-        .format_cfunc_decls(cfunc)
-        .map_err(HaruspexError::FormatTypes)?;
-    write_types(&types, filepath.as_ref())
-}
-
-/// Dumps all type definitions in [`IDB`] `idb` to the output file at
-/// `filepath`.
-///
-/// Returns `true` if the output file was written, or `false` if there were no
-/// type definitions to dump, in which case nothing is written.
-///
-/// # Errors
-///
-/// Returns [`HaruspexError::FormatTypes`] if the type definitions can't be
-/// formatted, or [`HaruspexError::FileWrite`] if the output file can't be
-/// written.
-pub fn dump_all_types_to_file(
-    idb: &IDB,
-    filepath: impl AsRef<Path>,
-) -> Result<bool, HaruspexError> {
-    let all_types = idb.format_decls().map_err(HaruspexError::FormatTypes)?;
-    write_types(&all_types, filepath.as_ref())
-}
-
 /// Creates a fresh output directory at `dirpath`, removing it first if it
 /// exists and is empty.
 ///
@@ -576,7 +518,7 @@ fn extract_pseudocode(idb: &IDB, dirpath: &Path) -> Result<FunctionCounts, Harus
     let all_types_path = dirpath.join("all_types.h");
     eprintln!();
     eprintln!("[*] Dumping all types to `{}`", all_types_path.display());
-    match dump_all_types_to_file(idb, all_types_path) {
+    match dump_all_types_to_file(idb, &all_types_path) {
         // Types were successfully written to the output file.
         Ok(true) => eprintln!("[+] Done"),
 
@@ -643,6 +585,54 @@ fn create_output_dir(dirpath: &Path) -> Result<(), HaruspexError> {
         path: dirpath.to_owned(),
         source,
     })
+}
+
+/// Writes the pseudocode of the already-decompiled [`CFunction`] `cfunc` to the
+/// output file at `filepath`.
+///
+/// # Errors
+///
+/// Returns [`HaruspexError::FileWrite`] if the output file can't be written.
+fn dump_pseudocode_to_file(cfunc: &CFunction<'_>, filepath: &Path) -> Result<(), HaruspexError> {
+    write_output(&cfunc.pseudocode(), filepath)
+}
+
+/// Dumps the type definitions of the already-decompiled [`CFunction`] `cfunc`
+/// in [`IDB`] `idb` to the output file at `filepath`.
+///
+/// Returns `true` if the output file was written, or `false` if there were no
+/// type definitions to dump, in which case nothing is written.
+///
+/// # Errors
+///
+/// Returns [`HaruspexError::FormatTypes`] if the type definitions can't be
+/// formatted, or [`HaruspexError::FileWrite`] if the output file can't be
+/// written.
+fn dump_types_to_file(
+    idb: &IDB,
+    cfunc: &CFunction<'_>,
+    filepath: &Path,
+) -> Result<bool, HaruspexError> {
+    let types = idb
+        .format_cfunc_decls(cfunc)
+        .map_err(HaruspexError::FormatTypes)?;
+    write_types(&types, filepath)
+}
+
+/// Dumps all type definitions in [`IDB`] `idb` to the output file at
+/// `filepath`.
+///
+/// Returns `true` if the output file was written, or `false` if there were no
+/// type definitions to dump, in which case nothing is written.
+///
+/// # Errors
+///
+/// Returns [`HaruspexError::FormatTypes`] if the type definitions can't be
+/// formatted, or [`HaruspexError::FileWrite`] if the output file can't be
+/// written.
+fn dump_all_types_to_file(idb: &IDB, filepath: &Path) -> Result<bool, HaruspexError> {
+    let all_types = idb.format_decls().map_err(HaruspexError::FormatTypes)?;
+    write_types(&all_types, filepath)
 }
 
 /// Writes the formatted type definitions in `types` to the output file at

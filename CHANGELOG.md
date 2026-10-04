@@ -24,10 +24,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Breaking:** `decompile_to_file` returns `Ok(None)` for a function that can't be decompiled, so its errors are never
   about decompiling the function itself; it also creates the parent directory of its output file.
-- **Breaking:** rename `dump_cfunc_pseudocode_to_file` to `dump_pseudocode_to_file` and `dump_cfunc_types_to_file` to
-  `dump_types_to_file`.
-- **Breaking:** `dump_types_to_file` and `dump_all_types_to_file` return `false` instead of an error when there are no
-  type definitions to dump.
 - **Breaking:** replace `HaruspexError`'s variants with `Decompile`, `LicenseUnavailable`, `DecompilerUnavailable`,
   `DecompilerConfig`, `FormatTypes`, `FileWrite`, `OutputDirExists`, `OutputDirCreate`, and `FileCopy`, which carry the
   failing address or path and chain the underlying error.
@@ -58,8 +54,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- **Breaking:** remove `dump_func_pseudocode_to_file` and `dump_func_types_to_file`; use `decompile` with
-  `dump_pseudocode_to_file` or `dump_types_to_file` instead.
+- **Breaking:** remove `dump_func_pseudocode_to_file`, `dump_cfunc_pseudocode_to_file`, `dump_func_types_to_file`,
+  `dump_cfunc_types_to_file`, and `dump_all_types_to_file` from the public API; use `decompile_to_file` instead, or
+  `decompile` to find out why a function can't be decompiled.
 
 ## [0.10.1] - 2026-09-21
 
