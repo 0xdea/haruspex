@@ -8,36 +8,49 @@ Haruspex is a headless IDA plugin written in Rust that extracts Hex-Rays pseudoc
 
 ## Build requirements
 
-**IDADIR** must be set to the IDA installation directory at both build time and runtime:
-
-```
-export IDADIR=/path/to/ida
-```
-
-The build script (`build.rs`) checks common default locations as a fallback, but setting it explicitly is safer. IDA 9.4+ with a valid license is required. LLVM/Clang must be installed (used by bindgen when building `idalib`). Rust 1.91+ is required (declared as `rust-version` in `Cargo.toml`, since `sanitize_filename` uses `str::floor_char_boundary`); clippy's `incompatible_msrv` lint checks code against it.
+- IDA 9.4+ (see the README's compatibility table) with the Hex-Rays decompiler and a valid license, with `IDADIR` set to the installation directory at both build time and runtime (`export IDADIR=/path/to/ida`). The build script (`build.rs`, via `idalib-build`) checks common default locations as a fallback, and only warns if it can't find IDA, but setting it explicitly is safer.
+- LLVM/Clang, used by bindgen when building `idalib`. On Windows, `LIBCLANG_PATH` must also be set to the LLVM/Clang `bin` directory.
+- Rust edition 2024, and Rust 1.91+ (declared as `rust-version` in `Cargo.toml`, since `sanitize_filename` uses `str::floor_char_boundary`); clippy's `incompatible_msrv` lint checks code against it.
 
 ## Commands
 
 ```bash
 # Build
-cargo build --locked            # debug (debug info stripped for faster startup)
-cargo build --release --locked  # optimized, LTO, stripped
+cargo build --release --locked     # optimized (LTO, stripped, O3)
+cargo build --locked               # debug build (no debug info, for faster startup)
 
-# Test (integration tests, custom harness, tests against ./tests/data/ls)
-cargo test --locked
-cargo test --test tests --locked -- --nocapture   # verbose
+# Unit tests (no IDA database needed)
+cargo test --lib --locked
 
-# Lint
+# Integration tests (custom harness, needs a working IDA installation)
+cargo test --test tests --locked
+
+# Doctests (need a working IDA installation, since the example analyzes ./tests/data/ls)
+cargo test --doc --locked
+
+# Lint and format (CI enforces these as errors)
 cargo fmt --all --check
-cargo clippy --all-targets --locked -- -D warnings
-cargo semver-checks
-cargo audit           # checks dependencies against the RustSec advisory database
+cargo clippy --workspace --all-targets --locked -- -D warnings
 
-# Docs
-cargo doc --locked
+# Documentation (CI enforces this as an error)
+RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked
+
+# Dependency vulnerability audit (requires cargo-audit)
+cargo audit
+
+# Semver compatibility (requires cargo-semver-checks)
+cargo semver-checks
 ```
 
+`--workspace` follows the `rust-style` skill; this is a single crate, so it is equivalent to CI's `cargo clippy --all-targets --locked -- -D warnings`. `--no-deps` matches CI's `build.yml` doc step and skips documenting dependencies (`doc.yml`, which publishes to `gh-pages`, runs a plain `cargo doc --locked`).
+
+CI's own `test` step only runs `cargo test --no-run` — a compile-only smoke check. All test suites link against the IDA libraries, and the integration suite and doctests also need a working IDA installation to analyze binaries, which CI runners don't have, so they only run locally.
+
 ## Architecture
+
+This is a single crate: `src/main.rs` (CLI entry point) and `src/lib.rs` (all core logic, and a library API used by augur).
+
+The binary (`src/main.rs`) is a thin wrapper: it calls `idalib::force_batch_mode()` to suppress IDA's UI before calling `haruspex::run`.
 
 Single-crate, ten public surfaces in `src/lib.rs`:
 
@@ -63,9 +76,11 @@ Single-crate, ten public surfaces in `src/lib.rs`:
 
 Every public function that accepts a path takes `impl AsRef<Path>` rather than a concrete `&Path`/`PathBuf`.
 
-The binary (`src/main.rs`) is a thin wrapper: it calls `idalib::force_batch_mode()` to suppress IDA's UI before calling `haruspex::run`.
+## Output
 
-## Output layout
+Progress/status messages go to stderr; stdout gets one line per decompiled function (see `haruspex::run(filepath)` above).
+
+Output layout:
 
 ```
 <binary>.dec/            # `<binary>` with its extension, if any, replaced by `.dec`
@@ -77,7 +92,15 @@ The binary (`src/main.rs`) is a thin wrapper: it calls `idalib::force_batch_mode
 
 `{func_name}` is sanitized by `sanitize_filename` and `{addr}` is the function's start address in uppercase hex. augur uses the same file names, organized in one subdirectory per string under `<binary>.str/`.
 
-## Lint posture
+## Error handling
+
+- Errors in the public API are `HaruspexError` variants (see above). Functions below `run` return them; only `run` converts them to `anyhow` and rejects zero decompiled functions, both inside the cleanup. `main()` prints errors as `[!] Error: {err:#}`.
+- Any error after the output directory is created, including when no functions were decompiled, removes the output directory (safe because `prepare_output_dir` guarantees it started empty); if removing it fails too, a warning is printed to stderr.
+- Functions that can't be decompiled are skipped and counted (`skipped`), while `LicenseUnavailable`, `DecompilerUnavailable`, and output errors (`OutputDirCreate`, `FileWrite`) are fatal; `decompile` is the one place that decides which decompilation failures are fatal.
+- Thunk functions are silently skipped.
+- Failing to format all type definitions prints `[!] Failed: <cause>` and isn't fatal.
+
+## Lint policy
 
 The workspace enforces very strict Clippy lints (all/pedantic/nursery/cargo/restriction lints, beside some explicitly allowed lints). All items must be documented. Unsafe blocks must have `// SAFETY:` comments. Taplo enforces TOML formatting (120-char line width, 4-space indent).
 
@@ -89,6 +112,25 @@ The crate-level documentation in `src/lib.rs` is assembled in a specific order t
 
 ## Tests
 
-**Unit tests** live in `src/lib.rs` under `#[cfg(test)] mod tests`. They cover `prepare_output_dir` (create, empty-dir recreate, non-empty failure with `OutputDirExists` keeping the existing content), `sanitize_filename` (plain names, reserved-char and control-char replacement, truncation by bytes on a char boundary), `output_path_for_function` (sanitized name, uppercase hex address, `.c` extension), `DumpedFunction::copy_to` (no-op when the files are already in place, detected by pointing `types` at a missing file, so any copy attempt would fail on every platform; copies `.c` and `.h`, points `self` at the copies, and keeps the originals; copies only the `.c` without types; creates a missing directory; fails with `FileCopy` naming both paths when the source is missing; leaves `self` unchanged when the `.c` copy succeeds but the `.h` copy fails), which use per-test directories from `test_dir` (a fresh, empty directory scoped to a label and the process ID, as in augur), `write_output` (writes exact content, fails with `HaruspexError::FileWrite` carrying the path when the parent directory doesn't exist), and the private `ArgHintsMode::directive()` (each variant maps to the expected `ARG_HINTS_MODE = N` string). These require no IDA/IDADIR.
+### Unit tests
 
-**Integration tests** live in `tests/main.rs` with `harness = false` (custom runner). They require IDA to be available and `IDADIR` set. The main test binary is `tests/data/ls` (x86-64 ELF); `tests/data/no_functions` (a data-only x86-64 ELF object with one type definition, built from `no_functions.c`) checks that `run` fails and removes its output directory, which by then contains `all_types.h`, when no functions were decompiled. As in augur, `main()` calls `idalib::force_batch_mode()` and then runs independent `test_*` scenarios, in the same order as augur's (the successful runs, then the failures): `test_binary_with_functions`, `test_library_functions`, `test_binary_without_functions`, `test_existing_output_dir`, `test_missing_binary`, `test_invalid_arguments`, each starting with `reset_output` (and ending with it when it produces output), and each checking with `check_no_idb_file` that no IDB file is left behind, which removes the output directory and every IDB file (`IDB_EXTENSIONS`); assertions live in `check_*` helpers that print `[*] Checking ... Ok.`. Objects derived from an `IDB` (`Function`, `CFunction`) must be dropped before the `IDB` itself, since their destructors call into IDA: idalib's lifetimes don't enforce this at implicit scope-end drops, and getting it wrong hangs the process. That's why `check_library_functions` opens the `IDB` itself and declares derived objects after it, so they all drop in the right order when it returns, before `reset_output` removes the database files. `test_binary_with_functions` runs the real binary through `run_binary` (`env!("CARGO_BIN_EXE_haruspex")`, forwarding its stderr) rather than calling `run`, to pin the CLI output with literals at no extra analysis cost: success exit status, exactly 79 stdout lines of which 9 (`N_TYPES_LINES`) name a `.h` file, the literal ``sub_2C30 -> `./tests/data/ls.dec/sub_2C30@2C30.c` + `sub_2C30@2C30.h` `` line (`check_stdout_line`), and ``[+] Decompiled 79 functions (52 skipped) into `./tests/data/ls.dec` `` as a whole stderr line (`check_summary`); both take the expected literal from the scenario, as in augur. `test_existing_output_dir` still checks `run`'s return value (`check_empty_output_dir_succeeds`), which differs from the skipped count, so returning the wrong count fails. `test_missing_binary` expects "failed to analyze binary file" and no output directory; `test_invalid_arguments` runs the binary with no arguments, two arguments, `-h`, and `--help`, expecting failure, `Usage:` on stderr, empty stdout, and no IDB file or output directory. Expected errors are matched against the full chain (`format!("{err:#}")`), as in augur. Tests validate function count, output `.c` and `.h` file counts, output directory behavior (non-empty dir error with its "already exists" message and the existing content preserved, empty-dir success), a regression check that argument name hints are disabled by default in `run`'s output (asserts a known `fwrite` call in `main@2630.c` has no inlay hints), a spot-check of a known output file (`sub_4AD0@4AD0.c`) to verify the naming scheme, pseudocode content, and error-path behavior for `decompile_to_file` (read-only files, path length limits, invalid filenames). They also directly exercise every public function on `ls`: `function_name` returns `main`, `decompile` succeeds on `main` and returns `Decompile` with the right address for the `free` import at `0xC1E0` (`FREE_IMPORT`, looked up by address because its `.plt` stub has the same name), which is in the extern segment and can't be decompiled; `decompile_to_file` returns `Some` with `types: None` and no `.h` file for `main` (no local types), `Some` with `types` set and a non-empty `.h` file for `sub_2C30` (known to have local types), `None` without creating any directory for `free`, and creates a missing parent directory; writing the files and type definitions is covered through `decompile_to_file` (the `.c`/`.h` files, and no `.h` for `main`) and `run` (the `.h` count includes `all_types.h`); and the error checks (read-only file, overlong name, and a NUL byte in the name on Unix, since a `/` would now just create a subdirectory) expect `FileWrite` carrying the output path.
+Unit tests live in `src/lib.rs` under `#[cfg(test)] mod tests`. They cover `prepare_output_dir` (create, empty-dir recreate, non-empty failure with `OutputDirExists` keeping the existing content), `sanitize_filename` (plain names, reserved-char and control-char replacement, truncation by bytes on a char boundary), `output_path_for_function` (sanitized name, uppercase hex address, `.c` extension), `DumpedFunction::copy_to` (no-op when the files are already in place, detected by pointing `types` at a missing file, so any copy attempt would fail on every platform; copies `.c` and `.h`, points `self` at the copies, and keeps the originals; copies only the `.c` without types; creates a missing directory; fails with `FileCopy` naming both paths when the source is missing; leaves `self` unchanged when the `.c` copy succeeds but the `.h` copy fails), which use per-test directories from `test_dir` (a fresh, empty directory scoped to a label and the process ID, as in augur), `write_output` (writes exact content, fails with `HaruspexError::FileWrite` carrying the path when the parent directory doesn't exist), and the private `ArgHintsMode::directive()` (each variant maps to the expected `ARG_HINTS_MODE = N` string). These require no IDA/IDADIR.
+
+### Integration tests
+
+Integration tests live in `tests/main.rs` with `harness = false` (custom runner). They require IDA to be available and `IDADIR` set. The main test binary is `tests/data/ls` (x86-64 ELF); `tests/data/no_functions` (a data-only x86-64 ELF object with one type definition, built from `no_functions.c`) checks that `run` fails and removes its output directory, which by then contains `all_types.h`, when no functions were decompiled. As in augur, `main()` calls `idalib::force_batch_mode()` and then runs independent `test_*` scenarios, in the same order as augur's (the successful runs, then the failures): `test_binary_with_functions`, `test_library_functions`, `test_binary_without_functions`, `test_existing_output_dir`, `test_missing_binary`, `test_invalid_arguments`, each starting with `reset_output` (and ending with it when it produces output), and each checking with `check_no_idb_file` that no IDB file is left behind, which removes the output directory and every IDB file (`IDB_EXTENSIONS`); assertions live in `check_*` helpers that print `[*] Checking ... Ok.`. Objects derived from an `IDB` (`Function`, `CFunction`) must be dropped before the `IDB` itself, since their destructors call into IDA: idalib's lifetimes don't enforce this at implicit scope-end drops, and getting it wrong hangs the process. That's why `check_library_functions` opens the `IDB` itself and declares derived objects after it, so they all drop in the right order when it returns, before `reset_output` removes the database files. `test_binary_with_functions` runs the real binary through `run_binary` (`env!("CARGO_BIN_EXE_haruspex")`, forwarding its stderr) rather than calling `run`, to pin the CLI output with literals at no extra analysis cost: success exit status, exactly 79 stdout lines of which 9 (`N_TYPES_LINES`) name a `.h` file, the literal ``sub_2C30 -> `./tests/data/ls.dec/sub_2C30@2C30.c` + `sub_2C30@2C30.h` `` line (`check_stdout_line`), and ``[+] Decompiled 79 functions (52 skipped) into `./tests/data/ls.dec` `` as a whole stderr line (`check_summary`); both take the expected literal from the scenario, as in augur. `test_existing_output_dir` still checks `run`'s return value (`check_empty_output_dir_succeeds`), which differs from the skipped count, so returning the wrong count fails. `test_missing_binary` expects "failed to analyze binary file" and no output directory; `test_invalid_arguments` runs the binary with no arguments, two arguments, `-h`, and `--help`, expecting failure, `Usage:` on stderr, empty stdout, and no IDB file or output directory. Expected errors are matched against the full chain (`format!("{err:#}")`), as in augur. Tests validate function count, output `.c` and `.h` file counts, output directory behavior (non-empty dir error with its "already exists" message and the existing content preserved, empty-dir success), a regression check that argument name hints are disabled by default in `run`'s output (asserts a known `fwrite` call in `main@2630.c` has no inlay hints), a spot-check of a known output file (`sub_4AD0@4AD0.c`) to verify the naming scheme, pseudocode content, and error-path behavior for `decompile_to_file` (read-only files, path length limits, invalid filenames). They also directly exercise every public function on `ls`: `function_name` returns `main`, `decompile` succeeds on `main` and returns `Decompile` with the right address for the `free` import at `0xC1E0` (`FREE_IMPORT`, looked up by address because its `.plt` stub has the same name), which is in the extern segment and can't be decompiled; `decompile_to_file` returns `Some` with `types: None` and no `.h` file for `main` (no local types), `Some` with `types` set and a non-empty `.h` file for `sub_2C30` (known to have local types), `None` without creating any directory for `free`, and creates a missing parent directory; writing the files and type definitions is covered through `decompile_to_file` (the `.c`/`.h` files, and no `.h` for `main`) and `run` (the `.h` count includes `all_types.h`); and the error checks (read-only file, overlong name, and a NUL byte in the name on Unix, since a `/` would now just create a subdirectory) expect `FileWrite` carrying the output path.
+
+## IDA integration notes
+
+- `idalib::force_batch_mode()` must be called before opening any database (suppresses IDA UI); `main()` and the test harness both call it first.
+- `IDB::open()` doesn't save the database on close, so no IDB file is left next to the binary (checked by `check_no_idb_file`).
+- idalib decompiles with `DECOMP_NO_CACHE`, so every `decompile` call is a full decompilation: `decompile_to_file` decompiles once and reuses the result for both the `.c` and the `.h` file.
+- Objects derived from an `IDB` (`Function`, `CFunction`) must be dropped before the `IDB` itself, since their destructors call into IDA (see Integration tests).
+- An unsupported architecture surfaces as `DecompilerUnavailable` before any decompilation (see `haruspex::decompile`).
+- Thunk functions (`FunctionFlags::THUNK`) are skipped.
+
+## CI workflows
+
+- **`build.yml`** — lint/build/test matrix across Linux, macOS, and Windows, plus a `zizmor` job that audits `.github/workflows/*.yml` for security issues (credential handling, injection, etc.).
+- **`doc.yml`** — builds rustdoc and pushes it to the `gh-pages` branch on `v*` tags; its `checkout` step needs persisted git credentials to `git push` later, so it carries a `# zizmor: ignore[artipacked]` suppression comment.
+- To suppress a specific zizmor finding, add an inline `# zizmor: ignore[<rule-id>]` comment on the flagged step with a short justification, rather than disabling the rule globally.
