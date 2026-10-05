@@ -128,6 +128,8 @@ fn check_library_functions(dirpath: &Path) -> anyhow::Result<()> {
     check_read_only_file(&idb, &main_func, &main_file)?;
     check_long_filename(&idb, &main_func, dirpath);
     check_invalid_filename(&idb, &main_func, dirpath);
+    check_parent_dir_create_error(&idb, &main_func, dirpath)?;
+    check_types_write_error(&idb, &types_func, dirpath)?;
     Ok(())
 }
 
@@ -565,6 +567,44 @@ fn check_invalid_filename(idb: &IDB, func: &Function<'_>, dirpath: &Path) {
     let result = haruspex::decompile_to_file(idb, func, &output_file);
     check_file_write_error(&result, &output_file);
     eprintln!("Ok.");
+}
+
+/// Checks that `decompile_to_file` fails if the parent directory of the output
+/// file can't be created, because a file is in the way.
+fn check_parent_dir_create_error(
+    idb: &IDB,
+    func: &Function<'_>,
+    dirpath: &Path,
+) -> anyhow::Result<()> {
+    eprint!("[*] Checking `decompile_to_file` handles directory creation errors... ");
+    let blocker = dirpath.join("blocker");
+    fs::write(&blocker, "not a directory")?;
+    let result = haruspex::decompile_to_file(idb, func, blocker.join("main.c"));
+    assert!(
+        matches!(&result, Err(HaruspexError::OutputDirCreate { path, .. }) if *path == blocker),
+        "wrong result returned: {result:?}"
+    );
+    eprintln!("Ok.");
+    Ok(())
+}
+
+/// Checks that `decompile_to_file` fails if the type definitions file of
+/// `func` can't be written, because a directory is in the way, after writing
+/// the pseudocode file.
+fn check_types_write_error(idb: &IDB, func: &Function<'_>, dirpath: &Path) -> anyhow::Result<()> {
+    eprint!("[*] Checking `decompile_to_file` handles type definitions write errors... ");
+    let output_file = dirpath.join("types_blocked.c");
+    let types_file = output_file.with_extension("h");
+    fs::create_dir_all(&types_file)?;
+    let result = haruspex::decompile_to_file(idb, func, &output_file);
+    check_file_write_error(&result, &types_file);
+    assert!(
+        output_file.is_file(),
+        "output file `{}` should be written before the type definitions file",
+        output_file.display()
+    );
+    eprintln!("Ok.");
+    Ok(())
 }
 
 /// Asserts that `result` of `decompile_to_file` is a

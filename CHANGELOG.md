@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add the `no_functions` test binary and an integration test for binaries without functions.
 - Add the `no_decompiler` test binary and an integration test for binaries without a decompiler.
+- Add tests for output directories that can't be created and type definitions files that can't be written.
 - Add `decompile`, which tells apart functions that can't be decompiled from errors that affect all functions.
 - Add `DumpedFunction`, returned by `decompile_to_file` with the paths of the files written.
 - Add `ArgHintsMode::apply` to set the argument name hints mode of an IDB's decompiler.

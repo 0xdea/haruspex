@@ -757,6 +757,24 @@ mod tests {
     }
 
     #[test]
+    fn copy_to_fails_if_output_directory_cannot_be_created() -> anyhow::Result<()> {
+        let dir = test_dir("copy_dir_create_error")?;
+        let mut dumped = dumped_function(dir.join("func@1000.c"), false)?;
+        // A file is in the way of the output directory.
+        let blocker = dir.join("blocker");
+        fs::write(&blocker, "not a directory")?;
+
+        let result = dumped.copy_to(blocker.join("func@1000.c"));
+        assert!(
+            matches!(&result, Err(HaruspexError::OutputDirCreate { path, .. }) if *path == blocker),
+            "wrong result returned: {result:?}"
+        );
+
+        fs::remove_dir_all(&dir)?;
+        Ok(())
+    }
+
+    #[test]
     fn copy_to_fails_on_missing_source() -> anyhow::Result<()> {
         let dir = test_dir("copy_missing_source")?;
         let mut dumped = dumped_function(dir.join("func@1000.c"), false)?;
@@ -861,6 +879,24 @@ mod tests {
         );
 
         fs::remove_dir_all(&dir)?;
+        Ok(())
+    }
+
+    #[test]
+    fn prepare_output_dir_fails_if_dir_cannot_be_created() -> anyhow::Result<()> {
+        let root = test_dir("create_error")?;
+        // A file is in the way of the output directory's parent.
+        let blocker = root.join("blocker");
+        fs::write(&blocker, "not a directory")?;
+        let dir = blocker.join("output");
+
+        let result = prepare_output_dir(&dir);
+        assert!(
+            matches!(&result, Err(HaruspexError::OutputDirCreate { path, .. }) if *path == dir),
+            "wrong error returned: {result:?}"
+        );
+
+        fs::remove_dir_all(&root)?;
         Ok(())
     }
 
