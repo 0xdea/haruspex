@@ -46,6 +46,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Escape non-printable chars in the function names that `run` prints, since names come from the analyzed binary.
 - Print one stdout line per decompiled function, naming its `.h` file when there is one, and report how many functions
   were skipped in the final summary.
+- Align the integration tests with augur's: scenario order, `check_*` helpers taking the expected output, and a
+  summary check that matches the whole line.
 
 ### Fixed
 

@@ -41,9 +41,9 @@ fn main() -> anyhow::Result<()> {
     idalib::force_batch_mode();
 
     test_binary_with_functions()?;
-    test_existing_output_dir()?;
     test_library_functions()?;
     test_binary_without_functions()?;
+    test_existing_output_dir()?;
     test_missing_binary()?;
     test_invalid_arguments()?;
 
@@ -60,44 +60,21 @@ fn test_binary_with_functions() -> anyhow::Result<()> {
     eprintln!();
     check_binary_succeeded(&output);
     check_number_of_output_lines(&output);
-    check_known_output_line(&output);
-    check_summary(&output);
+    check_stdout_line(
+        &output,
+        "sub_2C30 -> `./tests/data/ls.dec/sub_2C30@2C30.c` + `sub_2C30@2C30.h`",
+    );
+    check_summary(
+        &output,
+        "[+] Decompiled 79 functions (52 skipped) into `./tests/data/ls.dec`",
+    );
     check_number_of_files(&dirpath, "c", N_DECOMP)?;
     check_number_of_files(&dirpath, "h", N_HEADERS)?;
     check_arg_hints_disabled(&dirpath)?;
     check_known_output_file(&dirpath)?;
     check_no_idb_file(LS);
 
-    reset_output(LS)?;
-    eprintln!();
-    Ok(())
-}
-
-/// Runs haruspex with an existing output directory, and checks that it fails
-/// if the directory is not empty and succeeds if it is empty.
-fn test_existing_output_dir() -> anyhow::Result<()> {
-    let dirpath = reset_output(LS)?;
-    let sentinel = dirpath.join("sentinel.txt");
-    fs::create_dir_all(&dirpath)?;
-    fs::write(&sentinel, "block")?;
-
-    let result = haruspex::run(LS);
-    eprintln!();
-    check_existing_output_dir_error(result)?;
-    check_existing_output_dir_preserved(&sentinel)?;
-
-    // Leave the output directory in place, but empty.
-    fs::remove_file(&sentinel)?;
-    eprintln!();
-    let n_decomp = haruspex::run(LS)?;
-    eprint!("[*] Checking `run` succeeds when output directory is empty... ");
-    assert_eq!(
-        n_decomp, N_DECOMP,
-        "wrong number of decompiled functions on second run"
-    );
-    eprintln!("Ok.");
-    check_no_idb_file(LS);
-
+    // Remove the output directory and any IDB files at the end.
     reset_output(LS)?;
     eprintln!();
     Ok(())
@@ -114,6 +91,7 @@ fn test_library_functions() -> anyhow::Result<()> {
     check_library_functions(&dirpath)?;
     check_no_idb_file(LS);
 
+    // Remove the output directory and any IDB files at the end.
     reset_output(LS)?;
     eprintln!();
     Ok(())
@@ -157,24 +135,38 @@ fn test_binary_without_functions() -> anyhow::Result<()> {
     let dirpath = reset_output(NO_FUNCTIONS)?;
 
     let result = haruspex::run(NO_FUNCTIONS);
-    eprint!("[*] Checking `run` fails on a binary without functions... ");
-    let err = result.err().context("run succeeded unexpectedly")?;
-    assert!(
-        format!("{err:#}").contains("functions were decompiled"),
-        "wrong error returned: {err:#}"
-    );
-    eprintln!("Ok.");
-
-    eprint!("[*] Checking `run` removes the output directory on failure... ");
-    assert!(
-        !dirpath.exists(),
-        "output directory `{}` was not removed",
-        dirpath.display()
-    );
-    eprintln!("Ok.");
+    eprintln!();
+    check_no_functions_error(result)?;
+    check_output_dir_removed(&dirpath);
     check_no_idb_file(NO_FUNCTIONS);
+    eprintln!();
+    Ok(())
+}
 
-    reset_output(NO_FUNCTIONS)?;
+/// Runs haruspex with an existing output directory, and checks that it fails
+/// without touching its contents if it's not empty, and succeeds if it's
+/// empty.
+fn test_existing_output_dir() -> anyhow::Result<()> {
+    let dirpath = reset_output(LS)?;
+    let existing_file = dirpath.join("existing.txt");
+    fs::create_dir_all(&dirpath)?;
+    fs::write(&existing_file, "previous results")?;
+
+    let result = haruspex::run(LS);
+    eprintln!();
+    check_existing_output_dir_error(result)?;
+    check_existing_output_dir_preserved(&existing_file)?;
+
+    // Leave the output directory in place, but empty.
+    fs::remove_file(&existing_file)?;
+    eprintln!();
+    let n_decomp = haruspex::run(LS)?;
+    eprintln!();
+    check_empty_output_dir_succeeds(n_decomp);
+    check_no_idb_file(LS);
+
+    // Remove the output directory and any IDB files at the end.
+    reset_output(LS)?;
     eprintln!();
     Ok(())
 }
@@ -188,8 +180,6 @@ fn test_missing_binary() -> anyhow::Result<()> {
     eprintln!();
     check_missing_binary_error(result)?;
     check_no_output_dir_created(&dirpath);
-
-    eprintln!();
     Ok(())
 }
 
@@ -208,8 +198,8 @@ fn test_invalid_arguments() -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Removes the output directory and every IDB file of the binary at
-/// `filename`, packed or unpacked, if they exist.
+/// Removes the IDB files, packed or unpacked, and the output directory of the
+/// binary at `filename`, if they exist.
 ///
 /// Returns the path of the output directory.
 fn reset_output(filename: &str) -> anyhow::Result<PathBuf> {
@@ -280,26 +270,24 @@ fn check_number_of_output_lines(output: &process::Output) {
     eprintln!("Ok.");
 }
 
-/// Checks the stdout line of a known function with type definitions, which
-/// pins the output format.
-fn check_known_output_line(output: &process::Output) {
-    eprint!("[*] Checking known stdout line... ");
+/// Checks that stdout contains the known `line`, which pins the output format.
+fn check_stdout_line(output: &process::Output, line: &str) {
+    eprint!("[*] Checking stdout contains `{line}`... ");
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(
-        stdout.lines().any(|line| {
-            line == "sub_2C30 -> `./tests/data/ls.dec/sub_2C30@2C30.c` + `sub_2C30@2C30.h`"
-        }),
+        stdout.lines().any(|stdout_line| stdout_line == line),
         "known stdout line missing from:\n{stdout}"
     );
     eprintln!("Ok.");
 }
 
-/// Checks the final summary on stderr, including the skipped functions.
-fn check_summary(output: &process::Output) {
+/// Checks that stderr contains the final `summary`, which includes the skipped
+/// functions.
+fn check_summary(output: &process::Output, summary: &str) {
     eprint!("[*] Checking summary reports decompiled and skipped functions... ");
     let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(
-        stderr.contains("[+] Decompiled 79 functions (52 skipped) into `./tests/data/ls.dec`"),
+        stderr.lines().any(|line| line == summary),
         "summary missing or wrong in stderr"
     );
     eprintln!("Ok.");
@@ -580,20 +568,46 @@ fn check_no_idb_file(filename: &str) {
         let idb_path = Path::new(filename).with_extension(extension);
         assert!(
             !idb_path.exists(),
-            "unexpected IDB file left behind: {}",
+            "IDB file left behind: {}",
             idb_path.display()
         );
     }
     eprintln!("Ok.");
 }
 
-/// Checks that `run` failed because the output directory already exists and
-/// is not empty.
-fn check_existing_output_dir_error(result: anyhow::Result<usize>) -> anyhow::Result<()> {
-    eprint!("[*] Checking `run` fails when output directory is not empty... ");
+/// Checks that `run` returns the expected error for a binary without
+/// functions.
+fn check_no_functions_error(result: anyhow::Result<usize>) -> anyhow::Result<()> {
+    eprint!("[*] Checking binary without functions returns an error... ");
     let err = result
         .err()
-        .context("expected an error for a non-empty output directory")?;
+        .context("expected an error for a binary without functions")?;
+    assert!(
+        format!("{err:#}").contains("no functions were decompiled"),
+        "wrong error returned: {err:#}"
+    );
+    eprintln!("Ok.");
+    Ok(())
+}
+
+/// Checks that the output directory at `dirpath` was removed on error.
+fn check_output_dir_removed(dirpath: &Path) {
+    eprint!("[*] Checking output directory is removed on error... ");
+    assert!(
+        !dirpath.exists(),
+        "output directory left behind: {}",
+        dirpath.display()
+    );
+    eprintln!("Ok.");
+}
+
+/// Checks that `run` returns the expected error when the output directory
+/// already exists and is not empty.
+fn check_existing_output_dir_error(result: anyhow::Result<usize>) -> anyhow::Result<()> {
+    eprint!("[*] Checking existing output directory returns an error... ");
+    let err = result
+        .err()
+        .context("expected an error for an existing output directory")?;
     assert!(
         format!("{err:#}").contains("already exists"),
         "wrong error returned: {err:#}"
@@ -602,21 +616,39 @@ fn check_existing_output_dir_error(result: anyhow::Result<usize>) -> anyhow::Res
     Ok(())
 }
 
-/// Checks that the file in the existing output directory is still there and
-/// unchanged.
+/// Checks that the contents of an existing output directory are preserved on
+/// error.
 fn check_existing_output_dir_preserved(existing_file: &Path) -> anyhow::Result<()> {
-    eprint!("[*] Checking existing output directory content is preserved... ");
+    eprint!("[*] Checking existing output directory is preserved on error... ");
+    assert!(
+        existing_file.is_file(),
+        "file in existing output directory was removed: {}",
+        existing_file.display()
+    );
     assert_eq!(
         fs::read_to_string(existing_file)?,
-        "block",
-        "existing file `{}` was modified",
+        "previous results",
+        "file in existing output directory was modified: {}",
         existing_file.display()
     );
     eprintln!("Ok.");
     Ok(())
 }
 
-/// Checks that `run` failed because the binary file can't be analyzed.
+/// Checks that `run` succeeds with an existing but empty output directory, and
+/// returns the number of decompiled functions (unlike the skipped ones, of
+/// which `LS` has a different number).
+fn check_empty_output_dir_succeeds(n_decomp: usize) {
+    eprint!("[*] Checking `run` succeeds when output directory is empty... ");
+    assert_eq!(
+        n_decomp, N_DECOMP,
+        "wrong number of decompiled functions returned"
+    );
+    eprintln!("Ok.");
+}
+
+/// Checks that `run` returns the expected error for a binary that doesn't
+/// exist.
 fn check_missing_binary_error(result: anyhow::Result<usize>) -> anyhow::Result<()> {
     eprint!("[*] Checking missing binary returns an error... ");
     let err = result
@@ -635,7 +667,7 @@ fn check_no_output_dir_created(dirpath: &Path) {
     eprint!("[*] Checking no output directory is created... ");
     assert!(
         !dirpath.exists(),
-        "unexpected output directory: {}",
+        "unexpected output directory created: {}",
         dirpath.display()
     );
     eprintln!("Ok.");

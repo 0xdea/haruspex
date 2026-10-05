@@ -246,15 +246,15 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
     // available.
     ArgHintsMode::Disabled.apply(&mut idb)?;
 
-    // Create a new output directory, returning an error if it already exists
-    // and it's not empty.
+    // Create a new output directory, returning an error if it already exists and
+    // it's not empty.
     let dirpath = filepath.with_extension("dec");
     eprintln!("[*] Preparing output directory `{}`", dirpath.display());
     prepare_output_dir(&dirpath)?;
     eprintln!("[+] Output directory is ready");
 
-    // Remove the output directory, which is empty or only partially populated,
-    // if anything goes wrong, including when no functions were decompiled.
+    // Remove the output directory, which is empty or only partially populated, if
+    // anything goes wrong, including when no functions were decompiled.
     let counts = extract_pseudocode(&idb, &dirpath)
         .map_err(anyhow::Error::from)
         .and_then(|counts| {
@@ -285,6 +285,7 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
         filepath.display(),
         start.elapsed().as_secs_f64()
     );
+
     Ok(counts.decompiled)
 }
 
