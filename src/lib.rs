@@ -32,19 +32,6 @@ const MAX_FILENAME_LEN: usize = 64;
 #[derive(Debug, thiserror::Error)]
 #[non_exhaustive]
 pub enum HaruspexError {
-    /// The function can't be decompiled, but other functions may still be.
-    #[error("failed to decompile function at {addr:#X}")]
-    Decompile {
-        /// Start address of the function.
-        addr: Address,
-        /// Underlying IDA error.
-        #[source]
-        source: IDAError,
-    },
-    /// The Hex-Rays decompiler license is not available, so no function can be
-    /// decompiled.
-    #[error("Hex-Rays decompiler license is not available")]
-    LicenseUnavailable(#[source] IDAError),
     /// No decompiler is available for the IDB.
     #[error("decompiler is not available")]
     DecompilerUnavailable,
@@ -57,14 +44,18 @@ pub enum HaruspexError {
         #[source]
         source: IDAError,
     },
-    /// An output file can't be written.
-    #[error("failed to write `{}`", path.display())]
-    FileWrite {
-        /// Path of the output file.
-        path: PathBuf,
-        /// Underlying I/O error.
+    /// The Hex-Rays decompiler license is not available, so no function can be
+    /// decompiled.
+    #[error("Hex-Rays decompiler license is not available")]
+    LicenseUnavailable(#[source] IDAError),
+    /// The function can't be decompiled, but other functions may still be.
+    #[error("failed to decompile function at {addr:#X}")]
+    Decompile {
+        /// Start address of the function.
+        addr: Address,
+        /// Underlying IDA error.
         #[source]
-        source: io::Error,
+        source: IDAError,
     },
     /// The output directory already exists and can't be removed, e.g., because
     /// it's not empty.
@@ -80,6 +71,15 @@ pub enum HaruspexError {
     #[error("failed to create directory `{}`", path.display())]
     OutputDirCreate {
         /// Path of the output directory.
+        path: PathBuf,
+        /// Underlying I/O error.
+        #[source]
+        source: io::Error,
+    },
+    /// An output file can't be written.
+    #[error("failed to write `{}`", path.display())]
+    FileWrite {
+        /// Path of the output file.
         path: PathBuf,
         /// Underlying I/O error.
         #[source]
