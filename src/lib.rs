@@ -288,40 +288,6 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
     Ok(counts.decompiled)
 }
 
-/// Decompiles [`Function`] `func` in [`IDB`] `idb`.
-///
-/// Each call is a full decompilation, so callers that need the result more
-/// than once should keep the returned [`CFunction`] rather than call this
-/// again.
-///
-/// # Errors
-///
-/// Returns [`HaruspexError::Decompile`] if `func` can't be decompiled, which
-/// doesn't affect other functions, or [`HaruspexError::LicenseUnavailable`]
-/// or [`HaruspexError::DecompilerUnavailable`] if no function can be
-/// decompiled.
-pub fn decompile<'a>(idb: &'a IDB, func: &Function<'a>) -> Result<CFunction<'a>, HaruspexError> {
-    if !idb.decompiler_available() {
-        return Err(HaruspexError::DecompilerUnavailable);
-    }
-
-    idb.decompile(func).map_err(|source| {
-        if matches!(&source, IDAError::HexRays(err) if err.code() == HexRaysErrorCode::License) {
-            HaruspexError::LicenseUnavailable(source)
-        } else {
-            // Any other failure is specific to `func`. That includes `Only32`
-            // and `Only64`, since a database can mix code of different bitness
-            // (e.g., 32-bit segments in a 64-bit firmware image), and `BadArch`,
-            // since an unsupported architecture already makes the
-            // `decompiler_available` check above fail.
-            HaruspexError::Decompile {
-                addr: func.start_address(),
-                source,
-            }
-        }
-    })
-}
-
 /// Decompiles [`Function`] `func` in [`IDB`] `idb` and saves its pseudocode to
 /// the output file at `filepath`, and its type definitions to a sibling file
 /// with a `.h` extension.
@@ -425,6 +391,40 @@ pub fn decompile_to_file(
         pseudocode: filepath.to_owned(),
         types,
     }))
+}
+
+/// Decompiles [`Function`] `func` in [`IDB`] `idb`.
+///
+/// Each call is a full decompilation, so callers that need the result more
+/// than once should keep the returned [`CFunction`] rather than call this
+/// again.
+///
+/// # Errors
+///
+/// Returns [`HaruspexError::Decompile`] if `func` can't be decompiled, which
+/// doesn't affect other functions, or [`HaruspexError::LicenseUnavailable`]
+/// or [`HaruspexError::DecompilerUnavailable`] if no function can be
+/// decompiled.
+pub fn decompile<'a>(idb: &'a IDB, func: &Function<'a>) -> Result<CFunction<'a>, HaruspexError> {
+    if !idb.decompiler_available() {
+        return Err(HaruspexError::DecompilerUnavailable);
+    }
+
+    idb.decompile(func).map_err(|source| {
+        if matches!(&source, IDAError::HexRays(err) if err.code() == HexRaysErrorCode::License) {
+            HaruspexError::LicenseUnavailable(source)
+        } else {
+            // Any other failure is specific to `func`. That includes `Only32`
+            // and `Only64`, since a database can mix code of different bitness
+            // (e.g., 32-bit segments in a 64-bit firmware image), and `BadArch`,
+            // since an unsupported architecture already makes the
+            // `decompiler_available` check above fail.
+            HaruspexError::Decompile {
+                addr: func.start_address(),
+                source,
+            }
+        }
+    })
 }
 
 /// Creates a fresh output directory at `dirpath`, removing it first if it
