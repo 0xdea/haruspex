@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 use std::{fs, process};
 
 use anyhow::Context as _;
-use haruspex::{DumpedFunction, HaruspexError};
+use haruspex::{ArgHintsMode, DumpedFunction, HaruspexError};
 use idalib::Address;
 use idalib::func::Function;
 use idalib::idb::IDB;
@@ -18,6 +18,8 @@ const IDB_EXTENSIONS: [&str; 6] = ["i64", "id0", "id1", "id2", "nam", "til"];
 const LS: &str = "./tests/data/ls";
 /// Target binary with type definitions but no functions.
 const NO_FUNCTIONS: &str = "./tests/data/no_functions";
+/// Target binary for a processor without a decompiler.
+const NO_DECOMPILER: &str = "./tests/data/no_decompiler";
 /// Target binary that doesn't exist.
 const MISSING: &str = "./tests/data/missing";
 
@@ -43,6 +45,7 @@ fn main() -> anyhow::Result<()> {
     test_binary_with_functions()?;
     test_library_functions()?;
     test_binary_without_functions()?;
+    test_binary_without_decompiler()?;
     test_existing_output_dir()?;
     test_missing_binary()?;
     test_invalid_arguments()?;
@@ -139,6 +142,22 @@ fn test_binary_without_functions() -> anyhow::Result<()> {
     check_no_functions_error(result)?;
     check_output_dir_removed(&dirpath);
     check_no_idb_file(NO_FUNCTIONS);
+    eprintln!();
+    Ok(())
+}
+
+/// Runs haruspex against a binary for a processor without a decompiler, and
+/// checks that it fails before creating any output, as does applying a hints
+/// mode to its IDB.
+fn test_binary_without_decompiler() -> anyhow::Result<()> {
+    let dirpath = reset_output(NO_DECOMPILER)?;
+
+    let result = haruspex::run(NO_DECOMPILER);
+    eprintln!();
+    check_no_decompiler_error(result)?;
+    check_no_output_dir_created(&dirpath);
+    check_apply_without_decompiler()?;
+    check_no_idb_file(NO_DECOMPILER);
     eprintln!();
     Ok(())
 }
@@ -585,6 +604,35 @@ fn check_no_functions_error(result: anyhow::Result<usize>) -> anyhow::Result<()>
     assert!(
         format!("{err:#}").contains("no functions were decompiled"),
         "wrong error returned: {err:#}"
+    );
+    eprintln!("Ok.");
+    Ok(())
+}
+
+/// Checks that `run` returns the expected error for a binary without a
+/// decompiler.
+fn check_no_decompiler_error(result: anyhow::Result<usize>) -> anyhow::Result<()> {
+    eprint!("[*] Checking binary without a decompiler returns an error... ");
+    let err = result
+        .err()
+        .context("expected an error for a binary without a decompiler")?;
+    assert!(
+        format!("{err:#}").contains("decompiler is not available"),
+        "wrong error returned: {err:#}"
+    );
+    eprintln!("Ok.");
+    Ok(())
+}
+
+/// Checks that [`ArgHintsMode::apply`] fails on the IDB of `NO_DECOMPILER`
+/// with [`HaruspexError::DecompilerUnavailable`].
+fn check_apply_without_decompiler() -> anyhow::Result<()> {
+    eprint!("[*] Checking `ArgHintsMode::apply` fails without a decompiler... ");
+    let mut idb = IDB::open(NO_DECOMPILER)?;
+    let result = ArgHintsMode::Disabled.apply(&mut idb);
+    assert!(
+        matches!(result, Err(HaruspexError::DecompilerUnavailable)),
+        "wrong result returned: {result:?}"
     );
     eprintln!("Ok.");
     Ok(())
