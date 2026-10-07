@@ -599,7 +599,7 @@ fn check_types_write_error(idb: &IDB, func: &Function<'_>, dirpath: &Path) -> an
     let result = haruspex::decompile_to_file(idb, func, &output_file);
     check_file_write_error(&result, &types_file);
     assert!(
-        output_file.is_file(),
+        output_file.metadata().is_ok_and(|meta| meta.len() > 0),
         "output file `{}` should be written before the type definitions file",
         output_file.display()
     );
