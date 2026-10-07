@@ -763,11 +763,16 @@ mod tests {
         // A file is in the way of the output directory.
         let blocker = dir.join("blocker");
         fs::write(&blocker, "not a directory")?;
+        let original = dumped.clone();
 
         let result = dumped.copy_to(blocker.join("func@1000.c"));
         assert!(
             matches!(&result, Err(HaruspexError::OutputDirCreate { path, .. }) if *path == blocker),
             "wrong result returned: {result:?}"
+        );
+        assert_eq!(
+            dumped, original,
+            "self should still point at the original files"
         );
 
         fs::remove_dir_all(&dir)?;
