@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   filenames stay within the usual 255-byte limit.
 - **Breaking:** `sanitize_filename` also replaces control chars, which are invalid in Windows filenames.
 
+- Exclude `CLAUDE.md` from the published package.
 - Improve code style.
 - Update documentation.
 - Remove an unreachable license check on type definitions from `decompile_to_file`.

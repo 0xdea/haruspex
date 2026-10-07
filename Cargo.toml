@@ -17,6 +17,7 @@ exclude = [
     ".img/*",
     ".gitignore",
     ".taplo.toml",
+    "CLAUDE.md",
     "tests/*",
     "ida-plugin.json",
     "ida-plugin-stub.py",
