@@ -472,7 +472,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - First release to be published to [crates.io](https://crates.io/).
 
 [unreleased]: https://github.com/0xdea/haruspex/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/0xdea/haruspex/compare/v0.10.0...v1.0.0
+[1.0.0]: https://github.com/0xdea/haruspex/compare/v0.10.1...v1.0.0
 [0.10.1]: https://github.com/0xdea/haruspex/compare/v0.10.0...v0.10.1
 [0.10.0]: https://github.com/0xdea/haruspex/compare/v0.9.3...v0.10.0
 [0.9.3]: https://github.com/0xdea/haruspex/compare/v0.9.2...v0.9.3
