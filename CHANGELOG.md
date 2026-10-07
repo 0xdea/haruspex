@@ -9,18 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Declare the minimum supported Rust version (1.91) in `Cargo.toml`.
+- Add `decompile`, which tells apart functions that can't be decompiled from errors that affect all functions.
+- Add `DumpedFunction`, returned by `decompile_to_file` with the paths of the files written.
+- Add `DumpedFunction::copy_to`, which copies a function's output files elsewhere without decompiling it again, and
+  tracks the copies.
+- Add `ArgHintsMode::apply` to set the argument name hints mode of an IDB's decompiler.
+- Add `function_name`, which returns a function's name or `[no name]` if it has none.
 - Add the `no_functions` test binary and an integration test for binaries without functions.
 - Add the `no_decompiler` test binary and an integration test for binaries without a decompiler.
 - Add tests for output directories that can't be created and type definitions files that can't be written.
-- Add `decompile`, which tells apart functions that can't be decompiled from errors that affect all functions.
-- Add `DumpedFunction`, returned by `decompile_to_file` with the paths of the files written.
-- Add `ArgHintsMode::apply` to set the argument name hints mode of an IDB's decompiler.
-- Add `function_name`, which returns a function's name or `[no name]` if it has none.
-- Add `DumpedFunction::copy_to`, which copies a function's output files elsewhere without decompiling it again, and
-  tracks the copies.
 - Add integration tests for the CLI output, missing binaries, and invalid arguments, and check that no IDB file is left
   behind.
-- Declare the minimum supported Rust version (1.91) in `Cargo.toml`.
 
 ### Changed
 
@@ -29,28 +29,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** replace `HaruspexError`'s variants with `DecompilerUnavailable`, `DecompilerConfig`,
   `LicenseUnavailable`, `Decompile`, `OutputDirExists`, `OutputDirCreate`, `FileWrite`, and `FileCopy`, which carry the
   failing address or path and chain the underlying error.
-- **Breaking:** `prepare_output_dir` returns `HaruspexError` and no longer prints progress messages.
 - **Breaking:** make `ArgHintsMode::directive` private, in favor of `ArgHintsMode::apply`.
+- **Breaking:** `prepare_output_dir` returns `HaruspexError` and no longer prints progress messages.
 - **Breaking:** `output_path_for_function` takes a function's name and address instead of the function, so that callers
   that also print the name get it only once.
 - **Breaking:** `sanitize_filename` truncates names to 64 bytes on a char boundary, instead of 64 chars, so that output
   filenames stay within the usual 255-byte limit.
 - **Breaking:** `sanitize_filename` also replaces control chars, which are invalid in Windows filenames.
-
-- Exclude `CLAUDE.md` from the published package.
-- Improve code style.
-- Update documentation.
 - Remove an unreachable license check on type definitions from `decompile_to_file`.
-- Lowercase error messages.
-- Document how the output directory is named after the input file.
-- Split the integration test harness into independent scenarios and checks.
 - Print `[-] No type definitions found` instead of `[!] Failed` for binaries without type definitions, and print the
   cause when formatting them fails.
 - Escape non-printable chars in the function names that `run` prints, since names come from the analyzed binary.
 - Print one stdout line per decompiled function, naming its `.h` file when there is one, and report how many functions
   were skipped in the final summary.
-- Align the integration tests with augur's: scenario order, `check_*` helpers taking the expected output, and a
-  summary check that matches the whole line.
+- Split the integration test harness into independent scenarios and checks.
+- Lowercase error messages.
+- Exclude `CLAUDE.md` from the published package.
+- Improve code style.
+- Update documentation.
+- Update dependencies.
 
 ### Fixed
 
