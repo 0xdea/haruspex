@@ -1,6 +1,6 @@
 [package]
 name = "haruspex"
-version = "1.0.0-alpha"
+version = "1.0.0"
 authors = ["Marco Ivaldi <raptor@0xdeadbeef.info>"]
 edition = "2024"
 rust-version = "1.91"
