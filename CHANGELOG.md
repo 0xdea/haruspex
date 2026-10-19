@@ -412,7 +412,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Disable compilation on non-unix target families.
 
-## [0.2.0] - 2015-01-14
+## [0.2.0] - 2025-01-14
 
 ### Changed
 
@@ -420,7 +420,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update dependencies.
 - Improve documentation.
 
-## [0.1.4] - 2014-12-20
+## [0.1.4] - 2024-12-20
 
 ### Added
 
