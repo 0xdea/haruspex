@@ -109,8 +109,8 @@ summarizes the latest compatible release for each IDA version:
 
 | IDA version | Latest compatible release |
 | ----------- | ------------------------- |
-| v9.0.240925 | v0.2.4                    |
-| v9.0.241217 | v0.3.5                    |
+| v9.0.240925 | v0.1.3                    |
+| v9.0.241217 | v0.4.2                    |
 | v9.1.250226 | v0.6.2                    |
 | v9.2.250908 | v0.7.5                    |
 | v9.3.260213 | v0.8.1                    |
