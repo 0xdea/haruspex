@@ -147,7 +147,7 @@ Conventions shared by the augur, haruspex, and rhabdomancer harnesses:
 
 - `idalib::force_batch_mode()` must be called before opening any database (suppresses IDA UI); `main()` and the test harness both call it first.
 - IDA must run on the main thread and isn't thread-safe, so standard `#[test]` functions, which run on worker threads, can't use it: that's why the integration tests use a custom harness (`harness = false`).
-- Objects derived from an `IDB` (e.g., `Function`, `CFunction`) must be dropped before the `IDB` itself, since their destructors call into IDA, and getting it wrong hangs the process. Since idalib 0.11, `Function`, `Segment`, and `CFunction` implement `Drop`, so the borrow checker enforces this: dropping the `IDB` while one of them is still alive fails to compile (E0505).
+- Objects derived from an `IDB` (e.g., `Function`, `CFunction`) must be dropped before the `IDB` itself, since their destructors call into IDA, and getting it wrong hangs the process. Since idalib 0.11, `Function`, `Segment`, and `CFunction` implement `Drop`, so the borrow checker enforces this: dropping the `IDB` while one of them is still alive fails to compile (E0505 for an explicit `drop(idb)`, E0597 when the `IDB` goes out of scope first).
 - Names from the analyzed binary (function names, strings) are untrusted: print them escaped with `str::escape_debug()` (or `{:?}`) at the print site, and build file names from them only through a sanitizer.
 - To probe IDA's view of a binary, write a temporary `examples/` program (`cargo run --example ...`), then delete it.
 - `IDB::open()` doesn't save the database on close, so no IDB file is left next to the binary (checked by `check_no_idb_file`).
