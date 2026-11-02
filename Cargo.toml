@@ -1,6 +1,6 @@
 [package]
 name = "haruspex"
-version = "1.0.1-alpha"
+version = "1.1.0-alpha"
 authors = ["Marco Ivaldi <raptor@0xdeadbeef.info>"]
 edition = "2024"
 rust-version = "1.91"
@@ -24,12 +24,12 @@ exclude = [
 ]
 
 [dependencies]
-idalib = "0.10"
+idalib = "0.11"
 anyhow = "1.0"
 thiserror = "2.0"
 
 [build-dependencies]
-idalib-build = "0.10"
+idalib-build = "0.11"
 
 # [patch.crates-io]
 # idalib = { git = "https://github.com/0xdea/idalib", branch = "feature/hexrays-improvements" }
