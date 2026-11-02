@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Update idalib to v0.11.0 to support IDA 9.5.
 - Update other dependencies.
+- Mention a missing decompiler license in `DecompilerUnavailable`'s error message, since a missing license usually
+  returns `DecompilerUnavailable` instead of `LicenseUnavailable` with idalib v0.11.0.
 - Update documentation.
 
 ### Fixed

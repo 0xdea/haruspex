@@ -657,7 +657,9 @@ fn check_no_decompiler_error(result: anyhow::Result<usize>) -> anyhow::Result<()
         .err()
         .context("expected an error for a binary without a decompiler")?;
     assert!(
-        format!("{err:#}").contains("decompiler is not available"),
+        format!("{err:#}").contains(
+            "decompiler is not available (e.g., unsupported processor or missing license)"
+        ),
         "wrong error returned: {err:#}"
     );
     eprintln!("Ok.");

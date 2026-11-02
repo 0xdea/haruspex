@@ -25,15 +25,16 @@ const MAX_FILENAME_LEN: usize = 64;
 /// Haruspex error type.
 ///
 /// [`HaruspexError::Decompile`] only concerns the function that failed to
-/// decompile, while [`HaruspexError::LicenseUnavailable`] and
-/// [`HaruspexError::DecompilerUnavailable`] mean that no function can be
+/// decompile, while [`HaruspexError::DecompilerUnavailable`] and
+/// [`HaruspexError::LicenseUnavailable`] mean that no function can be
 /// decompiled. The other variants concern the decompiler configuration or
 /// output files.
 #[derive(Debug, thiserror::Error)]
 #[non_exhaustive]
 pub enum HaruspexError {
-    /// No decompiler is available for the IDB.
-    #[error("decompiler is not available")]
+    /// No decompiler is available for the IDB, for example because IDA has no
+    /// decompiler for its processor or no license for that decompiler.
+    #[error("decompiler is not available (e.g., unsupported processor or missing license)")]
     DecompilerUnavailable,
     /// A decompiler configuration directive can't be applied.
     #[error("failed to apply decompiler directive `{directive}`")]
@@ -45,7 +46,9 @@ pub enum HaruspexError {
         source: IDAError,
     },
     /// The Hex-Rays decompiler license is not available, so no function can be
-    /// decompiled.
+    /// decompiled. A missing license is usually reported earlier as
+    /// [`HaruspexError::DecompilerUnavailable`], so this variant covers
+    /// licensing failures that only show up during decompilation.
     #[error("Hex-Rays decompiler license is not available")]
     LicenseUnavailable(#[source] IDAError),
     /// The function can't be decompiled, but other functions may still be.
@@ -172,9 +175,10 @@ impl ArgHintsMode {
     ///
     /// # Errors
     ///
-    /// Returns [`HaruspexError::DecompilerUnavailable`] if no decompiler is
-    /// available for `idb`, or [`HaruspexError::DecompilerConfig`] if the
-    /// decompiler configuration can't be modified.
+    /// Returns [`HaruspexError::DecompilerUnavailable`] if no decompiler, or no
+    /// license for it, is available for `idb`, or
+    /// [`HaruspexError::DecompilerConfig`] if the decompiler configuration
+    /// can't be modified.
     pub fn apply(self, idb: &mut IDB) -> Result<(), HaruspexError> {
         if !idb.decompiler_available() {
             return Err(HaruspexError::DecompilerUnavailable);
@@ -242,8 +246,8 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
     eprintln!("[-] File type: {:?}", idb.meta().filetype());
     eprintln!();
 
-    // Disable argument name hints, which also checks that a decompiler is
-    // available.
+    // Disable argument name hints, which also checks that a decompiler, and a
+    // license for it, is available.
     ArgHintsMode::Disabled.apply(&mut idb)?;
 
     // Create a new output directory, returning an error if it already exists and
@@ -312,8 +316,8 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
 /// # Errors
 ///
 /// Errors are never about decompiling `func` itself. Returns
-/// [`HaruspexError::LicenseUnavailable`] or
-/// [`HaruspexError::DecompilerUnavailable`] if no function can be decompiled.
+/// [`HaruspexError::DecompilerUnavailable`] or
+/// [`HaruspexError::LicenseUnavailable`] if no function can be decompiled.
 /// Otherwise, returns [`HaruspexError::OutputDirCreate`] if the parent
 /// directory of `filepath` can't be created, or [`HaruspexError::FileWrite`]
 /// if an output file can't be written: these concern the output path, and
@@ -338,7 +342,7 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
 ///     .ok_or_else(|| anyhow::anyhow!("function `main` not found"))?;
 ///
 /// // `None` means that only this function can't be decompiled, while errors
-/// // are never about decompiling it (e.g., an unavailable Hex-Rays license).
+/// // are never about decompiling it (e.g., the output file can't be written).
 /// if let Some(dumped) =
 ///     haruspex::decompile_to_file(&idb, &func, &output_file)?
 /// {
@@ -403,15 +407,18 @@ pub fn decompile_to_file(
 /// # Errors
 ///
 /// Returns [`HaruspexError::Decompile`] if `func` can't be decompiled, which
-/// doesn't affect other functions, or [`HaruspexError::LicenseUnavailable`]
-/// or [`HaruspexError::DecompilerUnavailable`] if no function can be
-/// decompiled.
+/// doesn't affect other functions, or
+/// [`HaruspexError::DecompilerUnavailable`] or
+/// [`HaruspexError::LicenseUnavailable`] if no function can be decompiled.
 pub fn decompile<'a>(idb: &'a IDB, func: &Function<'a>) -> Result<CFunction<'a>, HaruspexError> {
     if !idb.decompiler_available() {
         return Err(HaruspexError::DecompilerUnavailable);
     }
 
     idb.decompile(func).map_err(|source| {
+        // A missing license usually already makes the `decompiler_available`
+        // check above fail, so this only catches license failures during
+        // decompilation.
         if matches!(&source, IDAError::HexRays(err) if err.code() == HexRaysErrorCode::License) {
             HaruspexError::LicenseUnavailable(source)
         } else {
@@ -505,9 +512,8 @@ pub fn sanitize_filename(filename: &str) -> String {
 ///
 /// # Errors
 ///
-/// Returns [`HaruspexError`] if no function can be decompiled (e.g., because
-/// the Hex-Rays decompiler license is not available), or if the output files
-/// or their directories can't be created.
+/// Returns [`HaruspexError`] if no function can be decompiled, or if the output
+/// files or their directories can't be created.
 fn extract_pseudocode(idb: &IDB, dirpath: &Path) -> Result<FunctionCounts, HaruspexError> {
     // Extract all type definitions.
     let all_types_path = dirpath.join("all_types.h");

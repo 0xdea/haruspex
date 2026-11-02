@@ -27,7 +27,8 @@ or [oneiromancer](https://crates.io/crates/oneiromancer).
 - Pseudocode of each function is stored in a separated file in the output directory for easy inspection.
 - Global and per-function type definitions are extracted to header files alongside the pseudocode.
 - External crates can invoke [`decompile_to_file`] to decompile a function and save its pseudocode and type definitions to
-  disk, telling apart functions that can't be decompiled from errors such as an unavailable Hex-Rays license.
+  disk, telling apart functions that can't be decompiled from errors that affect all functions, such as an unavailable
+  decompiler or license.
 
 ## Articles
 
