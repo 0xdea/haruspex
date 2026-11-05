@@ -19,9 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Garble names that aren't valid C identifiers in `run`'s pseudocode (e.g., `#memcpy` becomes `_memcpy`), which IDA 9.5
-  wraps in backticks by default, making pseudocode unparsable by static analysis tools. Library users get the same with
-  `NameMode::Garbled.apply`.
+- Garble symbol names that aren't valid C identifiers in `run`'s pseudocode (e.g., `#memcpy` in ARM64EC binaries becomes
+  `_memcpy`), which IDA 9.5 wraps in backticks by default, making pseudocode unparsable by static analysis tools. Library
+  users get the same with `NameMode::Garbled.apply`. Demangled Rust names are still wrapped in backticks.
 
 ## [1.1.0] - 2026-11-02
 
