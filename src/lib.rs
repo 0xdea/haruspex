@@ -27,8 +27,8 @@ const MAX_FILENAME_LEN: usize = 64;
 /// [`HaruspexError::Decompile`] only concerns the function that failed to
 /// decompile, while [`HaruspexError::DecompilerUnavailable`] and
 /// [`HaruspexError::LicenseUnavailable`] mean that no function can be
-/// decompiled. The other variants concern the decompiler configuration or
-/// output files.
+/// decompiled. The other variants concern the decompiler or IDA
+/// configuration, or output files.
 #[derive(Debug, thiserror::Error)]
 #[non_exhaustive]
 pub enum HaruspexError {
@@ -45,11 +45,20 @@ pub enum HaruspexError {
         #[source]
         source: IDAError,
     },
+    /// An IDA configuration directive can't be applied.
+    #[error("failed to apply IDA directive `{directive}`")]
+    IdaConfig {
+        /// Directive that can't be applied.
+        directive: &'static str,
+        /// Underlying IDA error.
+        #[source]
+        source: IDAError,
+    },
     /// The Hex-Rays decompiler license is not available, so no function can be
     /// decompiled. A missing license is usually reported earlier as
     /// [`HaruspexError::DecompilerUnavailable`], so this variant covers
     /// licensing failures that only show up during decompilation.
-    #[error("Hex-Rays decompiler license is not available")]
+    #[error("decompiler license is not available")]
     LicenseUnavailable(#[source] IDAError),
     /// The function can't be decompiled, but other functions may still be.
     #[error("failed to decompile function at {addr:#X}")]
@@ -203,6 +212,61 @@ impl ArgHintsMode {
     }
 }
 
+/// Name display mode, for names from the IDB (e.g., of called functions) in
+/// pseudocode.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[non_exhaustive]
+pub enum NameMode {
+    /// Names are displayed verbatim, the default with IDA 9.5's stock
+    /// `ida.cfg`, and the decompiler wraps those that aren't valid C
+    /// identifiers in backticks (e.g., `` `#memcpy`(dst, src, n) ``).
+    Verbatim,
+    /// Characters that aren't valid in names are displayed as underscores
+    /// (e.g., `_memcpy(dst, src, n)`). Names that differ only in such
+    /// characters (e.g., `has space` and `has_space`) are then displayed
+    /// identically: use [`NameMode::Verbatim`] to tell them apart.
+    Garbled,
+}
+
+impl NameMode {
+    /// Applies this name display mode to [`IDB`] `idb`.
+    ///
+    /// IDA 9.5 displays names verbatim by default, while [`run`] garbles them
+    /// so that pseudocode stays valid C, as with earlier IDA versions, for
+    /// tools that parse it. Only displayed names are affected: this doesn't
+    /// change names stored in the IDB, such as those returned by
+    /// [`function_name`].
+    ///
+    /// The mode only applies to `idb`: a database opened later, even in the
+    /// same process, starts again from the default set by `ida.cfg`.
+    ///
+    /// IDA doesn't report whether the directive was applied, so this can only
+    /// fail if idalib rejects it before passing it to IDA.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`HaruspexError::IdaConfig`] if the IDA configuration can't be
+    /// modified.
+    pub fn apply(self, idb: &mut IDB) -> Result<(), HaruspexError> {
+        let directive = self.directive();
+        idb.modify_ida_config(directive)
+            .map_err(|source| HaruspexError::IdaConfig { directive, source })
+    }
+
+    /// Returns the IDA config directive that applies this name display mode.
+    ///
+    /// `GarbleNames` is a bitmask in `ida.cfg`, where `0x2` garbles names
+    /// when displayed, and `0x1` garbles them in storage, which is never set
+    /// here.
+    #[must_use]
+    const fn directive(self) -> &'static str {
+        match self {
+            Self::Verbatim => "GarbleNames = 0",
+            Self::Garbled => "GarbleNames = 2",
+        }
+    }
+}
+
 /// Numbers of non-thunk functions processed by [`run`].
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 struct FunctionCounts {
@@ -222,6 +286,11 @@ struct FunctionCounts {
 /// output directory, which must either not exist or be empty. If anything goes
 /// wrong after it is created, including when no functions were decompiled, it
 /// is removed.
+///
+/// Names that aren't valid C identifiers are garbled in pseudocode (see
+/// [`NameMode::Garbled`]), while stdout and output file names keep the names
+/// stored in the IDB, so they can differ (e.g., `_memcpy` calls in pseudocode,
+/// but `#memcpy@ADDR.c`).
 ///
 /// Returns how many functions were decompiled.
 ///
@@ -249,6 +318,9 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
     // Disable argument name hints, which also checks that a decompiler, and a
     // license for it, is available.
     ArgHintsMode::Disabled.apply(&mut idb)?;
+
+    // Garble displayed names, so that pseudocode stays valid C.
+    NameMode::Garbled.apply(&mut idb)?;
 
     // Create a new output directory, returning an error if it already exists and
     // it's not empty.
@@ -333,8 +405,9 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
 ///
 /// let mut idb = idalib::idb::IDB::open(&input_file)?;
 ///
-/// // Disable argument name hints.
+/// // Disable argument name hints, and garble displayed names, as `run` does.
 /// haruspex::ArgHintsMode::Disabled.apply(&mut idb)?;
+/// haruspex::NameMode::Garbled.apply(&mut idb)?;
 ///
 /// let (_id, func) = idb
 ///     .functions()
@@ -845,6 +918,20 @@ mod tests {
             ArgHintsMode::Inlay.directive(),
             "ARG_HINTS_MODE = 2",
             "`Inlay` should map to `HAHM_INLAY`"
+        );
+    }
+
+    #[test]
+    fn name_mode_directive_matches_ida_config_values() {
+        assert_eq!(
+            NameMode::Verbatim.directive(),
+            "GarbleNames = 0",
+            "`Verbatim` should clear `GarbleNames`"
+        );
+        assert_eq!(
+            NameMode::Garbled.directive(),
+            "GarbleNames = 2",
+            "`Garbled` should only garble displayed names"
         );
     }
 

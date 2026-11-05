@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 use std::{fs, process};
 
 use anyhow::Context as _;
-use haruspex::{ArgHintsMode, DumpedFunction, HaruspexError};
+use haruspex::{ArgHintsMode, DumpedFunction, HaruspexError, NameMode};
 use idalib::Address;
 use idalib::func::Function;
 use idalib::idb::IDB;
@@ -16,6 +16,8 @@ const IDB_EXTENSIONS: [&str; 6] = ["i64", "id0", "id1", "id2", "nam", "til"];
 
 /// Target binary with functions.
 const LS: &str = "./tests/data/ls";
+/// Target binary that calls functions whose names aren't valid C identifiers.
+const GARBLE_NAMES: &str = "./tests/data/garble_names";
 /// Target binary with type definitions but no functions.
 const NO_FUNCTIONS: &str = "./tests/data/no_functions";
 /// Target binary for a processor without a decompiler.
@@ -44,6 +46,7 @@ fn main() -> anyhow::Result<()> {
 
     test_binary_with_functions()?;
     test_library_functions()?;
+    test_garbled_names()?;
     test_binary_without_functions()?;
     test_binary_without_decompiler()?;
     test_existing_output_dir()?;
@@ -130,6 +133,30 @@ fn check_library_functions(dirpath: &Path) -> anyhow::Result<()> {
     check_invalid_filename(&idb, &main_func, dirpath);
     check_parent_dir_create_error(&idb, &main_func, dirpath)?;
     check_types_write_error(&idb, &types_func, dirpath)?;
+    Ok(())
+}
+
+/// Checks that names that aren't valid C identifiers are garbled in pseudocode
+/// by `run` and by `NameMode::Garbled`, but not in file names or in the IDB.
+fn test_garbled_names() -> anyhow::Result<()> {
+    let dirpath = reset_output(GARBLE_NAMES)?;
+
+    // The IDB is closed when this returns, before the binary opens it again.
+    check_name_modes()?;
+
+    let output = run_binary(&[GARBLE_NAMES])?;
+    eprintln!();
+    check_binary_succeeded(&output);
+    check_stdout_line(
+        &output,
+        "_has#hash -> `./tests/data/garble_names.dec/_has#hash@100000340.c`",
+    );
+    check_garbled_names(&dirpath)?;
+    check_no_idb_file(GARBLE_NAMES);
+
+    // Remove the output directory and any IDB files at the end.
+    reset_output(GARBLE_NAMES)?;
+    eprintln!();
     Ok(())
 }
 
@@ -366,6 +393,94 @@ fn check_known_output_file(dirpath: &Path) -> anyhow::Result<()> {
     );
     eprintln!("Ok.");
     Ok(())
+}
+
+/// Opens the IDB of `GARBLE_NAMES` and checks how each `NameMode` displays
+/// names in the pseudocode of `_main`.
+///
+/// Both modes are applied explicitly, `Verbatim` after `Garbled`, so that each
+/// is shown to have an effect whatever IDA's default, which `ida.cfg` sets.
+fn check_name_modes() -> anyhow::Result<()> {
+    let mut idb = IDB::open(GARBLE_NAMES)?;
+
+    NameMode::Garbled.apply(&mut idb)?;
+    check_garbled_pseudocode(&idb)?;
+    check_stored_name_verbatim(&idb)?;
+    NameMode::Verbatim.apply(&mut idb)?;
+    check_verbatim_names(&idb)?;
+    Ok(())
+}
+
+/// Checks that names in the pseudocode of `_main` in `idb` are displayed
+/// verbatim, wrapped in backticks, after applying `NameMode::Verbatim`.
+fn check_verbatim_names(idb: &IDB) -> anyhow::Result<()> {
+    eprint!("[*] Checking names are displayed verbatim with `NameMode::Verbatim`... ");
+    let main_func = find_function(idb, "_main")?;
+    let pseudocode = haruspex::decompile(idb, &main_func)?.pseudocode();
+    // The decompiler drops the leading underscore of Mach-O symbols (`_main`
+    // is displayed as `main`), so `_has#hash` is displayed as `has#hash`.
+    for call in ["`has#hash`(", "`has space`(", "`has*star?`("] {
+        assert!(
+            pseudocode.contains(call),
+            "pseudocode doesn't contain `{call}`:\n{pseudocode}"
+        );
+    }
+    eprintln!("Ok.");
+    Ok(())
+}
+
+/// Checks that names in the pseudocode of `_main` in `idb` are garbled after
+/// applying `NameMode::Garbled`.
+fn check_garbled_pseudocode(idb: &IDB) -> anyhow::Result<()> {
+    eprint!("[*] Checking names are garbled with `NameMode::Garbled`... ");
+    let main_func = find_function(idb, "_main")?;
+    let pseudocode = haruspex::decompile(idb, &main_func)?.pseudocode();
+    check_garbled_calls(&pseudocode);
+    eprintln!("Ok.");
+    Ok(())
+}
+
+/// Checks that names stored in `idb` stay verbatim after applying
+/// `NameMode::Garbled`, so that `function_name` returns them unchanged.
+fn check_stored_name_verbatim(idb: &IDB) -> anyhow::Result<()> {
+    eprint!("[*] Checking `NameMode::Garbled` keeps stored names verbatim... ");
+    let func = find_function(idb, "_has#hash")?;
+    assert_eq!(
+        haruspex::function_name(&func),
+        "_has#hash",
+        "wrong function name returned"
+    );
+    eprintln!("Ok.");
+    Ok(())
+}
+
+/// Checks that `run` garbles names in the pseudocode of `_main` in the output
+/// directory of `GARBLE_NAMES`.
+fn check_garbled_names(dirpath: &Path) -> anyhow::Result<()> {
+    eprint!("[*] Checking names are garbled in pseudocode by default... ");
+    let pseudocode = fs::read_to_string(dirpath.join("_main@100000370.c"))?;
+    check_garbled_calls(&pseudocode);
+    eprintln!("Ok.");
+    Ok(())
+}
+
+/// Asserts that `pseudocode` calls the functions of `GARBLE_NAMES` by their
+/// garbled names, and contains no backticks.
+///
+/// The decompiler drops the leading underscore of Mach-O symbols, so
+/// `_has#hash` is displayed as `has_hash`. Each call follows `= ` or `return `,
+/// so the leading space rules out a prefixed name (e.g., `_has_hash(`).
+fn check_garbled_calls(pseudocode: &str) {
+    for call in [" has_hash(", " has_space(", " has_star_("] {
+        assert!(
+            pseudocode.contains(call),
+            "pseudocode doesn't contain `{call}`:\n{pseudocode}"
+        );
+    }
+    assert!(
+        !pseudocode.contains('`'),
+        "pseudocode contains backticks:\n{pseudocode}"
+    );
 }
 
 /// Checks that `function_name` returns the name of `func`, i.e., `main`.

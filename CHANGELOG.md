@@ -7,9 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add `NameMode` and `NameMode::apply` to set how names are displayed in an IDB's pseudocode.
+- Add `HaruspexError::IdaConfig`, returned when an IDA configuration directive can't be applied.
+- Add the `garble_names` test binary and integration tests for names that aren't valid C identifiers.
+
 ### Changed
 
 - Mark the `linker_messages` suppression as permanent.
+
+### Fixed
+
+- Garble names that aren't valid C identifiers in `run`'s pseudocode (e.g., `#memcpy` becomes `_memcpy`), which IDA 9.5
+  wraps in backticks by default, making pseudocode unparsable by static analysis tools. Library users get the same with
+  `NameMode::Garbled.apply`.
 
 ## [1.1.0] - 2026-11-02
 
