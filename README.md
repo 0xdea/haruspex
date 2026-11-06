@@ -142,6 +142,8 @@ This project's development has been supported by the following organizations:
   implementations such as `<char as core::fmt::Display>::fmt`) and types (e.g., `&str`) in backticks.
 - Use the `.cpp` extension instead of `.c` to output pseudocode (see
   this [issue](https://github.com/0xdea/semgrep-rules/issues/12))?
+- Allow choosing which architecture to analyze in universal (fat) Mach-O binaries, since IDA picks one in batch mode
+  (e.g., IDA 9.5 picks arm64e where IDA 9.4 picked x86_64).
 - Implement serialized output to facilitate automated parsing and analysis.
 - Integrate with Semgrep scanning (see <https://github.com/0xdea/semgrep-rules>).
 - Integrate with weggli scanning (see <https://github.com/0xdea/weggli-patterns>).
