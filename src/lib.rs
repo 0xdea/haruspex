@@ -290,7 +290,7 @@ struct FunctionCounts {
 /// Names that aren't valid C identifiers are garbled in pseudocode (see
 /// [`NameMode::Garbled`]), while stdout and output file names keep the names
 /// stored in the IDB, so they can differ (e.g., `_memcpy` calls in pseudocode,
-/// but `#memcpy@ADDR.c`).
+/// but a `#memcpy@ADDR.c` file).
 ///
 /// Returns how many functions were decompiled.
 ///
@@ -405,7 +405,7 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
 ///
 /// let mut idb = idalib::idb::IDB::open(&input_file)?;
 ///
-/// // Disable argument name hints, and garble displayed names, as `run` does.
+/// // Disable argument name hints and garble displayed names.
 /// haruspex::ArgHintsMode::Disabled.apply(&mut idb)?;
 /// haruspex::NameMode::Garbled.apply(&mut idb)?;
 ///

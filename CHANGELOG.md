@@ -5,7 +5,7 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.2.0] - 2026-11-06
 
 ### Added
 
@@ -24,9 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Garble symbol names that aren't valid C identifiers in `run`'s pseudocode (e.g., `#memcpy` in ARM64EC binaries becomes
-  `_memcpy`), which IDA 9.5 wraps in backticks by default, making pseudocode unparsable by static analysis tools. Library
-  users get the same with `NameMode::Garbled.apply`. Demangled Rust names are still wrapped in backticks.
+- Garble names that IDA 9.5 wraps in backticks in the pseudocode written by the haruspex CLI (e.g., `#memcpy` becomes
+  `_memcpy`, as on IDA 9.4), so static analysis tools can parse it again. Library users need to call
+  `NameMode::Garbled.apply` themselves. Demangled Rust names still keep their backticks.
 
 ## [1.1.0] - 2026-11-02
 
@@ -508,7 +508,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - First release to be published to [crates.io](https://crates.io/).
 
-[unreleased]: https://github.com/0xdea/haruspex/compare/v1.1.0...HEAD
+[unreleased]: https://github.com/0xdea/haruspex/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/0xdea/haruspex/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/0xdea/haruspex/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/0xdea/haruspex/compare/v0.10.1...v1.0.0
 [0.10.1]: https://github.com/0xdea/haruspex/compare/v0.10.0...v0.10.1
