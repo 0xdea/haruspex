@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   isolates and zero-width spaces) no longer reach output file names and printed paths. Other non-ASCII characters that
   aren't letters or digits (e.g., emoji) are now replaced too.
 - Mark the `linker_messages` suppression as permanent.
+- Update other dependencies.
+- Update documentation.
 
 ### Fixed
 
