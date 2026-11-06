@@ -138,7 +138,8 @@ This project's development has been supported by the following organizations:
 ## TODO
 
 - Add a Semgrep CI regression test to make sure the percentage of parsed lines doesn't decrease.
-- Make pseudocode of Rust binaries parsable again with IDA 9.5, which wraps demangled Rust names in backticks.
+- Make pseudocode of Rust binaries parsable again with IDA 9.5, which wraps some demangled Rust names (e.g., trait
+  implementations such as `<char as core::fmt::Display>::fmt`) and types (e.g., `&str`) in backticks.
 - Use the `.cpp` extension instead of `.c` to output pseudocode (see
   this [issue](https://github.com/0xdea/semgrep-rules/issues/12))?
 - Implement serialized output to facilitate automated parsing and analysis.

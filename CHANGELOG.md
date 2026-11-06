@@ -26,7 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Garble names that IDA 9.5 wraps in backticks in the pseudocode written by the haruspex CLI (e.g., `#memcpy` becomes
   `_memcpy`, as on IDA 9.4), so static analysis tools can parse it again. Library users need to call
-  `NameMode::Garbled.apply` themselves. Demangled Rust names still keep their backticks.
+  `NameMode::Garbled.apply` themselves. Some demangled Rust names (e.g., trait implementations such as
+  `<char as core::fmt::Display>::fmt`) and types (e.g., `&str`) still keep their backticks.
 
 ## [1.1.0] - 2026-11-02
 
