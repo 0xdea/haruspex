@@ -555,11 +555,27 @@ pub fn output_path_for_function(
         .join(format!("{}@{addr:X}.c", sanitize_filename(func_name)))
 }
 
-/// Replaces reserved and control characters in `filename` with underscores and
-/// truncates it to at most `MAX_FILENAME_LEN` bytes, on a character boundary.
+/// Replaces disallowed characters in `filename` with underscores and truncates
+/// it to at most `MAX_FILENAME_LEN` bytes, on a character boundary.
 ///
-/// Control characters are invalid in Windows filenames and, since names come
-/// from the analyzed binary, could inject terminal escape sequences elsewhere.
+/// Only letters and digits of any script, printable ASCII characters, and
+/// spaces are allowed, except for reserved characters, i.e., `.` and `/` (and,
+/// on Windows, the other characters that Windows doesn't allow in filenames).
+/// Names come from the analyzed binary, so this keeps out control characters,
+/// which are invalid in Windows filenames and could inject terminal escape
+/// sequences when paths are printed, and Unicode format characters, such as
+/// bidirectional isolates and zero-width spaces, which could reorder or hide
+/// parts of a printed path (IDA 9.5 keeps some of them in names). Allowing
+/// known-safe characters, rather than denying known-dangerous ones, also
+/// covers characters that future Unicode versions may add. Other non-ASCII
+/// symbols, such as emoji, are replaced too.
+///
+/// Letters of any script are kept, so a sanitized name can still look like
+/// another one (e.g., with look-alike letters from another script, invisible
+/// Hangul fillers, or stacked combining marks), and different names can give
+/// the same result (e.g., `a.b` and `a/b`): [`output_path_for_function`]
+/// appends the function's address, which keeps its file names distinct.
+///
 /// Counting bytes rather than characters keeps output filenames within the
 /// usual 255-byte limit on filename length, even for names made of multi-byte
 /// characters and once [`output_path_for_function`] appends its `@ADDR.c`
@@ -572,7 +588,10 @@ pub fn sanitize_filename(filename: &str) -> String {
     // the result.
     let (truncated, _rest) = filename.split_at(filename.floor_char_boundary(MAX_FILENAME_LEN));
     truncated.replace(
-        |ch: char| ch.is_control() || RESERVED_CHARS.contains(&ch),
+        |ch: char| {
+            let allowed = ch.is_alphanumeric() || ch.is_ascii_graphic() || ch == ' ';
+            !allowed || RESERVED_CHARS.contains(&ch)
+        },
         "_",
     )
 }
@@ -1045,6 +1064,74 @@ mod tests {
     }
 
     #[test]
+    fn sanitize_filename_keeps_letters_and_digits_of_any_script() {
+        // Latin, CJK, and Greek letters, and an Arabic-Indic digit.
+        assert_eq!(
+            sanitize_filename("caf\u{e9}_\u{4e2d}\u{6587}_\u{3c0}\u{663}"),
+            "caf\u{e9}_\u{4e2d}\u{6587}_\u{3c0}\u{663}",
+            "letters and digits of any script should be kept"
+        );
+    }
+
+    #[test]
+    fn sanitize_filename_keeps_printable_ascii_and_spaces() {
+        // None of these characters is reserved on any platform.
+        assert_eq!(
+            sanitize_filename("#has hash$1@x~-!&+,;=[]{}'%^`"),
+            "#has hash$1@x~-!&+,;=[]{}'%^`",
+            "unreserved printable ASCII characters and spaces should be kept"
+        );
+    }
+
+    #[test]
+    fn sanitize_filename_replaces_invisible_chars() {
+        // Soft hyphen, Arabic letter mark, Mongolian vowel separator,
+        // zero-width space, non-joiner, and joiner, left-to-right and
+        // right-to-left marks, bidirectional embeddings, pop directional
+        // formatting, overrides, and isolates, word joiner, zero-width
+        // no-break space (BOM), and a tag character. IDA 9.5 keeps several of
+        // them (e.g., the isolates) in names.
+        for ch in [
+            '\u{ad}',
+            '\u{61c}',
+            '\u{180e}',
+            '\u{200b}',
+            '\u{200c}',
+            '\u{200d}',
+            '\u{200e}',
+            '\u{200f}',
+            '\u{202a}',
+            '\u{202b}',
+            '\u{202c}',
+            '\u{202d}',
+            '\u{202e}',
+            '\u{2060}',
+            '\u{2066}',
+            '\u{2067}',
+            '\u{2068}',
+            '\u{2069}',
+            '\u{feff}',
+            '\u{e0001}',
+        ] {
+            assert_eq!(
+                sanitize_filename(&format!("a{ch}b")),
+                "a_b",
+                "invisible char {ch:?} should be replaced with an underscore"
+            );
+        }
+    }
+
+    #[test]
+    fn sanitize_filename_replaces_other_non_ascii_symbols() {
+        // A trademark sign, an emoji, and a combining acute accent.
+        assert_eq!(
+            sanitize_filename("a\u{2122}b\u{1f980}c\u{301}"),
+            "a_b_c_",
+            "non-ASCII chars other than letters and digits should be replaced"
+        );
+    }
+
+    #[test]
     fn sanitize_filename_on_empty_name_produces_empty_string() {
         assert_eq!(
             sanitize_filename(""),
@@ -1085,12 +1172,12 @@ mod tests {
 
     #[test]
     fn sanitize_filename_truncates_by_bytes_on_a_char_boundary() {
-        // Each crab is four bytes long in UTF-8, so after the leading `a` the
-        // 16th crab would end at byte 65, past `MAX_FILENAME_LEN`.
-        let long = format!("a{}", "\u{1F980}".repeat(20));
+        // Each `中` is three bytes long in UTF-8, so after the leading `ab` the
+        // 21st would end at byte 65, past `MAX_FILENAME_LEN`.
+        let long = format!("ab{}", "\u{4E2D}".repeat(25));
         assert_eq!(
             sanitize_filename(&long),
-            format!("a{}", "\u{1F980}".repeat(15)),
+            format!("ab{}", "\u{4E2D}".repeat(20)),
             "names should be truncated to whole chars within `MAX_FILENAME_LEN` bytes"
         );
     }

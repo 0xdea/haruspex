@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Update idalib to v0.11.1, for `IDB::modify_ida_config`.
+- Make `sanitize_filename` an allowlist of letters and digits of any script, printable ASCII characters, and spaces
+  (except reserved characters), so that Unicode format characters that IDA 9.5 keeps in names (e.g., bidirectional
+  isolates and zero-width spaces) no longer reach output file names and printed paths. Other non-ASCII characters that
+  aren't letters or digits (e.g., emoji) are now replaced too.
 - Mark the `linker_messages` suppression as permanent.
 
 ### Fixed
