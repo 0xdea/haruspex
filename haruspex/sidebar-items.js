@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["ArgHintsMode","HaruspexError"],"fn":["decompile","decompile_to_file","function_name","output_path_for_function","prepare_output_dir","run","sanitize_filename"],"struct":["DumpedFunction"]};
+window.SIDEBAR_ITEMS = {"enum":["ArgHintsMode","HaruspexError","NameMode"],"fn":["decompile","decompile_to_file","function_name","output_path_for_function","prepare_output_dir","run","sanitize_filename"],"struct":["DumpedFunction"]};
