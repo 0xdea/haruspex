@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Update idalib to v0.11.1, for `IDB::modify_ida_config`.
 - Mark the `linker_messages` suppression as permanent.
 
 ### Fixed

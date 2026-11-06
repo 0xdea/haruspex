@@ -421,8 +421,9 @@ checksum = "15cdd26707701c53297e2fa6afb323d55fbc1d0810c3aec078ae3ef0424c3c15"
 
 [[package]]
 name = "idalib"
-version = "0.11.0+9.5.261026"
-source = "git+https://github.com/0xdea/idalib?branch=feat%2Fprocess-config-directive#3fb4217642455a3325eca0a6ddba3449d3a6b7d7"
+version = "0.11.1+9.5.261026"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2f17de71fce2e8082bce7f555b3d86a8498a611f31bec99d892eae4d21949395"
 dependencies = [
  "anyhow",
  "autocxx-idalib",
@@ -435,8 +436,9 @@ dependencies = [
 
 [[package]]
 name = "idalib-build"
-version = "0.11.0+9.5.261026"
-source = "git+https://github.com/0xdea/idalib?branch=feat%2Fprocess-config-directive#3fb4217642455a3325eca0a6ddba3449d3a6b7d7"
+version = "0.11.1+9.5.261026"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b88f7cf016da44889378e1554b66474a68cb1ef4610f54cd3bd3e058a7bd01f8"
 dependencies = [
  "anyhow",
  "idalib-sys",
@@ -444,8 +446,9 @@ dependencies = [
 
 [[package]]
 name = "idalib-sys"
-version = "0.11.0+9.5.261026"
-source = "git+https://github.com/0xdea/idalib?branch=feat%2Fprocess-config-directive#3fb4217642455a3325eca0a6ddba3449d3a6b7d7"
+version = "0.11.1+9.5.261026"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "387128dad650818234f66ff549f12027748ebf01104c60f192ae09f97cc9734d"
 dependencies = [
  "anyhow",
  "autocxx-bindgen-idalib",

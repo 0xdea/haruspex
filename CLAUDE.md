@@ -11,7 +11,7 @@ Haruspex is a headless IDA plugin written in Rust that extracts Hex-Rays pseudoc
 - IDA 9.5+ (see the README's compatibility table) with the Hex-Rays decompiler and a valid license, with `IDADIR` set to the installation directory at both build time and runtime. The build script (`build.rs`, via `idalib-build`) checks common installation paths if it's unset, and only warns if it can't find IDA, so set it explicitly for non-standard locations (`export IDADIR=/path/to/ida`).
 - LLVM/Clang, used by bindgen when building `idalib`. On Windows, `LIBCLANG_PATH` must also be set to the LLVM/Clang `bin` directory.
 - Rust edition 2024, and Rust 1.91+ (declared as `rust-version` in `Cargo.toml`, since `sanitize_filename` uses `str::floor_char_boundary`); clippy's `incompatible_msrv` lint checks code against it.
-- Temporarily, idalib comes from the `feat/process-config-directive` branch of `0xdea/idalib` through `[patch.crates-io]` in `Cargo.toml`, for `IDB::modify_ida_config` (used by `NameMode`). All three crates (`idalib`, `idalib-sys`, `idalib-build`) are patched, since `idalib-sys` declares `links = "idalib"`, so a git copy and a crates.io copy can't coexist. Before publishing, comment the patch out again and require the idalib release that includes the method (likely `0.11.1`), since crates.io rejects git dependencies.
+- idalib 0.11.1+ (`idalib = "0.11.1"` and `idalib-build = "0.11.1"` in `Cargo.toml`), the first release with `IDB::modify_ida_config`, which `NameMode` uses; it was developed for haruspex and merged upstream.
 
 ## Commands
 
