@@ -52,17 +52,17 @@ The easiest way to get the latest release is via [crates.io](https://crates.io/c
 1. Download, install, and configure IDA (see <https://hex-rays.com/ida-pro>).
 2. Install LLVM/Clang (see <https://rust-lang.github.io/rust-bindgen/requirements.html>).
 3. On Linux/macOS, install as follows:
-    ```sh
-    export IDADIR=/path/to/ida # if not set, the build script will check common locations
-    cargo install haruspex --locked
-    ```
-    On Windows, instead, use the following commands:
-    ```powershell
-    $env:LIBCLANG_PATH="\path\to\clang+llvm\bin"
-    $env:PATH="\path\to\ida;$env:PATH"
-    $env:IDADIR="\path\to\ida" # if not set, the build script will check common locations
-    cargo install haruspex --locked
-    ```
+   ```sh
+   export IDADIR=/path/to/ida # if not set, the build script will check common locations
+   cargo install haruspex --locked
+   ```
+   On Windows, instead, use the following commands:
+   ```powershell
+   $env:LIBCLANG_PATH="\path\to\clang+llvm\bin"
+   $env:PATH="\path\to\ida;$env:PATH"
+   $env:IDADIR="\path\to\ida" # if not set, the build script will check common locations
+   cargo install haruspex --locked
+   ```
 
 ## Compiling
 
@@ -71,37 +71,37 @@ Alternatively, you can build from [source](https://github.com/0xdea/haruspex):
 1. Download, install, and configure IDA (see <https://hex-rays.com/ida-pro>).
 2. Install LLVM/Clang (see <https://rust-lang.github.io/rust-bindgen/requirements.html>).
 3. On Linux/macOS, compile as follows:
-    ```sh
-    git clone --depth 1 https://github.com/0xdea/haruspex
-    cd haruspex
-    export IDADIR=/path/to/ida # if not set, the build script will check common locations
-    cargo build --release --locked
-    ```
-    On Windows, instead, use the following commands:
-    ```powershell
-    git clone --depth 1 https://github.com/0xdea/haruspex
-    cd haruspex
-    $env:LIBCLANG_PATH="\path\to\clang+llvm\bin"
-    $env:PATH="\path\to\ida;$env:PATH"
-    $env:IDADIR="\path\to\ida" # if not set, the build script will check common locations
-    cargo build --release --locked
-    ```
+   ```sh
+   git clone --depth 1 https://github.com/0xdea/haruspex
+   cd haruspex
+   export IDADIR=/path/to/ida # if not set, the build script will check common locations
+   cargo build --release --locked
+   ```
+   On Windows, instead, use the following commands:
+   ```powershell
+   git clone --depth 1 https://github.com/0xdea/haruspex
+   cd haruspex
+   $env:LIBCLANG_PATH="\path\to\clang+llvm\bin"
+   $env:PATH="\path\to\ida;$env:PATH"
+   $env:IDADIR="\path\to\ida" # if not set, the build script will check common locations
+   cargo build --release --locked
+   ```
 
 ## Usage
 
 1. Make sure IDA is properly configured with a valid license.
 2. Make sure the `IDADIR` environment variable is set if your IDA installation is in a non-standard location.
 3. Run as follows:
-    ```sh
-    haruspex <binary_file>
-    ```
+   ```sh
+   haruspex <binary_file>
+   ```
 4. Find the extracted pseudocode and type definitions in the output directory next to `<binary_file>`, named after
    it with its extension, if any, replaced by `.dec` (e.g., `foo.exe` and `foo` both produce `foo.dec`, so binaries
    that differ only in their extension share the same output directory):
-    ```sh
-    vim foo.dec
-    code foo.dec
-    ```
+   ```sh
+   vim foo.dec
+   code foo.dec
+   ```
 
 ## Compatibility
 
