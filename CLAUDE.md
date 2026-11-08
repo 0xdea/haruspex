@@ -118,7 +118,7 @@ Pure functions whose result matters carry `#[must_use]`, private ones included (
 
 Use `#[expect(clippy::some_lint, reason = "...")]`, never `#[allow]`, to locally suppress a lint that genuinely cannot be avoided, in both library code and tests. The only one in the codebase: `panic_in_result_fn` (test assertions, as a module-level `#![expect]` in `tests/main.rs` and on `mod tests` in `src/lib.rs`).
 
-Taplo enforces TOML formatting (`.taplo.toml`: 120-char line width, 4-space indent).
+TOML formatting comes from the maintainer's Zed settings (`lsp.taplo.settings.formatter` in `settings.json`: 120-char line width, 4-space indent, at most one blank line in a row), applied by taplo through Zed's language server. The repository has no taplo configuration, so `taplo fmt` run elsewhere uses taplo's defaults (80 columns, 2-space indent).
 
 The crate-level documentation in `src/lib.rs` is assembled in a specific order to satisfy two restriction lints simultaneously, and should not be "simplified" back to a plain `#![doc = include_str!("../README.md")]`:
 
