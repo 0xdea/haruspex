@@ -3,6 +3,7 @@
 #![cfg_attr(doc, doc = include_str!("../README.md"))]
 #![doc(html_logo_url = "https://raw.githubusercontent.com/0xdea/haruspex/master/.img/logo.png")]
 
+use std::mem::DropGuard;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 use std::{fs, io};
@@ -331,23 +332,20 @@ pub fn run(filepath: impl AsRef<Path>) -> anyhow::Result<usize> {
 
     // Remove the output directory, which is empty or only partially populated, if
     // anything goes wrong, including when no functions were decompiled.
-    let counts = extract_pseudocode(&idb, &dirpath)
-        .map_err(anyhow::Error::from)
-        .and_then(|counts| {
-            anyhow::ensure!(
-                counts.decompiled > 0,
-                "no functions were decompiled, check your input file"
+    let cleanup = DropGuard::new(&dirpath, |dirpath| {
+        if let Err(cleanup_err) = fs::remove_dir_all(dirpath) {
+            eprintln!(
+                "[!] Failed to remove directory `{}`: {cleanup_err}",
+                dirpath.display()
             );
-            Ok(counts)
-        })
-        .inspect_err(|_| {
-            if let Err(cleanup_err) = fs::remove_dir_all(&dirpath) {
-                eprintln!(
-                    "[!] Failed to remove directory `{}`: {cleanup_err}",
-                    dirpath.display()
-                );
-            }
-        })?;
+        }
+    });
+    let counts = extract_pseudocode(&idb, &dirpath)?;
+    anyhow::ensure!(
+        counts.decompiled > 0,
+        "no functions were decompiled, check your input file"
+    );
+    DropGuard::dismiss(cleanup);
 
     eprintln!();
     eprintln!(
