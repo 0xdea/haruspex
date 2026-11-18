@@ -10,7 +10,7 @@
     "categories": ["vulnerability-research-and-exploit-development", "decompilation"],
     "urls": {
       "repository": "https://github.com/0xdea/haruspex",
-      "homepage": "https://0xdeadbeef.info/haruspex/haruspex/"
+      "homepage": "https://docs.rs/haruspex"
     },
     "authors": [
       {
