@@ -5,7 +5,7 @@
 [![](https://img.shields.io/crates/d/haruspex?style=flat&color=red)](https://crates.io/crates/haruspex)
 [![](https://img.shields.io/badge/ida-9.5-purple)](https://hex-rays.com/ida-pro)
 [![](https://img.shields.io/badge/mastodon-%40raptor-blue.svg)](https://infosec.exchange/@raptor)
-[![build](https://github.com/0xdea/haruspex/actions/workflows/build.yml/badge.svg)](https://github.com/0xdea/haruspex/actions/workflows/build.yml)
+[![build](https://img.shields.io/github/actions/workflow/status/0xdea/haruspex/build.yml?label=build)](https://github.com/0xdea/haruspex/actions/workflows/build.yml)
 [![doc](https://img.shields.io/docsrs/haruspex)](https://docs.rs/haruspex)
 
 > "Hacking is the discipline of questioning all your assumptions all of the time."
