@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Redirecting to docs.rs</title>
+<script>
+const prefix = "/haruspex/haruspex/";
+const path = location.pathname;
+location.replace(path.startsWith(prefix)
+  ? "https://docs.rs/haruspex/latest/haruspex/" + path.slice(prefix.length)
+  : "https://docs.rs/haruspex");
+</script>
+</head>
+<body>
+<p>The documentation has moved to <a href="https://docs.rs/haruspex">https://docs.rs/haruspex</a>.</p>
+</body>
+</html>
